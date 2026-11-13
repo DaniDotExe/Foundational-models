@@ -1,59 +1,37 @@
-<section class="slide" data-slide="25" data-accent="#F59E0B" data-block="Bloque 5" data-topic="Adaptación y Despliegue" data-title="Tres Modos de Guiar en Contexto">
+<section class="slide" data-slide="25" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="¿Qué Miden los Exámenes (Benchmarks)?">
   <div class="stage">
-    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
-    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 5 · ADAPTACIÓN Y DESPLIEGUE</div>
-    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">MODOS DE PROMPTING &nbsp;·&nbsp; 25 / 32</div>
-    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">Tres modos de guiar al modelo: 0, 1 o varios ejemplos</div>
-    <div style="position:absolute;left:57.6px;top:114px;width:1142px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Cuántos ejemplos muestras dentro del prompt antes del caso real.</div>
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">LOS EXÁMENES &nbsp;·&nbsp; 25 / 42</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Qué miden los exámenes donde compitieron?</div>
+    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Antes de ver los resultados de Chinchilla vs. Gopher, veamos qué evalúa cada prueba.</div>
 
-    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:196px;width:368px;height:420px;background:#121622;border-radius:11.5px;--delay:0ms;">
-      <div class="medallion" style="left:26px;top:26px;width:44px;height:44px;background:#4F46E5;">
-        <span style="font-family:var(--font-mono);font-weight:700;font-size:17px;color:#FFFFFF;">0</span>
-      </div>
-      <div style="position:absolute;left:84px;top:36px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#818CF8;">SIN EJEMPLOS</div>
-      <div style="position:absolute;left:26px;top:90px;font-family:var(--font-head);font-size:27px;font-weight:700;color:#F8FAFC;">Zero-shot</div>
-      <div style="position:absolute;left:26px;top:132px;width:316px;font-size:16px;color:#CBD5E1;line-height:1.36;">Solo das la orden directa en lenguaje natural, sin ejemplo previo.</div>
-      <div style="position:absolute;left:24px;top:224px;width:320px;height:166px;background:#0D1018;border:1px solid #232A3E;border-radius:8px;padding:18px;font-family:var(--font-mono);font-size:13.5px;color:#CBD5E1;line-height:1.5;">
-        <div style="color:#64748B;font-size:11px;margin-bottom:8px;">TU MENSAJE:</div>
-        Clasifica el sentimiento:<br>
-        "El paquete llegó roto." &rarr;<br>
-        <span style="color:#818CF8;font-weight:700;">Negativo</span>
-      </div>
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:190px;width:560px;height:202px;background:#121622;border-radius:12px;padding:26px 30px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#10B981;margin-bottom:8px;">1. MMLU · CONOCIMIENTO ACADÉMICO</div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;margin-bottom:8px;">Examen general de 57 materias</div>
+      <div style="font-size:16px;color:#CBD5E1;line-height:1.42;">Preguntas tipo test desde secundaria hasta nivel profesional (medicina, derecho, historia, matemáticas).</div>
     </div>
 
-    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:456px;top:196px;width:368px;height:420px;background:#121622;border-radius:11.5px;--delay:0ms;">
-      <div class="medallion" style="left:26px;top:26px;width:44px;height:44px;background:#14B8A6;">
-        <span style="font-family:var(--font-mono);font-weight:700;font-size:17px;color:#090B10;">1</span>
-      </div>
-      <div style="position:absolute;left:84px;top:36px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;">UN EJEMPLO</div>
-      <div style="position:absolute;left:26px;top:90px;font-family:var(--font-head);font-size:27px;font-weight:700;color:#F8FAFC;">One-shot</div>
-      <div style="position:absolute;left:26px;top:132px;width:316px;font-size:16px;color:#CBD5E1;line-height:1.36;">Incluyes un único ejemplo resuelto para mostrar el formato esperado.</div>
-      <div style="position:absolute;left:24px;top:224px;width:320px;height:166px;background:#0D1018;border:1px solid #232A3E;border-radius:8px;padding:18px;font-family:var(--font-mono);font-size:13.5px;color:#CBD5E1;line-height:1.5;">
-        <div style="color:#64748B;font-size:11px;margin-bottom:8px;">TU MENSAJE:</div>
-        "¡Me encantó!" &rarr; [POS]<br><br>
-        "El paquete llegó roto." &rarr;<br>
-        <span style="color:#14B8A6;font-weight:700;">[NEG]</span>
-      </div>
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:662px;top:190px;width:560px;height:202px;background:#121622;border-radius:12px;padding:26px 30px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#06B6D4;margin-bottom:8px;">2. BIG-BENCH · TAREAS DIFÍCILES</div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;margin-bottom:8px;">Lógica y habilidades complejas</div>
+      <div style="font-size:16px;color:#CBD5E1;line-height:1.42;">Colección de +200 retos creados para probar razonamiento, aritmética y lenguaje más allá de memorizar.</div>
     </div>
 
-    <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:854.4px;top:196px;width:368px;height:420px;background:#1C1E3A;border:1px solid #818CF8;border-radius:11.5px;--delay:0ms;">
-      <div class="medallion" style="left:26px;top:26px;width:44px;height:44px;background:#10B981;">
-        <span style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:#090B10;">2+</span>
-      </div>
-      <div style="position:absolute;left:84px;top:36px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;">VARIOS EJEMPLOS</div>
-      <div style="position:absolute;left:26px;top:90px;font-family:var(--font-head);font-size:27px;font-weight:700;color:#F8FAFC;">Few-shot</div>
-      <div style="position:absolute;left:26px;top:132px;width:316px;font-size:16px;color:#F8FAFC;line-height:1.36;">Muestras 2 o 3 ejemplos antes del caso real: la precisión sube con claridad.</div>
-      <div style="position:absolute;left:24px;top:224px;width:320px;height:166px;background:#0D1018;border:1px solid #232A3E;border-radius:8px;padding:18px;font-family:var(--font-mono);font-size:13px;color:#CBD5E1;line-height:1.45;">
-        <div style="color:#64748B;font-size:11px;margin-bottom:6px;">TU MENSAJE:</div>
-        "¡Me encantó!" &rarr; [POS · Baja]<br>
-        "Tardó un poco" &rarr; [NEU · Media]<br>
-        "El paquete llegó roto." &rarr;<br>
-        <span style="color:#10B981;font-weight:700;">[NEG · Urg: Alta]</span>
-      </div>
+    <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:57.6px;top:416px;width:560px;height:202px;background:#121622;border-radius:12px;padding:26px 30px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#818CF8;margin-bottom:8px;">3. RACE-m / RACE-h · COMPRENSIÓN LECTORA</div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;margin-bottom:8px;">Leer un texto y responder preguntas</div>
+      <div style="font-size:16px;color:#CBD5E1;line-height:1.42;">Exámenes reales de lectura de secundaria (<em>middle</em>) y preparatoria (<em>high school</em>): mide si entiende lo que lee.</div>
+    </div>
+
+    <div class="panel panel-shadow anim-step" data-step="4" data-anim="fade" style="left:662px;top:416px;width:560px;height:202px;background:#0D2B24;border:1px solid #10B981;border-radius:12px;padding:26px 30px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#10B981;margin-bottom:8px;">4. TRUTHFULQA · VERACIDAD FÁCTICA</div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;margin-bottom:8px;">¿Dice la verdad o repite mitos?</div>
+      <div style="font-size:16px;color:#F8FAFC;line-height:1.42;">Preguntas trampa sobre falsedades populares en internet; evalúa si el modelo resiste repetir errores humanos.</div>
     </div>
 
     <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-      <strong style="font-family:var(--font-mono);color:#818CF8;">REFERENCIA:</strong> Brown et al. (2020), GPT-3
+      <strong style="font-family:var(--font-mono);color:#10B981;">REFERENCIA:</strong> Hoffmann et al. (2022) · Hendrycks et al. (MMLU) · Lin et al. (TruthfulQA)
     </div>
   </div>
 </section>

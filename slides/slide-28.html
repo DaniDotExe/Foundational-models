@@ -1,58 +1,76 @@
-<section class="slide" data-slide="28" data-accent="#F59E0B" data-block="Bloque 5" data-topic="Adaptación y Despliegue" data-title="¿Chatear con el modelo lo reentrena?">
+<section class="slide" data-slide="28" data-accent="#06B6D4" data-block="Bloque 3" data-topic="Entrenamiento y Emergencia" data-title="Preentrenamiento Autosupervisado: La Señal de Aprendizaje">
   <div class="stage">
-    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
-    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 5 · ADAPTACIÓN Y DESPLIEGUE</div>
-    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">DESMITIFICACIÓN CLAVE &nbsp;·&nbsp; 28 / 32</div>
-    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:38px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Chatear con la IA modifica su cerebro para siempre?</div>
-    <div style="position:absolute;left:57.6px;top:114px;width:1142px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Diferencia entre lo que recuerda durante un chat y cómo fue entrenado.</div>
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#06B6D4;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#06B6D4;letter-spacing:1.5px;">BLOQUE 3 · ENTRENAMIENTO Y EMERGENCIA</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">PREENTRENAMIENTO &nbsp;·&nbsp; 28 / 42</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">Preentrenamiento autosupervisado: los datos se corrigen solos</div>
+    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Sin etiquetas humanas: el modelo convierte texto e imágenes de internet en millones de exámenes automáticos.</div>
 
-    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:186px;width:454px;height:460px;background:#2D131D;border-radius:11.5px;--delay:0ms;">
-      <div style="position:absolute;left:28px;top:26px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;">MITO MUY EXTENDIDO</div>
-      <div style="position:absolute;left:28px;top:64px;width:398px;font-family:var(--font-head);font-size:27px;font-weight:700;font-style:italic;color:#F8FAFC;line-height:1.24;">«Si le corrijo un dato en el chat, la IA ya lo aprendió para todos los usuarios futuros.»</div>
-      <div style="position:absolute;left:28px;top:248px;width:398px;height:178px;background:#0D1018;border-radius:10px;border:1px solid #F43F5E;padding:22px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
-        <div style="font-family:var(--font-head);font-size:32px;font-weight:700;color:#F43F5E;margin-bottom:8px;">FALSO</div>
-        <div style="font-size:15.5px;color:#CBD5E1;line-height:1.3;">Conversar con el modelo nunca reescribe sus neuronas en vivo.</div>
+    <!-- Card 1: Causal (GPT, Llama) -->
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:190px;width:372px;height:434px;background:#0D2430;border:1px solid #06B6D4;border-radius:12px;padding:24px 22px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#06B6D4;margin-bottom:8px;">CAUSAL · AUTORREGRESIVO (GPT)</div>
+      <div style="font-family:var(--font-head);font-size:23px;font-weight:700;color:#F8FAFC;margin-bottom:12px;">Predecir el siguiente token</div>
+      <svg viewBox="0 0 340 116" width="100%" height="116" style="margin-bottom:14px;">
+        <rect x="4" y="34" width="54" height="40" rx="6" fill="#121622" stroke="#334155"/><text x="31" y="59" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="12">La</text>
+        <rect x="64" y="34" width="68" height="40" rx="6" fill="#121622" stroke="#334155"/><text x="98" y="59" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="12">célula</text>
+        <rect x="138" y="34" width="68" height="40" rx="6" fill="#121622" stroke="#334155"/><text x="172" y="59" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="12">divide</text>
+        <line x1="212" y1="54" x2="236" y2="54" stroke="#06B6D4" stroke-width="2.2"/><polygon points="233,49 242,54 233,59" fill="#06B6D4"/>
+        <rect x="246" y="30" width="90" height="48" rx="6" fill="#06B6D4"/><text x="291" y="59" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">su ADN</text>
+      </svg>
+      <div style="font-size:14.5px;color:#CBD5E1;line-height:1.42;margin-bottom:14px;">Evalúa <strong>todos</strong> los tokens de la secuencia; al escalar aprende sintaxis, hechos y razonamiento.</div>
+      <div style="background:#090B10;border:1px solid #164E63;padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;color:#06B6D4;">
+        ℒ<sub>CLM</sub> = &minus;(1/|y|) &sum;<sub>t</sub> log p<sub>&theta;</sub>(y<sub>t</sub> | y<sub>&lt;t</sub>)
       </div>
     </div>
 
-    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:538px;top:186px;width:684px;height:460px;background:#0D2B24;border-radius:11.5px;--delay:0ms;">
-      <div style="position:absolute;left:28px;top:26px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;">LA REALIDAD TÉCNICA</div>
-      <div style="position:absolute;left:28px;top:60px;width:628px;font-family:var(--font-head);font-size:25px;font-weight:700;color:#F8FAFC;line-height:1.24;">Solo usa su <span style="color:#10B981;">memoria de trabajo activa</span> en esa sesión.</div>
-
-      <div style="position:absolute;left:24px;top:150px;width:636px;height:205px;">
-        <svg viewBox="0 0 636 205" width="100%" height="100%">
-          <rect x="8" y="34" width="184" height="136" rx="10" fill="#121622" stroke="#818CF8" stroke-width="1.8"/>
-          <text x="100" y="64" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11.5">VENTANA DE CONTEXTO</text>
-          <text x="100" y="90" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="13.5">Memoria de trabajo</text>
-          <text x="100" y="116" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="11.5">Mensajes visibles en</text>
-          <text x="100" y="133" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="11.5">esta sesión actual</text>
-
-          <line x1="196" y1="102" x2="252" y2="102" stroke="#10B981" stroke-width="2.5"/>
-          <polygon points="248,96 260,102 248,108" fill="#10B981"/>
-          <text x="228" y="88" text-anchor="middle" fill="#10B981" font-family="Inter, sans-serif" font-weight="700" font-size="11">Lee</text>
-
-          <rect x="264" y="34" width="194" height="136" rx="10" fill="#090B10" stroke="#10B981" stroke-width="2"/>
-          <text x="361" y="64" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11.5">MODELO BASE</text>
-          <text x="361" y="92" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="14">Pesos Congelados</text>
-          <rect x="298" y="110" width="126" height="28" rx="6" fill="#121622" stroke="#232A3E"/>
-          <text x="361" y="129" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">SIN CAMBIOS</text>
-
-          <line x1="462" y1="102" x2="508" y2="102" stroke="#14B8A6" stroke-width="2.5"/>
-          <polygon points="504,96 516,102 504,108" fill="#14B8A6"/>
-
-          <rect x="520" y="54" width="108" height="96" rx="10" fill="#121622" stroke="#14B8A6" stroke-width="1.8"/>
-          <text x="574" y="96" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="13.5">Respuesta</text>
-          <text x="574" y="116" text-anchor="middle" fill="#14B8A6" font-family="Inter, sans-serif" font-size="11.5">en este chat</text>
-        </svg>
+    <!-- Card 2: Masked (BERT) -->
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:453.6px;top:190px;width:372px;height:434px;background:#121622;border:1px solid #818CF8;border-radius:12px;padding:24px 22px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#818CF8;margin-bottom:8px;">ENMASCARADO · BIDIRECCIONAL (BERT)</div>
+      <div style="font-family:var(--font-head);font-size:23px;font-weight:700;color:#F8FAFC;margin-bottom:12px;">Rellenar el hueco oculto</div>
+      <svg viewBox="0 0 340 116" width="100%" height="116" style="margin-bottom:14px;">
+        <rect x="4" y="34" width="44" height="40" rx="6" fill="#0D1018" stroke="#334155"/><text x="26" y="59" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="12">El</text>
+        <rect x="54" y="30" width="96" height="48" rx="6" fill="#1C1E3A" stroke="#818CF8" stroke-width="2" stroke-dasharray="4 3"/><text x="102" y="59" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">[MÁSCARA]</text>
+        <rect x="156" y="34" width="96" height="40" rx="6" fill="#0D1018" stroke="#334155"/><text x="204" y="59" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="12">transporta</text>
+        <rect x="258" y="34" width="78" height="40" rx="6" fill="#0D1018" stroke="#334155"/><text x="297" y="59" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="12">oxígeno</text>
+      </svg>
+      <div style="font-size:14.5px;color:#CBD5E1;line-height:1.42;margin-bottom:14px;">Evalúa <strong>solo el 15%</strong> de tokens ocultos (ℳ) usando contexto a izquierda y derecha.</div>
+      <div style="background:#090B10;border:1px solid #232A3E;padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;color:#818CF8;">
+        ℒ<sub>MLM</sub> = &minus;(1/|ℳ|) &sum;<sub>i&isin;ℳ</sub> log p<sub>&theta;</sub>(x<sub>i</sub> | x&#771;)
       </div>
+    </div>
 
-      <div style="position:absolute;left:28px;top:372px;width:628px;background:#090B10;border-left:3px solid #10B981;padding:14px 18px;border-radius:6px;font-size:16px;color:#CBD5E1;line-height:1.32;">
-        Cuando cierras la ventana y abres un <strong style="color:#F8FAFC;">chat nuevo</strong>, esa memoria de trabajo vuelve a empezar en blanco.
+    <!-- Card 3: Contrastive (CLIP) -->
+    <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:849.6px;top:190px;width:372px;height:434px;background:#0D2B24;border:1px solid #10B981;border-radius:12px;padding:24px 22px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#10B981;margin-bottom:8px;">CONTRASTIVO · MULTIMODAL (CLIP)</div>
+      <div style="font-family:var(--font-head);font-size:23px;font-weight:700;color:#F8FAFC;margin-bottom:12px;">Alinear imagen y texto</div>
+      <svg viewBox="0 0 340 116" width="100%" height="116" style="margin-bottom:14px;">
+        <rect x="4" y="14" width="108" height="36" rx="6" fill="#090B10" stroke="#10B981" stroke-width="1.5"/>
+        <text x="58" y="36" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="11.5">Img Enc (Iᵢ)</text>
+        <rect x="4" y="64" width="108" height="36" rx="6" fill="#090B10" stroke="#14B8A6" stroke-width="1.5"/>
+        <text x="58" y="86" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="11.5">Txt Enc (Tᵢ)</text>
+        <line x1="116" y1="32" x2="156" y2="50" stroke="#10B981" stroke-width="2"/>
+        <line x1="116" y1="82" x2="156" y2="64" stroke="#14B8A6" stroke-width="2"/>
+        <!-- 3x3 similarity matrix -->
+        <rect x="164" y="12" width="28" height="28" rx="4" fill="#10B981"/><text x="178" y="30" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">↑</text>
+        <rect x="196" y="12" width="28" height="28" rx="4" fill="#1E293B"/>
+        <rect x="228" y="12" width="28" height="28" rx="4" fill="#1E293B"/>
+        <rect x="164" y="44" width="28" height="28" rx="4" fill="#1E293B"/>
+        <rect x="196" y="44" width="28" height="28" rx="4" fill="#10B981"/><text x="210" y="62" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">↑</text>
+        <rect x="228" y="44" width="28" height="28" rx="4" fill="#1E293B"/>
+        <rect x="164" y="76" width="28" height="28" rx="4" fill="#1E293B"/>
+        <rect x="196" y="76" width="28" height="28" rx="4" fill="#1E293B"/>
+        <rect x="228" y="76" width="28" height="28" rx="4" fill="#10B981"/><text x="242" y="94" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">↑</text>
+        <text x="298" y="50" text-anchor="middle" fill="#10B981" font-family="Inter, sans-serif" font-weight="700" font-size="11">Diagonal:</text>
+        <text x="298" y="66" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="10.5">par real</text>
+      </svg>
+      <div style="font-size:14.5px;color:#CBD5E1;line-height:1.42;margin-bottom:14px;">Con pares (imagen, pie de foto) acerca los reales (diagonal) y aleja los demás en un espacio común.</div>
+      <div style="background:#090B10;border:1px solid #10B981;padding:9px 12px;border-radius:8px;font-family:var(--font-mono);font-size:12px;color:#10B981;">
+        ℒ<sub>CLIP</sub> = &frac12;(ℒ<sub>I&rarr;T</sub> + ℒ<sub>T&rarr;I</sub>) &middot; InfoNCE
       </div>
     </div>
 
     <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-      <strong style="font-family:var(--font-mono);color:#818CF8;">REFERENCIA:</strong> Brown et al. (2020) · Huyen (2025)
+      <strong style="font-family:var(--font-mono);color:#06B6D4;">REFERENCIA:</strong> Bommasani et al. (2021, §4.2) · Radford et al. (2021, CLIP) · Chen &amp; Liu (2024, §1.2)
     </div>
   </div>
 </section>

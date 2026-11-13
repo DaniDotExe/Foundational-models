@@ -1,37 +1,85 @@
-<section class="slide" data-slide="26" data-accent="#F59E0B" data-block="Bloque 5" data-topic="Adaptación y Despliegue" data-title="Ejemplos y Razonamiento Paso a Paso">
+<section class="slide" data-slide="26" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="Resultados: Chinchilla vs. Gopher">
   <div class="stage">
-    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
-    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 5 · ADAPTACIÓN Y DESPLIEGUE</div>
-    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">DEMOSTRACIÓN EN ACCIÓN &nbsp;·&nbsp; 26 / 32</div>
-    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">Multiplicar la precisión con un buen contexto</div>
-    <div style="position:absolute;left:57.6px;top:114px;width:1142px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Combinar ejemplos claros con «Pensemos paso a paso» cambia el resultado sin tocar el modelo.</div>
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">CHINCHILLA VS. GOPHER &nbsp;·&nbsp; 26 / 42</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿En cuánto superó Chinchilla (70B) a Gopher (280B)?</div>
+    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Con el <strong>mismo presupuesto de cómputo</strong> (~5.7&times;10<sup>23</sup> FLOPs), el modelo 4&times; más pequeño ganó en todos los frentes.</div>
 
-    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:184px;width:1164.5px;height:190px;background:#2D131D;border-radius:12px;--delay:0ms;">
-      <div style="position:absolute;left:32px;top:22px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;">SIN GUÍA · PROMPT AMBIGUO</div>
-      <div style="position:absolute;left:32px;top:56px;width:540px;background:#0D1018;border:1px solid #232A3E;border-radius:8px;padding:18px;font-family:var(--font-mono);font-size:14.5px;color:#CBD5E1;line-height:1.45;">
-        "Tenía 12 cajas, vendí 3 paquetes de 2 y recibí el doble de lo que quedó. ¿Cuántas hay?"
+    <!-- Main Chart Panel -->
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:186px;width:820px;height:434px;background:#121622;border-radius:12px;padding:26px 32px;--delay:0ms;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#94A3B8;">PRECISIÓN EN BENCHMARKS CLAVE (%)</div>
+        <div style="display:flex;gap:18px;font-family:var(--font-mono);font-size:12px;font-weight:700;">
+          <span style="color:#F43F5E;">&#9632; Gopher (280B / 300B tok)</span>
+          <span style="color:#10B981;">&#9632; Chinchilla (70B / 1.4T tok)</span>
+        </div>
       </div>
-      <div style="position:absolute;left:604px;top:56px;width:528px;">
-        <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F43F5E;margin-bottom:8px;">Adivina rápido y falla</div>
-        <div style="font-size:16.5px;color:#CBD5E1;line-height:1.38;">Al pedir la respuesta directa sin formato ni pasos intermedios, intenta contestar en el primer token y suele equivocarse.</div>
-      </div>
+
+      <svg viewBox="0 0 756 340" width="100%" height="340">
+        <!-- Row 1: MMLU -->
+        <text x="0" y="34" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="14.5">MMLU (57 materias)</text>
+        <rect x="200" y="14" width="276" height="16" rx="4" fill="#F43F5E" opacity="0.85"/>
+        <text x="484" y="27" fill="#F43F5E" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">60.0%</text>
+        <rect x="200" y="34" width="311" height="18" rx="4" fill="#10B981"/>
+        <text x="519" y="48" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">67.6%</text>
+        <rect x="650" y="18" width="96" height="28" rx="6" fill="#0D2B24" stroke="#10B981"/>
+        <text x="698" y="37" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">+7.6 pp</text>
+
+        <!-- Row 2: BIG-bench -->
+        <text x="0" y="102" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="14.5">BIG-bench (promedio)</text>
+        <rect x="200" y="82" width="250" height="16" rx="4" fill="#F43F5E" opacity="0.85"/>
+        <text x="458" y="95" fill="#F43F5E" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">54.4%</text>
+        <rect x="200" y="102" width="299" height="18" rx="4" fill="#10B981"/>
+        <text x="507" y="116" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">65.1%</text>
+        <rect x="650" y="86" width="96" height="28" rx="6" fill="#0D2B24" stroke="#10B981"/>
+        <text x="698" y="105" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">+10.7 pp</text>
+
+        <!-- Row 3: RACE-h -->
+        <text x="0" y="170" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="14.5">RACE-h (lectura)</text>
+        <rect x="200" y="150" width="329" height="16" rx="4" fill="#F43F5E" opacity="0.85"/>
+        <text x="537" y="163" fill="#F43F5E" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">71.6%</text>
+        <rect x="200" y="170" width="378" height="18" rx="4" fill="#10B981"/>
+        <text x="586" y="184" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">82.3%</text>
+        <rect x="650" y="154" width="96" height="28" rx="6" fill="#0D2B24" stroke="#10B981"/>
+        <text x="698" y="173" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">+10.7 pp</text>
+
+        <!-- Row 4: RACE-m -->
+        <text x="0" y="238" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="14.5">RACE-m (lectura)</text>
+        <rect x="200" y="218" width="345" height="16" rx="4" fill="#F43F5E" opacity="0.85"/>
+        <text x="553" y="231" fill="#F43F5E" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">75.1%</text>
+        <rect x="200" y="238" width="399" height="18" rx="4" fill="#10B981"/>
+        <text x="607" y="252" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">86.8%</text>
+        <rect x="650" y="222" width="96" height="28" rx="6" fill="#0D2B24" stroke="#10B981"/>
+        <text x="698" y="241" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">+11.7 pp</text>
+
+        <!-- Row 5: TruthfulQA (10-shot) -->
+        <text x="0" y="306" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="700" font-size="14.5">TruthfulQA (10-shot)</text>
+        <rect x="200" y="286" width="201" height="16" rx="4" fill="#F43F5E" opacity="0.85"/>
+        <text x="409" y="299" fill="#F43F5E" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">43.7%</text>
+        <rect x="200" y="306" width="307" height="18" rx="4" fill="#10B981"/>
+        <text x="515" y="320" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">66.7%</text>
+        <rect x="650" y="290" width="96" height="28" rx="6" fill="#0D2B24" stroke="#10B981"/>
+        <text x="698" y="309" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">+23.0 pp</text>
+      </svg>
     </div>
 
-    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:57.6px;top:398px;width:1164.5px;height:252px;background:#0D2B24;border:1px solid #10B981;border-radius:12px;--delay:0ms;">
-      <div style="position:absolute;left:32px;top:22px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;">CON FEW-SHOT + «PENSEMOS PASO A PASO»</div>
-      <div style="position:absolute;left:32px;top:56px;width:500px;background:#0D1018;border:1px solid #232A3E;border-radius:8px;padding:18px;font-family:var(--font-mono);font-size:14px;color:#CBD5E1;line-height:1.5;">
-        <span style="color:#94A3B8;">[2 ejemplos resueltos paso a paso]</span><br>
-        Problema nuevo... <strong style="color:#10B981;">"Pensemos paso a paso:"</strong>
+    <!-- Right: Key Takeaways -->
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:900px;top:186px;width:322px;height:434px;background:#0D2B24;border:1px solid #10B981;border-radius:12px;padding:28px 24px;display:flex;flex-direction:column;justify-content:space-between;--delay:0ms;">
+      <div>
+        <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#10B981;margin-bottom:10px;">DOBLE VICTORIA</div>
+        <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;line-height:1.25;margin-bottom:14px;">Más preciso y 4&times; más barato de usar</div>
+        <div style="font-size:15.5px;color:#F8FAFC;line-height:1.45;">Superó incluso a <strong style="color:#10B981;">MT-NLG (530B)</strong> y batió la predicción experta de MMLU para 2023 (63.4%).</div>
       </div>
-      <div style="position:absolute;left:564px;top:56px;width:568px;background:#090B10;border:1px solid #10B981;border-radius:8px;padding:16px 20px;font-family:var(--font-mono);font-size:14px;color:#F8FAFC;line-height:1.5;">
-        1. Vendí: 3 &times; 2 = 6 cajas. &nbsp;&nbsp; 2. Quedaron: 12 &minus; 6 = 6 cajas.<br>
-        3. Recibí el doble: +12 cajas. &nbsp;&nbsp; <strong style="color:#10B981;">Total final: 18 cajas ✓</strong>
+      <div style="background:#090B10;padding:14px;border-radius:8px;font-family:var(--font-mono);font-size:12.5px;color:#10B981;line-height:1.45;">
+        &bull; The Pile: mejor en todos los subconjuntos<br>
+        &bull; Wikitext-103: 7.16 vs 7.75 PPL<br>
+        &bull; Inferencia: 4&times; menos memoria
       </div>
-      <div style="position:absolute;left:32px;top:202px;width:1100px;font-size:16px;color:#CBD5E1;">Cada paso escrito sirve como apoyo lógico antes de dar el resultado final.</div>
     </div>
 
     <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-      <strong style="font-family:var(--font-mono);color:#818CF8;">REFERENCIA:</strong> Wei et al. (2022) · Brown et al. (2020) · Huyen (2025)
+      <strong style="font-family:var(--font-mono);color:#10B981;">REFERENCIA:</strong> Hoffmann et al. (2022), Tables 4, 5, A8, A10 · DeepMind
     </div>
   </div>
 </section>

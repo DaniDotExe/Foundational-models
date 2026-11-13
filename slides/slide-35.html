@@ -1,0 +1,39 @@
+<section class="slide" data-slide="35" data-accent="#F59E0B" data-block="Bloque 5" data-topic="Adaptación y Despliegue" data-title="Vía 1: Ajuste Fino Completo (Full Fine-Tuning)">
+  <div class="stage">
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 5 · ADAPTACIÓN Y DESPLIEGUE</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">VÍA 1 · FULL FINE-TUNING &nbsp;·&nbsp; 35 / 42</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">Vía 1: Ajuste fino completo (Full Fine-Tuning)</div>
+    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Actualiza el 100% de los pesos con ejemplos expertos: máxima adaptación, pero altísimo coste de memoria en GPU.</div>
+
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:194px;width:560px;height:414px;background:#121622;border-radius:12px;padding:32px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;margin-bottom:12px;">CÓMO FUNCIONA</div>
+      <div style="font-family:var(--font-head);font-size:26px;font-weight:700;color:#F8FAFC;margin-bottom:16px;">Reentrenar toda la red</div>
+      <div style="font-size:16.5px;color:#CBD5E1;line-height:1.48;margin-bottom:18px;">Parte del modelo preentrenado y ajusta <strong>todos los parámetros</strong> con datos supervisados de tu dominio (~2% del cómputo del preentrenamiento).</div>
+      <div style="background:#0D1018;border-radius:8px;padding:14px 16px;font-size:15.5px;color:#CBD5E1;line-height:1.45;">
+        <strong style="color:#10B981;">Cuándo conviene:</strong> tareas muy alejadas del texto general o dominio clínico/legal estricto.<br>
+        <strong style="color:#F43F5E;">Riesgo:</strong> puede olvidar capacidades previas o degradar la alineación de seguridad.
+      </div>
+    </div>
+
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:662px;top:194px;width:560px;height:414px;background:#261A0D;border:1px solid #F59E0B;border-radius:12px;padding:32px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;margin-bottom:12px;">LIMITACIÓN PRINCIPAL</div>
+      <div style="font-family:var(--font-head);font-size:26px;font-weight:700;color:#F8FAFC;margin-bottom:16px;">Exige demasiada GPU y copias</div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:15.5px;color:#CBD5E1;line-height:1.42;">
+        <div style="background:#0D1018;padding:12px 16px;border-radius:8px;border-left:3px solid #F59E0B;">
+          <strong style="color:#F8FAFC;">Mucha más memoria que usar el modelo:</strong> para ajustar el 100% de los pesos, la GPU guarda el modelo, sus gradientes y copias del optimizador.
+        </div>
+        <div style="background:#0D1018;padding:12px 16px;border-radius:8px;border-left:3px solid #F43F5E;">
+          <strong style="color:#F8FAFC;">Una copia gigante por tarea:</strong> cada versión especializada duplica todo el modelo en almacenamiento y producción.
+        </div>
+      </div>
+      <div style="margin-top:16px;font-size:15.5px;color:#F8FAFC;line-height:1.4;">
+        <strong style="color:#F59E0B;">En la práctica (modelo 7B):</strong> usarlo cabe en ~14 GB de VRAM, pero reentrenarlo completo exige multiplicar esa memoria (~4&times; o más).
+      </div>
+    </div>
+
+    <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
+      <strong style="font-family:var(--font-mono);color:#F59E0B;">REFERENCIA:</strong> Huyen (2025, Cap. 7) · Chen &amp; Liu (2024, Cap. 7)
+    </div>
+  </div>
+</section>

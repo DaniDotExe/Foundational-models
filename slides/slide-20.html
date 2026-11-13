@@ -1,27 +1,60 @@
-<section class="slide" data-slide="20" data-accent="#06B6D4" data-block="Bloque 3" data-topic="Entrenamiento y Emergencia" data-title="Sin Calculadora Interna y el Reto de la Imprevisibilidad">
+<section class="slide" data-slide="20" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="¿Qué es un FLOP?">
   <div class="stage">
-    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#06B6D4;opacity:0.07;"></div>
-    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#06B6D4;letter-spacing:1.5px;">BLOQUE 3 · LA SORPRESA CIENTÍFICA</div>
-    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">MITO Y DISCUSIÓN &nbsp;·&nbsp; 20 / 32</div>
-    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">Nadie programó esas habilidades manualmente</div>
-    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Por qué este fenómeno asombró —y preocupó— tanto a la comunidad científica.</div>
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">UNIDAD DE CÓMPUTO &nbsp;·&nbsp; 20 / 42</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">FLOPs vs. FLOPS: trabajo total vs. velocidad del chip</div>
+    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Un <strong style="color:#10B981;">FLOP</strong> es una suma o multiplicación con decimales; cuidado con confundir la cantidad de trabajo con la rapidez de la GPU.</div>
 
-    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:198px;width:560px;height:400px;background:#2D131D;border-radius:12px;padding:36px;--delay:0ms;">
-      <div style="font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;margin-bottom:14px;">ERROR COMÚN QUE EVITAR</div>
-      <div style="font-family:var(--font-head);font-size:28px;font-weight:700;color:#F8FAFC;line-height:1.22;margin-bottom:20px;">NO hay una calculadora interna enchufada</div>
-      <div style="font-size:17.5px;color:#CBD5E1;line-height:1.48;">Nadie escribió reglas de aritmética ni de ironía en el código. La capacidad emergió por sí sola tras practicar prediciendo miles de millones de palabras.</div>
+    <!-- Left: FLOPs (Trabajo total) -->
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:186px;width:560px;height:316px;background:#0D2B24;border:1px solid #10B981;border-radius:12px;padding:24px 28px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#10B981;margin-bottom:6px;">FLOPs (CON «s» MINÚSCULA) · DISTANCIA DEL VIAJE</div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;margin-bottom:10px;">Cantidad total de trabajo</div>
+      <svg viewBox="0 0 490 96" width="100%" height="96" style="margin-bottom:10px;">
+        <rect x="4" y="14" width="144" height="44" rx="8" fill="#090B10" stroke="#10B981" stroke-width="1.6"/>
+        <text x="76" y="41" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="14">w₁ &times; x₁</text>
+        <text x="166" y="42" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="20">+</text>
+        <rect x="184" y="14" width="144" height="44" rx="8" fill="#090B10" stroke="#10B981" stroke-width="1.6"/>
+        <text x="256" y="41" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="14">w₂ &times; x₂</text>
+        <line x1="336" y1="36" x2="368" y2="36" stroke="#10B981" stroke-width="2.2"/><polygon points="364,30 375,36 364,42" fill="#10B981"/>
+        <rect x="380" y="10" width="106" height="52" rx="8" fill="#10B981"/>
+        <text x="433" y="34" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">2 FLOPs</text>
+        <text x="433" y="51" text-anchor="middle" fill="#090B10" font-family="Inter, sans-serif" font-size="11">1 mul + 1 sum</text>
+        <text x="245" y="84" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12.5">&gt;90% del entrenamiento son multiplicaciones de matrices así</text>
+      </svg>
+      <div style="font-size:14.5px;color:#F8FAFC;line-height:1.38;">Es el trabajo <strong style="color:#10B981;">acumulado de principio a fin</strong> (todos los <em>batches</em> hasta terminar). <strong style="color:#10B981;">GPT-3</strong> completo = <strong>3.14 &times; 10<sup>23</sup> FLOPs</strong>.</div>
     </div>
 
-    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:662px;top:198px;width:560px;height:400px;background:#121622;border:1px solid #232A3E;border-radius:12px;padding:36px;--delay:0ms;">
-      <div style="font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;margin-bottom:14px;">PARA DISCUTIR EN CLASE</div>
-      <div style="font-family:var(--font-head);font-size:26px;font-weight:700;font-style:italic;color:#F8FAFC;line-height:1.25;margin-bottom:26px;">«¿Por qué esto asombró y preocupó tanto a los científicos?»</div>
-      <div class="anim-step" data-step="3" data-anim="fade" style="background:#0D1018;border-left:3px solid #F59E0B;padding:18px 20px;border-radius:6px;font-size:17px;color:#CBD5E1;line-height:1.42;--delay:0ms;">
-        Porque <strong style="color:#F8FAFC;">no es fácil predecir</strong> qué nuevas habilidades —ni qué vulnerabilidades peligrosas— despertarán antes de invertir millones.
+    <!-- Right: FLOPS / FLOP/s (Velocidad del chip) -->
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:662px;top:186px;width:560px;height:316px;background:#121622;border:1px solid #818CF8;border-radius:12px;padding:24px 28px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#818CF8;margin-bottom:6px;">FLOPS o FLOP/s (CON «S» MAYÚSCULA) · VELOCIDAD</div>
+      <div style="font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;margin-bottom:10px;">¡No confundir! Es la rapidez del chip</div>
+      <svg viewBox="0 0 490 96" width="100%" height="96" style="margin-bottom:10px;">
+        <!-- Speedometer arc -->
+        <path d="M54,68 A44,44 0 0,1 142,68" fill="none" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
+        <path d="M54,68 A44,44 0 0,1 128,36" fill="none" stroke="#818CF8" stroke-width="8" stroke-linecap="round"/>
+        <line x1="98" y1="68" x2="126" y2="40" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="98" cy="68" r="5" fill="#F8FAFC"/>
+        <text x="98" y="88" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">km/h de la GPU</text>
+        <!-- Callout -->
+        <rect x="174" y="12" width="310" height="72" rx="8" fill="#0D1018" stroke="#334155"/>
+        <text x="190" y="34" fill="#F59E0B" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">NVIDIA H100 &rarr; ~60 TeraFLOP/s</text>
+        <text x="190" y="54" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12.5">60 &times; 10¹² = 6 &times; 10¹³ op./seg (FP32)</text>
+        <text x="190" y="73" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">Con Tensor Cores BF16 llega a ~989 TFLOP/s</text>
+      </svg>
+      <div style="font-size:15px;color:#CBD5E1;line-height:1.4;"><strong>1 Tera = 10<sup>12</sup></strong>. Por eso 60 TeraFLOP/s equivale a <strong>6 &times; 10<sup>13</sup></strong> operaciones por segundo en un chip.</div>
+    </div>
+
+    <!-- Bottom: Simple mnemonic -->
+    <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:57.6px;top:524px;width:1164.5px;height:112px;background:#181E2E;border:1px solid #F59E0B;border-radius:12px;display:flex;align-items:center;padding:0 32px;gap:28px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;color:#F59E0B;white-space:nowrap;">REGLA SIMPLE<br>PARA RECORDAR</div>
+      <div style="font-size:17px;color:#F8FAFC;line-height:1.42;">
+        <strong style="color:#10B981;">FLOPs</strong> = distancia total del viaje (todo el entrenamiento acumulado) &nbsp;&middot;&nbsp; <strong style="color:#818CF8;">FLOPS (FLOP/s)</strong> = velocidad del auto (qué tan rápido avanza cada GPU).
       </div>
     </div>
 
     <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-      <strong style="font-family:var(--font-mono);color:#06B6D4;">REFERENCIA:</strong> Wei et al. (2022) · Anderson (1972)
+      <strong style="font-family:var(--font-mono);color:#10B981;">REFERENCIA:</strong> Huyen (2025, Cap. 2) · Kaplan et al. (2020)
     </div>
   </div>
 </section>

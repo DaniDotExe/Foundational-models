@@ -1,0 +1,62 @@
+<section class="slide" data-slide="36" data-accent="#F59E0B" data-block="Bloque 5" data-topic="Adaptación y Despliegue" data-title="Vía 3: Adaptadores Ligeros (PEFT / LoRA)">
+  <div class="stage">
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 5 · ADAPTACIÓN Y DESPLIEGUE</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">VÍA 3 · PEFT / LORA &nbsp;·&nbsp; 36 / 42</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:40px;font-weight:700;color:#F8FAFC;line-height:1.12;">Vía 3: LoRA — cómo funciona por dentro</div>
+    <div style="position:absolute;left:57.6px;top:114px;width:1164px;font-family:var(--font-body);font-size:19px;color:#CBD5E1;line-height:1.3;">Congela la matriz gigante y entrena dos matrices delgadas cuyo producto aporta solo el ajuste necesario.</div>
+
+    <!-- Left: Visual LoRA Matrix Factorization with concrete numbers -->
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:190px;width:580px;height:434px;background:#121622;border:1px solid #818CF8;border-radius:12px;padding:24px 28px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#818CF8;margin-bottom:6px;">EJEMPLO NUMÉRICO REAL (CAPA 4096 &times; 4096, r = 8)</div>
+      <div style="font-family:var(--font-head);font-size:23px;font-weight:700;color:#F8FAFC;margin-bottom:10px;">W<sub>nuevo</sub> = W<sub>0</sub> (congelado) + B &middot; A</div>
+      <svg viewBox="0 0 510 215" width="100%" height="215">
+        <!-- Input x -->
+        <rect x="195" y="174" width="120" height="32" rx="6" fill="#0D1018" stroke="#475569"/>
+        <text x="255" y="195" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-size="13">Entrada x</text>
+        <!-- Left branch: W0 frozen -->
+        <path d="M220,174 L125,138" stroke="#64748B" stroke-width="2" fill="none"/>
+        <rect x="26" y="64" width="198" height="74" rx="10" fill="#182032" stroke="#64748B" stroke-width="1.8"/>
+        <text x="125" y="92" text-anchor="middle" fill="#CBD5E1" font-family="JetBrains Mono, monospace" font-weight="700" font-size="14.5">W₀ (Congelada)</text>
+        <text x="125" y="112" text-anchor="middle" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="11.5">4096 &times; 4096 = 16.7M</text>
+        <text x="125" y="129" text-anchor="middle" fill="#64748B" font-family="Inter, sans-serif" font-size="11">0 pesos entrenados</text>
+        <!-- Right branch: A -> B trainable -->
+        <path d="M290,174 L385,148" stroke="#F59E0B" stroke-width="2.2" fill="none"/>
+        <rect x="295" y="110" width="180" height="36" rx="6" fill="#261A0D" stroke="#F59E0B" stroke-width="1.8"/>
+        <text x="385" y="133" text-anchor="middle" fill="#F59E0B" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">A (8 &times; 4096) = 32.7K</text>
+        <line x1="385" y1="110" x2="385" y2="96" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="295" y="58" width="180" height="36" rx="6" fill="#261A0D" stroke="#F59E0B" stroke-width="1.8"/>
+        <text x="385" y="81" text-anchor="middle" fill="#F59E0B" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">B (4096 &times; 8) = 32.7K</text>
+        <!-- Sum node -->
+        <path d="M125,64 L240,28" stroke="#64748B" stroke-width="2" fill="none"/>
+        <path d="M385,58 L270,28" stroke="#F59E0B" stroke-width="2.2" fill="none"/>
+        <circle cx="255" cy="24" r="16" fill="#10B981"/>
+        <text x="255" y="30" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="18">+</text>
+      </svg>
+      <div style="background:#090B10;border-left:3px solid #10B981;padding:10px 14px;border-radius:6px;font-size:14.5px;color:#F8FAFC;line-height:1.4;margin-top:8px;">
+        <strong>65,536 pesos</strong> en A + B vs. <strong>16.7 millones</strong> en W₀ &rarr; entrenas solo el <strong style="color:#10B981;">0.39%</strong>, pero <strong style="font-family:var(--font-mono);">B&middot;A</strong> genera el ajuste completo 4096&times;4096.
+      </div>
+    </div>
+
+    <!-- Right: Why it works step by step -->
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:662px;top:190px;width:560px;height:434px;background:#261A0D;border:1px solid #F59E0B;border-radius:12px;padding:28px 30px;--delay:0ms;">
+      <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:#F59E0B;margin-bottom:8px;">INTUICIÓN PASO A PASO</div>
+      <div style="font-family:var(--font-head);font-size:25px;font-weight:700;color:#F8FAFC;margin-bottom:16px;">¿Por qué funciona sin dañar la base?</div>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:15px;color:#F8FAFC;line-height:1.42;">
+        <div style="background:#0D1018;padding:12px 16px;border-radius:8px;border-left:3px solid #818CF8;">
+          <strong style="color:#818CF8;">1. El cambio necesario es compacto («rango bajo»):</strong> adaptar un modelo ya entrenado no exige mover millones de perillas independientes; basta un ajuste de rango <em>r</em> = 4..16.
+        </div>
+        <div style="background:#0D1018;padding:12px 16px;border-radius:8px;border-left:3px solid #10B981;">
+          <strong style="color:#10B981;">2. Arranque seguro (B = 0 al inicio):</strong> en el paso 0, <em>B&middot;A = 0</em>, así el modelo parte idéntico al original y solo aprende la diferencia útil.
+        </div>
+        <div style="background:#0D1018;padding:12px 16px;border-radius:8px;border-left:3px solid #F59E0B;">
+          <strong style="color:#F59E0B;">3. Fusión sin pérdida de velocidad:</strong> al terminar, sumas <em>W₀ + B&middot;A</em> en una sola matriz y responde igual de rápido que antes.
+        </div>
+      </div>
+    </div>
+
+    <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
+      <strong style="font-family:var(--font-mono);color:#F59E0B;">REFERENCIA:</strong> Chen &amp; Liu (2024, §1.3, Cap. 7) · Huyen (2025, Cap. 7) · Bommasani et al. (2021, §4.3)
+    </div>
+  </div>
+</section>
