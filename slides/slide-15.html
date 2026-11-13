@@ -1,0 +1,49 @@
+<section class="slide" data-slide="15" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="Ejercicio: ¿Qué modelo elegirías para tu app?">
+  <div class="stage">
+    <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
+    <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
+    <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">EJERCICIO EN CLASE &nbsp;·&nbsp; 15 / 30</div>
+    <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Tu turno de decidir: ¿Cuál pondrías en producción?</div>
+    <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Imagina que vas a construir una aplicación usada por miles de personas todos los días.</div>
+
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:174px;width:562px;height:252px;background:#121622;border:1px solid #232A3E;border-radius:13.4px;--delay:0ms;">
+      <div style="position:absolute;left:30px;top:24px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#818CF8;">OPCIÓN A</div>
+      <div style="position:absolute;left:30px;top:64px;font-family:var(--font-head);font-size:52px;font-weight:700;color:#F8FAFC;">500B <span style="font-size:24px;color:#94A3B8;">parámetros</span></div>
+      <div style="position:absolute;left:30px;top:138px;font-family:var(--font-mono);font-size:22px;font-weight:700;color:#CBD5E1;">Entrenado con 1T tokens</div>
+      <div style="position:absolute;left:30px;top:186px;width:490px;font-size:15.5px;color:#94A3B8;">Un modelo gigantesco (~2 tokens leídos por cada parámetro).</div>
+    </div>
+
+    <div class="anim-step" data-step="1" data-anim="fade" style="position:absolute;left:621px;top:280px;width:38px;text-align:center;font-family:var(--font-mono);font-size:16px;font-weight:700;color:#64748B;">VS</div>
+
+    <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:660px;top:174px;width:562px;height:252px;background:#121622;border:1px solid #232A3E;border-radius:13.4px;--delay:60ms;">
+      <div style="position:absolute;left:30px;top:24px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#14B8A6;">OPCIÓN B</div>
+      <div style="position:absolute;left:30px;top:64px;font-family:var(--font-head);font-size:52px;font-weight:700;color:#F8FAFC;">70B <span style="font-size:24px;color:#94A3B8;">parámetros</span></div>
+      <div style="position:absolute;left:30px;top:138px;font-family:var(--font-mono);font-size:22px;font-weight:700;color:#CBD5E1;">Entrenado con 2T tokens</div>
+      <div style="position:absolute;left:30px;top:186px;width:490px;font-size:15.5px;color:#94A3B8;">Un modelo 7 veces más compacto (~28.5 tokens leídos por parámetro).</div>
+    </div>
+
+    <div class="anim-step" data-step="1" data-anim="fade" style="position:absolute;left:57.6px;top:442px;width:1164px;text-align:center;font-family:var(--font-head);font-size:23px;font-style:italic;color:#F8FAFC;--delay:100ms;">
+      Votación rápida: ¿Cuál es más eficiente para una aplicación real y por qué?
+    </div>
+
+    <div class="panel panel-shadow anim-step" data-step="2" data-anim="wipeU" style="left:57.6px;top:486px;width:1164.5px;height:168px;background:#0D2B24;border:1px solid #10B981;border-radius:13.4px;--delay:0ms;">
+      <div style="position:absolute;left:28px;top:18px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#10B981;">GANADOR EN PRODUCCIÓN: OPCIÓN B (70B · 2T TOKENS)</div>
+      <div style="position:absolute;left:28px;top:52px;width:350px;background:#090B10;padding:14px 16px;border-radius:8px;">
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:4px;">1. Más rápido</div>
+        <div style="font-size:14.5px;color:#CBD5E1;line-height:1.25;">Recorre 7 veces menos parámetros para generar cada palabra.</div>
+      </div>
+      <div style="position:absolute;left:406px;top:52px;width:350px;background:#090B10;padding:14px 16px;border-radius:8px;">
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:4px;">2. Mucho más barato</div>
+        <div style="font-size:14.5px;color:#CBD5E1;line-height:1.25;">Se entrena 1 vez, pero se consulta millones de veces; usa menos servidores.</div>
+      </div>
+      <div style="position:absolute;left:784px;top:52px;width:352px;background:#090B10;padding:14px 16px;border-radius:8px;">
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:4px;">3. Conocimiento denso</div>
+        <div style="font-size:14.5px;color:#CBD5E1;line-height:1.25;">Cada parámetro absorbió 14 veces más lectura (como Llama 3 hoy).</div>
+      </div>
+    </div>
+
+    <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
+      <strong style="font-family:var(--font-mono);color:#10B981;">REFERENCIA:</strong> Hoffmann et al. (2022) · Huyen (2025)
+    </div>
+  </div>
+</section>
