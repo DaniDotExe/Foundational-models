@@ -45,7 +45,7 @@
     }
     .progress-fill {
       height: 100%;
-      width: 5.88%;
+      width: 5.56%;
       background: var(--slide-accent);
       box-shadow: 0 0 12px var(--slide-accent);
       transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease;
@@ -273,7 +273,7 @@
       <div class="step-dots" id="stepDots"></div>
       <button class="hud-btn" onclick="stepPrev()" title="Paso o diapositiva anterior (←)">←</button>
       <button class="hud-btn" onclick="stepNext()" title="Siguiente paso o diapositiva (→ / Espacio)">→</button>
-      <span class="hud-counter" id="slideCounter">01 / 17</span>
+      <span class="hud-counter" id="slideCounter">01 / 18</span>
     </div>
   </nav>
 
@@ -287,7 +287,7 @@
           <div class="glow-orb" style="left:840px;top:330px;width:580px;height:580px;background:#4F46E5;opacity:0.095;"></div>
 
           <div style="position:absolute;left:64px;top:64px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#14B8A6;letter-spacing:1.8px;">INTRODUCCIÓN A LA IA MODERNA</div>
-          <div style="position:absolute;left:1100px;top:40px;width:120px;text-align:right;font-family:var(--font-mono);font-size:13px;color:#64748B;">01 / 17</div>
+          <div style="position:absolute;left:1100px;top:40px;width:120px;text-align:right;font-family:var(--font-mono);font-size:13px;color:#64748B;">01 / 18</div>
 
           <div style="position:absolute;left:64px;top:118px;width:590px;font-family:var(--font-head);font-size:66px;font-weight:700;color:#F8FAFC;line-height:1.06;">Modelos<br>Fundacionales</div>
           <div style="position:absolute;left:64px;top:276px;width:575px;font-family:var(--font-body);font-size:21px;font-weight:400;color:#CBD5E1;line-height:1.38;">Cómo la Inteligencia Artificial pasó de resolver una sola tarea aislada a convertirse en una base común capaz de adaptarse al instante.</div>
@@ -295,7 +295,7 @@
           <div class="panel panel-shadow" style="left:64px;top:398px;width:575px;height:238px;background:#0D1018;border:1px solid #1C2336;border-radius:12px;">
             <div style="position:absolute;left:28px;top:24px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:#14B8A6;letter-spacing:1.5px;">QUÉ APRENDEREMOS HOY</div>
             <div style="position:absolute;left:28px;top:58px;width:518px;display:flex;flex-direction:column;gap:14px;font-size:16.5px;color:#CBD5E1;line-height:1.3;">
-              <div><strong style="color:#F8FAFC;">1. Cambio de idea:</strong> Por qué un modelo base reemplazó miles de programas aislados.</div>
+              <div><strong style="color:#F8FAFC;">1. Preentrenamiento y Adaptación:</strong> Del esquema «uno para uno» a una base general común (<em>one-for-all</em>).</div>
               <div><strong style="color:#F8FAFC;">2. Escala y sorpresas:</strong> Cómo se equilibran datos y tamaño, y qué nace al crecer.</div>
               <div><strong style="color:#F8FAFC;">3. Uso y límites reales:</strong> Cómo guiarlo con texto y qué cuidados exige en la vida real.</div>
             </div>
@@ -307,8 +307,8 @@
 
             <div class="medallion" style="left:34px;top:66px;width:46px;height:46px;background:#14B8A6;"><span style="font-family:var(--font-mono);font-weight:700;font-size:15px;color:#090B10;">1</span></div>
             <div style="position:absolute;left:98px;top:64px;width:400px;">
-              <div style="font-family:var(--font-head);font-size:20px;font-weight:700;color:#F8FAFC;">El Gran Cambio de Paradigma</div>
-              <div style="font-size:14px;color:#94A3B8;margin-top:2px;">Preentrenamiento + Adaptación (el bloque de mármol)</div>
+              <div style="font-family:var(--font-head);font-size:20px;font-weight:700;color:#F8FAFC;">El Paradigma: Preentrenamiento y Adaptación</div>
+              <div style="font-size:14px;color:#94A3B8;margin-top:2px;">De modelos aislados (one-for-one) al sustrato común (one-for-all)</div>
             </div>
 
             <div class="medallion" style="left:34px;top:148px;width:46px;height:46px;background:#10B981;"><span style="font-family:var(--font-mono);font-weight:700;font-size:15px;color:#090B10;">2</span></div>
@@ -348,265 +348,343 @@
         </div>
       </section>
 
-      <!-- SLIDE 02: BLOQUE 1 - GANCHO INICIAL -->
-      <section class="slide" data-slide="2" data-accent="#14B8A6" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="¿Un programa distinto para cada tarea?">
+      <!-- SLIDE 02: BLOQUE 1 - DEL ESQUEMA ONE-FOR-ONE AL ONE-FOR-ALL -->
+      <section class="slide" data-slide="2" data-accent="#14B8A6" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="Del Esquema «Uno para Uno» al Paradigma «Uno para Todos»">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#14B8A6;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;letter-spacing:1.5px;">BLOQUE 1 · EL GRAN CAMBIO DE PARADIGMA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">ANTES DE LOS MODELOS FUNDACIONALES &nbsp;·&nbsp; 02 / 17</div>
-          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Un programa distinto para cada tarea?</div>
-          <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Por qué la forma tradicional de construir Inteligencia Artificial se volvió insostenible.</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">ANTES DE LOS MODELOS FUNDACIONALES &nbsp;·&nbsp; 02 / 18</div>
+          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Un modelo exclusivo desde cero para cada tarea?</div>
+          <div style="position:absolute;left:57.6px;top:106px;width:1164px;font-family:var(--font-body);font-size:16.5px;color:#CBD5E1;line-height:1.25;">Sustitución de modelos especializados aislados (<em>one-for-one</em>) por una base general preentrenada que se adapta a múltiples tareas finales (<em>one-for-all</em>).</div>
 
-          <div class="panel panel-shadow" style="left:57.6px;top:162px;width:1164.5px;height:106px;background:#0F2E32;border-radius:11.5px;">
-            <div class="medallion" style="left:26px;top:31px;width:44px;height:44px;background:#14B8A6;">
+          <div class="panel panel-shadow" style="left:57.6px;top:160px;width:1164.5px;height:114px;background:#0F2E32;border-radius:11.5px;">
+            <div class="medallion" style="left:26px;top:35px;width:44px;height:44px;background:#14B8A6;">
               <svg stroke="#FFFFFF" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="22" width="22"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
             </div>
-            <div style="position:absolute;left:88px;top:14px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:#14B8A6;">PREGUNTA PARA EL GRUPO</div>
-            <div style="position:absolute;left:88px;top:38px;width:1048px;font-family:var(--font-head);font-size:23px;font-weight:700;font-style:italic;color:#F8FAFC;line-height:1.25;">«Si quisieran un programa que traduzca textos, otro que resuma contratos y otro que escriba código, ¿cuántos programas necesitarían programar?»</div>
+            <div style="position:absolute;left:88px;top:13px;font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#14B8A6;">PREGUNTA Y CUELLO DE BOTELLA DEL ETIQUETADO MANUAL</div>
+            <div style="position:absolute;left:88px;top:33px;width:1052px;font-family:var(--font-head);font-size:19px;font-weight:700;font-style:italic;color:#F8FAFC;line-height:1.2;">«Para clasificar imágenes médicas, traducir textos o detectar spam, ¿cuántos modelos hacían falta?»</div>
+            <div style="position:absolute;left:88px;top:64px;width:1052px;font-size:13.8px;color:#CBD5E1;line-height:1.3;">Etiquetar 1M de imágenes (ImageNet) costó $50k–$100k ($0.05/etiqueta); escalar a 1M de categorías costaría <strong style="color:#F8FAFC;">$50 millones</strong>, y etiquetar tomografías con médicos era astronómico (Huyen, 2025, pp. 44–46; Bommasani et al., 2021, p. 4).</div>
           </div>
 
-          <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:290px;width:354px;height:276px;background:#121622;border-radius:11.5px;--delay:0ms;">
-            <div class="medallion" style="left:24px;top:20px;width:40px;height:40px;background:#F43F5E;">
-              <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg>
+          <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:292px;width:354px;height:274px;background:#121622;border-radius:11.5px;--delay:0ms;">
+            <div class="medallion" style="left:22px;top:18px;width:40px;height:40px;background:#F43F5E;">
+              <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </div>
-            <div style="position:absolute;left:76px;top:29px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#F43F5E;">MODELO 1</div>
-            <div style="position:absolute;left:16px;top:76px;width:322px;height:184px;">
-              <svg viewBox="0 0 320 155" width="100%" height="100%">
-                <rect x="14" y="8" width="292" height="38" rx="8" fill="#0D1018" stroke="#232A3E"/>
-                <text x="160" y="31" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13">Textos traducidos a mano</text>
-                <line x1="160" y1="46" x2="160" y2="68" stroke="#F43F5E" stroke-width="2"/>
-                <polygon points="155,64 165,64 160,72" fill="#F43F5E"/>
-                <rect x="24" y="74" width="272" height="38" rx="8" fill="#090B10" stroke="#F43F5E" stroke-width="1.5"/>
-                <text x="160" y="98" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">Programa A · Traducir</text>
-                <text x="160" y="138" text-anchor="middle" fill="#94A3B8" font-family="Inter, sans-serif" font-size="12">Solo sirve para traducir</text>
+            <div style="position:absolute;left:74px;top:27px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;">MODELO 1 · IMÁGENES MÉDICAS</div>
+            <div style="position:absolute;left:16px;top:72px;width:322px;height:186px;">
+              <svg viewBox="0 0 320 165" width="100%" height="100%">
+                <rect x="14" y="8" width="292" height="40" rx="8" fill="#0D1018" stroke="#232A3E"/>
+                <text x="160" y="33" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13">Tomografías etiquetadas por médicos</text>
+                <line x1="160" y1="48" x2="160" y2="72" stroke="#F43F5E" stroke-width="2"/>
+                <polygon points="155,68 165,68 160,76" fill="#F43F5E"/>
+                <rect x="20" y="78" width="280" height="40" rx="8" fill="#090B10" stroke="#F43F5E" stroke-width="1.5"/>
+                <text x="160" y="103" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">Modelo A · Clasificar Rayos X</text>
+                <text x="160" y="146" text-anchor="middle" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">CNN desde cero · Incapaz de leer texto</text>
               </svg>
             </div>
           </div>
 
-          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:462.7px;top:290px;width:354px;height:276px;background:#121622;border-radius:11.5px;--delay:0ms;">
-            <div class="medallion" style="left:24px;top:20px;width:40px;height:40px;background:#F59E0B;">
-              <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:462.7px;top:292px;width:354px;height:274px;background:#121622;border-radius:11.5px;--delay:0ms;">
+            <div class="medallion" style="left:22px;top:18px;width:40px;height:40px;background:#F59E0B;">
+              <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
             </div>
-            <div style="position:absolute;left:76px;top:29px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#F59E0B;">MODELO 2</div>
-            <div style="position:absolute;left:16px;top:76px;width:322px;height:184px;">
-              <svg viewBox="0 0 320 155" width="100%" height="100%">
-                <rect x="14" y="8" width="292" height="38" rx="8" fill="#0D1018" stroke="#232A3E"/>
-                <text x="160" y="31" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13">Contratos resumidos a mano</text>
-                <line x1="160" y1="46" x2="160" y2="68" stroke="#F59E0B" stroke-width="2"/>
-                <polygon points="155,64 165,64 160,72" fill="#F59E0B"/>
-                <rect x="24" y="74" width="272" height="38" rx="8" fill="#090B10" stroke="#F59E0B" stroke-width="1.5"/>
-                <text x="160" y="98" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">Programa B · Resumir</text>
-                <text x="160" y="138" text-anchor="middle" fill="#94A3B8" font-family="Inter, sans-serif" font-size="12">Entrenado desde cero aparte</text>
+            <div style="position:absolute;left:74px;top:27px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;">MODELO 2 · TRADUCCIÓN</div>
+            <div style="position:absolute;left:16px;top:72px;width:322px;height:186px;">
+              <svg viewBox="0 0 320 165" width="100%" height="100%">
+                <rect x="14" y="8" width="292" height="40" rx="8" fill="#0D1018" stroke="#232A3E"/>
+                <text x="160" y="33" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13">Pares de textos traducidos a mano</text>
+                <line x1="160" y1="48" x2="160" y2="72" stroke="#F59E0B" stroke-width="2"/>
+                <polygon points="155,68 165,68 160,76" fill="#F59E0B"/>
+                <rect x="20" y="78" width="280" height="40" rx="8" fill="#090B10" stroke="#F59E0B" stroke-width="1.5"/>
+                <text x="160" y="103" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">Modelo B · Traductor Dedicado</text>
+                <text x="160" y="146" text-anchor="middle" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">LSTM aparte · No resume ni clasifica</text>
               </svg>
             </div>
           </div>
 
-          <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:867.8px;top:290px;width:354px;height:276px;background:#121622;border-radius:11.5px;--delay:0ms;">
-            <div class="medallion" style="left:24px;top:20px;width:40px;height:40px;background:#4F46E5;">
-              <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+          <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:867.8px;top:292px;width:354px;height:274px;background:#121622;border-radius:11.5px;--delay:0ms;">
+            <div class="medallion" style="left:22px;top:18px;width:40px;height:40px;background:#4F46E5;">
+              <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
             </div>
-            <div style="position:absolute;left:76px;top:29px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:#818CF8;">MODELO 3</div>
-            <div style="position:absolute;left:16px;top:76px;width:322px;height:184px;">
-              <svg viewBox="0 0 320 155" width="100%" height="100%">
-                <rect x="14" y="8" width="292" height="38" rx="8" fill="#0D1018" stroke="#232A3E"/>
-                <text x="160" y="31" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13">Ejemplos de código etiquetados</text>
-                <line x1="160" y1="46" x2="160" y2="68" stroke="#818CF8" stroke-width="2"/>
-                <polygon points="155,64 165,64 160,72" fill="#818CF8"/>
-                <rect x="24" y="74" width="272" height="38" rx="8" fill="#090B10" stroke="#818CF8" stroke-width="1.5"/>
-                <text x="160" y="98" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-weight="700" font-size="13">Programa C · Programar</text>
-                <text x="160" y="138" text-anchor="middle" fill="#94A3B8" font-family="Inter, sans-serif" font-size="12">No reutiliza conocimiento previo</text>
+            <div style="position:absolute;left:74px;top:27px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#818CF8;">MODELO 3 · DETECCIÓN DE SPAM</div>
+            <div style="position:absolute;left:16px;top:72px;width:322px;height:186px;">
+              <svg viewBox="0 0 320 165" width="100%" height="100%">
+                <rect x="14" y="8" width="292" height="40" rx="8" fill="#0D1018" stroke="#232A3E"/>
+                <text x="160" y="33" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13">Correos marcados manualmente</text>
+                <line x1="160" y1="48" x2="160" y2="72" stroke="#818CF8" stroke-width="2"/>
+                <polygon points="155,68 165,68 160,76" fill="#818CF8"/>
+                <rect x="20" y="78" width="280" height="40" rx="8" fill="#090B10" stroke="#818CF8" stroke-width="1.5"/>
+                <text x="160" y="103" text-anchor="middle" fill="#F8FAFC" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">Modelo C · Filtro de Spam</text>
+                <text x="160" y="146" text-anchor="middle" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">Modelo matemático exclusivo · Sin reúso</text>
               </svg>
             </div>
           </div>
 
-          <div class="panel panel-shadow anim-step" data-step="4" data-anim="fade" style="left:57.6px;top:586px;width:1164.5px;height:70px;background:#2D131D;border-radius:9.6px;--delay:0ms;">
-            <div style="position:absolute;left:26px;top:22px;font-family:var(--font-body);font-size:18px;font-weight:700;color:#F43F5E;">El esquema anterior (uno por tarea):</div>
-            <div style="position:absolute;left:365px;top:14px;width:776px;font-family:var(--font-body);font-size:17px;color:#F8FAFC;line-height:1.3;">Un modelo exclusivo para cada problema específico. 3 tareas significaban 3 programas distintos, 3 colecciones etiquetadas a mano y cero reutilización.</div>
+          <div class="panel panel-shadow anim-step" data-step="4" data-anim="fade" style="left:57.6px;top:584px;width:1164.5px;height:72px;background:#2D131D;border-radius:9.6px;--delay:0ms;">
+            <div style="position:absolute;left:26px;top:23px;font-family:var(--font-body);font-size:17.5px;font-weight:700;color:#F43F5E;">Principio «Uno para Uno» (One-for-One):</div>
+            <div style="position:absolute;left:384px;top:14px;width:756px;font-family:var(--font-body);font-size:15.5px;color:#F8FAFC;line-height:1.32;">Según Chen &amp; Liu (2024, §1.1, p. 3), 3 tareas exigían diseñar y entrenar 3 modelos matemáticos exclusivos desde cero, con colecciones etiquetadas aparte y cero sustrato compartido.</div>
           </div>
 
           <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-            <strong style="font-family:var(--font-mono);color:#14B8A6;">REFERENCIA:</strong> Bommasani et al. (2021) · Chen &amp; Liu (2024)
+            <strong style="font-family:var(--font-mono);color:#14B8A6;">REFERENCIA:</strong> Bommasani et al. (2021, §1.1, pp. 3–6) · Chen &amp; Liu (2024, §1.1, pp. 3–4) · Huyen (2025, Cap. 1, pp. 44–53)
           </div>
         </div>
       </section>
 
-      <!-- SLIDE 03: BLOQUE 1 - PREENTRENAMIENTO + ADAPTACIÓN Y BLOQUE DE MÁRMOL -->
-      <section class="slide" data-slide="3" data-accent="#14B8A6" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="Preentrenamiento + Adaptación: El Bloque de Mármol">
+      <!-- SLIDE 03: BLOQUE 1 - ESQUEMA EN DOS FASES: PREENTRENAMIENTO + ADAPTACIÓN -->
+      <section class="slide" data-slide="3" data-accent="#14B8A6" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="El Esquema en Dos Fases: Preentrenamiento y Adaptación">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#14B8A6;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;letter-spacing:1.5px;">BLOQUE 1 · EL GRAN CAMBIO DE PARADIGMA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">LA NUEVA ARQUITECTURA &nbsp;·&nbsp; 03 / 17</div>
-          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Preentrenamiento + Adaptación: El Bloque de Mármol</div>
-          <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Un Modelo Fundacional aprende patrones generales por sí solo y luego se moldea para cualquier tarea.</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">EL ESQUEMA EN DOS FASES &nbsp;·&nbsp; 03 / 18</div>
+          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">El Paradigma de «Preentrenamiento y Adaptación»</div>
+          <div style="position:absolute;left:57.6px;top:106px;width:1164px;font-family:var(--font-body);font-size:16.5px;color:#CBD5E1;line-height:1.25;">Fase 1: una red masiva aprende representaciones universales por autosupervisión · Fase 2: esa base incompleta se adapta a cientos de tareas.</div>
 
-          <!-- Left Panel: Autosupervisión -->
-          <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:178px;width:436.8px;height:478px;background:#121622;border-radius:11.5px;--delay:0ms;">
-            <div class="medallion" style="left:24px;top:22px;width:42px;height:42px;background:#14B8A6;">
+          <!-- Left Panel: Fase 1 - Preentrenamiento por Autosupervisión -->
+          <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:168px;width:454px;height:488px;background:#121622;border-radius:11.5px;--delay:0ms;">
+            <div class="medallion" style="left:24px;top:20px;width:42px;height:42px;background:#14B8A6;">
               <svg stroke="#FFFFFF" fill="none" stroke-width="1.9" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="22" width="22"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
             </div>
-            <div style="position:absolute;left:80px;top:31px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;">AUTOSUPERVISIÓN</div>
-            <div style="position:absolute;left:24px;top:78px;width:388px;font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;line-height:1.18;">Aprender sin etiquetas humanas</div>
-            <div style="position:absolute;left:24px;top:118px;width:388px;font-size:16px;color:#CBD5E1;line-height:1.3;">No hace falta que una persona etiquete miles de textos: el propio texto sirve para practicar.</div>
+            <div style="position:absolute;left:80px;top:29px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:#14B8A6;">FASE 1 · PREENTRENAMIENTO (~98% CÓMPUTO)</div>
+            <div style="position:absolute;left:24px;top:74px;width:406px;font-family:var(--font-head);font-size:22px;font-weight:700;color:#F8FAFC;line-height:1.18;">Autosupervisión sin etiquetas humanas</div>
+            <div style="position:absolute;left:24px;top:106px;width:406px;font-size:14.2px;color:#CBD5E1;line-height:1.32;">Habilitado por <strong style="color:#F8FAFC;">transfer learning + escala</strong> (Transformer, hardware y datos masivos): la red infiere etiquetas del propio dato crudo.</div>
 
-            <div style="position:absolute;left:22px;top:194px;width:392px;height:196px;">
-              <svg viewBox="0 0 380 185" width="100%" height="100%">
-                <rect x="4" y="6" width="372" height="76" rx="10" fill="#0D1018" stroke="#232A3E"/>
-                <text x="18" y="29" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">PREDECIR LA SIGUIENTE PALABRA (GPT)</text>
-                <text x="18" y="57" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13.5">"El contrato establece que las partes</text>
-                <rect x="274" y="39" width="88" height="26" rx="6" fill="#0F2E32" stroke="#14B8A6"/>
-                <text x="318" y="57" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">acuerdan</text>
+            <div style="position:absolute;left:22px;top:164px;width:410px;height:208px;">
+              <svg viewBox="0 0 400 200" width="100%" height="100%">
+                <rect x="4" y="4" width="392" height="88" rx="10" fill="#0D1018" stroke="#232A3E"/>
+                <text x="16" y="25" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">AUTOREGRESIVO · SIGUIENTE TOKEN (GPT)</text>
+                <text x="16" y="49" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12.5">"I love street food." &rarr; 6 pares automáticos</text>
+                <rect x="16" y="60" width="368" height="22" rx="5" fill="#0F2E32" stroke="#14B8A6" stroke-opacity="0.5"/>
+                <text x="200" y="75" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-size="10.5">(&lt;BOS&gt;&rarr;I) (I&rarr;love) ... (food&rarr;.) · Huyen Tabla 1-1</text>
 
-                <rect x="4" y="98" width="372" height="76" rx="10" fill="#0D1018" stroke="#232A3E"/>
-                <text x="18" y="121" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">RELLENAR HUECOS OCULTOS (BERT)</text>
-                <text x="18" y="149" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13.5">"La cláusula de</text>
-                <rect x="128" y="131" width="76" height="26" rx="6" fill="#1C1E3A" stroke="#818CF8"/>
-                <text x="166" y="149" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12">[hueco]</text>
-                <text x="214" y="149" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="13.5">aplica desde hoy"</text>
+                <rect x="4" y="104" width="392" height="90" rx="10" fill="#0D1018" stroke="#232A3E"/>
+                <text x="16" y="125" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">ENMASCARADO (BERT) Y MULTIMODAL (CLIP)</text>
+                <text x="16" y="149" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12.5">"La cláusula de</text>
+                <rect x="112" y="133" width="66" height="22" rx="5" fill="#1C1E3A" stroke="#818CF8"/>
+                <text x="145" y="148" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">[MASK]</text>
+                <text x="186" y="149" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12.5">aplica desde hoy"</text>
+                <text x="16" y="178" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">CLIP: 400M pares (imagen, texto) sin etiquetar (400&times; ImageNet)</text>
               </svg>
             </div>
-            <div style="position:absolute;left:24px;top:412px;width:388px;font-size:14.5px;font-style:italic;color:#94A3B8;line-height:1.25;">Concepto de Foundation Model: una base común pensada para adaptarse a muchas tareas (Bommasani et al., 2021).</div>
+            <div style="position:absolute;left:24px;top:384px;width:406px;font-size:13.8px;color:#94A3B8;line-height:1.34;"><strong style="color:#14B8A6;">Bommasani et al. (2021, pp. 1, 7, 85):</strong> acuñaron <em>foundation models</em> para subrayar su <strong style="color:#F8FAFC;">carácter central pero incompleto</strong> (<em>intermediary assets</em>) con representaciones genéricas (Chen &amp; Liu, 2024, p. 109).</div>
           </div>
 
-          <!-- Right Panel: Bloque de Mármol + Adaptación -->
-          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:520.3px;top:178px;width:701.8px;height:478px;background:#0F2E32;border-radius:11.5px;--delay:0ms;">
-            <div style="position:absolute;left:28px;top:24px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;">LA ANALOGÍA CENTRAL · PREENTRENAMIENTO + ADAPTACIÓN</div>
+          <!-- Right Panel: Fase 2 - Bloque de Mármol + 3 Vías de Adaptación -->
+          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:530px;top:168px;width:692px;height:488px;background:#0F2E32;border-radius:11.5px;--delay:0ms;">
+            <div style="position:absolute;left:26px;top:22px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:#14B8A6;">FASE 2 · EL BLOQUE DE MÁRMOL Y LAS 3 VÍAS DE ADAPTACIÓN</div>
 
-            <div style="position:absolute;left:22px;top:64px;width:254px;height:300px;">
-              <svg viewBox="0 0 250 295" width="100%" height="100%">
-                <polygon points="125,35 220,82 125,130 30,82" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
-                <polygon points="30,82 125,130 125,235 30,188" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1.5"/>
-                <polygon points="220,82 125,130 125,235 220,188" fill="#94A3B8" stroke="#64748B" stroke-width="1.5"/>
-                <path d="M55,95 Q85,125 68,178" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.55"/>
-                <path d="M148,140 Q180,160 198,125" fill="none" stroke="#E2E8F0" stroke-width="1.8" opacity="0.45"/>
-                <path d="M90,62 Q130,85 170,74" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity="0.6"/>
-                <text x="125" y="264" text-anchor="middle" fill="#F8FAFC" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="18">Bloque de Mármol</text>
-                <text x="125" y="284" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">PREENTRENAMIENTO MASIVO</text>
+            <div style="position:absolute;left:14px;top:64px;width:224px;height:296px;">
+              <svg viewBox="0 0 230 295" width="100%" height="100%">
+                <polygon points="115,35 204,82 115,130 26,82" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+                <polygon points="26,82 115,130 115,232 26,186" fill="#CBD5E1" stroke="#94A3B8" stroke-width="1.5"/>
+                <polygon points="204,82 115,130 115,232 204,186" fill="#94A3B8" stroke="#64748B" stroke-width="1.5"/>
+                <path d="M50,95 Q80,125 63,176" fill="none" stroke="#FFFFFF" stroke-width="2" opacity="0.55"/>
+                <path d="M138,140 Q168,158 184,125" fill="none" stroke="#E2E8F0" stroke-width="1.8" opacity="0.45"/>
+                <path d="M84,62 Q122,85 158,74" fill="none" stroke="#FFFFFF" stroke-width="1.6" opacity="0.6"/>
+                <text x="115" y="262" text-anchor="middle" fill="#F8FAFC" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="18">Base Incompleta</text>
+                <text x="115" y="282" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">PREENTRENAMIENTO MASIVO</text>
               </svg>
             </div>
 
-            <div class="anim-step" data-step="3" data-anim="fade" style="position:absolute;left:284px;top:64px;width:398px;height:312px;--delay:40ms;">
-              <svg viewBox="0 0 385 305" width="100%" height="100%">
-                <line x1="6" y1="152" x2="52" y2="152" stroke="#14B8A6" stroke-width="3"/>
-                <polygon points="48,145 62,152 48,159" fill="#14B8A6"/>
-                <rect x="6" y="114" width="60" height="22" rx="6" fill="#090B10" stroke="#14B8A6"/>
-                <text x="36" y="129" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10">CINCEL</text>
+            <div class="anim-step" data-step="3" data-anim="fade" style="position:absolute;left:242px;top:56px;width:434px;height:322px;--delay:40ms;">
+              <svg viewBox="0 0 434 322" width="100%" height="100%">
+                <line x1="6" y1="160" x2="62" y2="160" stroke="#14B8A6" stroke-width="3"/>
+                <polygon points="58,153 72,160 58,167" fill="#14B8A6"/>
+                <rect x="2" y="122" width="76" height="22" rx="6" fill="#090B10" stroke="#14B8A6"/>
+                <text x="40" y="137" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="9.5">ADAPTACIÓN</text>
 
-                <path d="M64,152 C95,152 95,52 128,52" fill="none" stroke="#14B8A6" stroke-width="2" stroke-dasharray="4 3"/>
-                <line x1="64" y1="152" x2="128" y2="152" stroke="#10B981" stroke-width="2" stroke-dasharray="4 3"/>
-                <path d="M64,152 C95,152 95,252 128,252" fill="none" stroke="#818CF8" stroke-width="2" stroke-dasharray="4 3"/>
+                <path d="M74,160 C104,160 104,52 134,52" fill="none" stroke="#14B8A6" stroke-width="2" stroke-dasharray="4 3"/>
+                <line x1="74" y1="160" x2="134" y2="160" stroke="#10B981" stroke-width="2" stroke-dasharray="4 3"/>
+                <path d="M74,160 C104,160 104,268 134,268" fill="none" stroke="#818CF8" stroke-width="2" stroke-dasharray="4 3"/>
 
-                <rect x="132" y="12" width="244" height="80" rx="10" fill="#121622" stroke="#232A3E"/>
-                <g transform="translate(148,24)">
-                  <rect x="8" y="42" width="32" height="10" rx="2" fill="#94A3B8"/>
-                  <path d="M14,42 L14,26 L26,20 L34,12 L38,18 L34,26 L34,42 Z" fill="#E2E8F0"/>
-                  <circle cx="24" cy="14" r="4.5" fill="#CBD5E1"/>
-                </g>
-                <text x="206" y="44" fill="#F8FAFC" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="15.5">Estatua Ecuestre</text>
-                <text x="206" y="66" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12">Asistente de preguntas</text>
+                <rect x="136" y="8" width="290" height="88" rx="10" fill="#121622" stroke="#14B8A6" stroke-opacity="0.65"/>
+                <text x="152" y="31" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">1. AJUSTE FINO (FINE-TUNING / SFT)</text>
+                <text x="152" y="53" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="600" font-size="12.5">Actualiza pesos (~2% cómputo, Huyen p. 186)</text>
+                <text x="152" y="75" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">&rarr; Ej. Asistente clínico o legal especializado</text>
 
-                <rect x="132" y="112" width="244" height="80" rx="10" fill="#121622" stroke="#232A3E"/>
-                <g transform="translate(152,122)">
-                  <rect x="6" y="4" width="28" height="7" rx="2" fill="#E2E8F0"/>
-                  <rect x="10" y="11" width="20" height="36" fill="#CBD5E1"/>
-                  <line x1="15" y1="13" x2="15" y2="45" stroke="#94A3B8" stroke-width="1.5"/>
-                  <line x1="20" y1="13" x2="20" y2="45" stroke="#94A3B8" stroke-width="1.5"/>
-                  <line x1="25" y1="13" x2="25" y2="45" stroke="#94A3B8" stroke-width="1.5"/>
-                  <rect x="6" y="47" width="28" height="7" rx="2" fill="#94A3B8"/>
-                </g>
-                <text x="206" y="144" fill="#F8FAFC" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="15.5">Columna Clásica</text>
-                <text x="206" y="166" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12">Resumen de contratos</text>
+                <rect x="136" y="116" width="290" height="88" rx="10" fill="#121622" stroke="#10B981" stroke-opacity="0.65"/>
+                <text x="152" y="139" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">2. PROMPTING / EN CONTEXTO (SIN PESOS)</text>
+                <text x="152" y="161" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="600" font-size="12.5">Training-free: Zero/Few-shot, CoT, Visual Prompt</text>
+                <text x="152" y="183" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">&rarr; Ej. Traducir, spam, rayos X (Chen p. 58)</text>
 
-                <rect x="132" y="212" width="244" height="80" rx="10" fill="#121622" stroke="#232A3E"/>
-                <g transform="translate(150,222)">
-                  <ellipse cx="22" cy="10" rx="10" ry="3.5" fill="#E2E8F0"/>
-                  <path d="M14,12 Q6,30 14,48 L30,48 Q38,30 30,12 Z" fill="#CBD5E1"/>
-                  <rect x="14" y="48" width="16" height="5" rx="2" fill="#94A3B8"/>
-                </g>
-                <text x="206" y="244" fill="#F8FAFC" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="15.5">Vasija Esculpida</text>
-                <text x="206" y="266" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12">Generación de código</text>
+                <rect x="136" y="224" width="290" height="88" rx="10" fill="#121622" stroke="#818CF8" stroke-opacity="0.65"/>
+                <text x="152" y="247" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11">3. ADAPTADORES LIGEROS (PEFT / LORA)</text>
+                <text x="152" y="269" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="600" font-size="12.5">Entrena &lt;1% params (evita 12&times; RAM, Chen p. 77)</text>
+                <text x="152" y="291" fill="#94A3B8" font-family="Inter, sans-serif" font-size="11.5">&rarr; Ej. Resumir contratos o generar código</text>
               </svg>
             </div>
-            <div class="anim-step" data-step="3" data-anim="fade" style="position:absolute;left:28px;top:398px;width:645px;font-size:17px;color:#F8FAFC;line-height:1.3;--delay:80ms;">La adaptación (ajuste fino o instrucciones) da los toques de cincel para transformar el mismo bloque base en muchas herramientas distintas.</div>
+            <div class="anim-step" data-step="3" data-anim="fade" style="position:absolute;left:26px;top:394px;width:640px;font-size:15.5px;color:#F8FAFC;line-height:1.34;--delay:80ms;">Esa misma base —incompleta por sí sola para un producto final— se adapta a cientos de aplicaciones distintas: <strong style="color:#14B8A6;">«10 ejemplos y un fin de semana vs. 1 millón de ejemplos y 6 meses»</strong> (Huyen, 2025, p. 55).</div>
           </div>
 
           <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-            <strong style="font-family:var(--font-mono);color:#14B8A6;">REFERENCIA:</strong> Bommasani et al. (2021) · Devlin et al. (2019) · Chen &amp; Liu (2024)
+            <strong style="font-family:var(--font-mono);color:#14B8A6;">REFERENCIA:</strong> Bommasani et al. (2021, pp. 1–7, 85) · Chen &amp; Liu (2024, §1.3 pp. 7–10, §5.2 p. 58, §10.1 p. 109) · Huyen (2025, pp. 40–55, 186)
           </div>
         </div>
       </section>
 
-      <!-- SLIDE 04: BLOQUE 1 - CHEQUEO DE COMPRENSIÓN -->
-      <section class="slide" data-slide="4" data-accent="#F59E0B" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="¿Viene programado con todas las respuestas?">
+      <!-- SLIDE 04: BLOQUE 1 - ERROR TÍPICO Y VALOR PARA APRENDER MEJOR -->
+      <section class="slide" data-slide="4" data-accent="#F59E0B" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="Error Típico vs. Sustrato Cognitivo Compartido">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 1 · EL GRAN CAMBIO DE PARADIGMA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">CHEQUEO DE COMPRENSIÓN &nbsp;·&nbsp; 04 / 17</div>
-          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Viene programado con todas las respuestas?</div>
-          <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">La diferencia entre memorizar respuestas fijas y aprender cómo funciona el lenguaje.</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">ERROR TÍPICO Y VALOR PEDAGÓGICO &nbsp;·&nbsp; 04 / 18</div>
+          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Viene programado de fábrica o memoriza respuestas?</div>
+          <div style="position:absolute;left:57.6px;top:106px;width:1164px;font-family:var(--font-body);font-size:16.5px;color:#CBD5E1;line-height:1.25;">Desmontando el error típico para comprender el marco conceptual transferible y el sustrato cognitivo compartido.</div>
 
-          <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:176px;width:1164.5px;height:136px;background:#2C200E;border-radius:13.4px;--delay:0ms;">
-            <div class="medallion" style="left:30px;top:44px;width:48px;height:48px;background:#F59E0B;">
-              <svg stroke="#FFFFFF" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="24" width="24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          <div class="panel panel-shadow anim-step" data-step="1" data-anim="fade" style="left:57.6px;top:162px;width:1164.5px;height:106px;background:#2C200E;border-radius:13.4px;--delay:0ms;">
+            <div class="medallion" style="left:28px;top:31px;width:44px;height:44px;background:#F59E0B;">
+              <svg stroke="#FFFFFF" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="22" width="22"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
             </div>
-            <div style="position:absolute;left:98px;top:20px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;">PARA REFLEXIONAR EN CLASE</div>
-            <div style="position:absolute;left:98px;top:48px;width:1032px;font-family:var(--font-head);font-size:29px;font-weight:700;font-style:italic;color:#F8FAFC;line-height:1.24;">«Entonces, ¿ChatGPT viene programado de fábrica con todas las respuestas a preguntas legales?»</div>
+            <div style="position:absolute;left:90px;top:14px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:#F59E0B;">CHEQUEO DE COMPRENSIÓN EN CLASE</div>
+            <div style="position:absolute;left:90px;top:38px;width:1048px;font-family:var(--font-head);font-size:21px;font-weight:700;font-style:italic;color:#F8FAFC;line-height:1.25;">«¿Un modelo fundacional ya viene programado de fábrica para resolver tu problema de negocio, o cada función nueva requirió programar un software aparte desde cero?»</div>
           </div>
 
-          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:57.6px;top:338px;width:436.8px;height:316px;background:#2D131D;border-radius:11.5px;--delay:0ms;">
-            <div style="position:absolute;left:28px;top:24px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;">IDEA EQUIVOCADA</div>
-            <div style="position:absolute;left:28px;top:56px;width:380px;font-family:var(--font-head);font-size:24px;font-weight:700;color:#F8FAFC;line-height:1.18;">No es una base de datos de respuestas</div>
-            <div style="position:absolute;left:26px;top:134px;width:382px;height:150px;">
-              <svg viewBox="0 0 360 135" width="100%" height="100%">
-                <rect x="10" y="10" width="340" height="112" rx="10" fill="#0D1018" stroke="#F43F5E" stroke-opacity="0.5"/>
-                <text x="28" y="45" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="12.5">if pregunta == "cláusula X":</text>
-                <text x="46" y="72" fill="#94A3B8" font-family="JetBrains Mono, monospace" font-size="12.5">return respuesta_fija_142</text>
-                <line x1="20" y1="22" x2="340" y2="108" stroke="#F43F5E" stroke-width="3.5" stroke-linecap="round"/>
-                <line x1="340" y1="22" x2="20" y2="108" stroke="#F43F5E" stroke-width="3.5" stroke-linecap="round"/>
-              </svg>
+          <!-- Left Panel: Error Típico -->
+          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:57.6px;top:286px;width:510px;height:370px;background:#2D131D;border-radius:11.5px;--delay:0ms;">
+            <div style="position:absolute;left:24px;top:20px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;">ERROR TÍPICO (DOBLE CONFUSIÓN)</div>
+
+            <div style="position:absolute;left:24px;top:52px;width:462px;height:146px;background:#0D1018;border:1px solid rgba(244,63,94,0.45);border-radius:10px;padding:14px 18px;">
+              <div style="font-family:var(--font-head);font-size:19px;font-weight:700;color:#F43F5E;margin-bottom:6px;">1. Creer que «ya viene listo de fábrica»</div>
+              <div style="font-size:14px;color:#CBD5E1;line-height:1.34;">Suponer que trae programadas las respuestas específicas de negocio o memorizó un examen. Un modelo base es una <strong style="color:#F8FAFC;">máquina de completado incompleta</strong> que requiere adaptación (Bommasani et al., 2021, p. 7; Huyen, 2025, p. 184).</div>
+            </div>
+
+            <div style="position:absolute;left:24px;top:210px;width:462px;height:138px;background:#0D1018;border:1px solid rgba(244,63,94,0.45);border-radius:10px;padding:14px 18px;">
+              <div style="font-family:var(--font-head);font-size:19px;font-weight:700;color:#F43F5E;margin-bottom:6px;">2. Asumir un software distinto desde cero</div>
+              <div style="font-size:14px;color:#CBD5E1;line-height:1.34;">Pensar que cada funcionalidad nueva (resumir, programar, traducir) requirió programar un software independiente desde cero, cuando todas nacen del mismo modelo base adaptado (Chen &amp; Liu, 2024, p. 3).</div>
             </div>
           </div>
 
-          <div class="panel panel-shadow anim-step" data-step="2" data-anim="fade" style="left:520.3px;top:338px;width:701.8px;height:316px;background:#0D2B24;border-radius:11.5px;--delay:80ms;">
-            <div class="medallion" style="left:28px;top:22px;width:42px;height:42px;background:#10B981;">
-              <svg stroke="#FFFFFF" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="22" width="22"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          <!-- Right Panel: Por qué es importante para aprender mejor -->
+          <div class="panel panel-shadow anim-step" data-step="3" data-anim="fade" style="left:590px;top:286px;width:632px;height:370px;background:#0D2B24;border-radius:11.5px;--delay:80ms;">
+            <div class="medallion" style="left:26px;top:18px;width:40px;height:40px;background:#10B981;">
+              <svg stroke="#FFFFFF" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="20" width="20"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
             </div>
-            <div style="position:absolute;left:84px;top:31px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;">CÓMO FUNCIONA REALMENTE</div>
-            <div style="position:absolute;left:28px;top:78px;width:645px;font-family:var(--font-head);font-size:23px;font-weight:700;color:#F8FAFC;line-height:1.25;">No. Posee una comprensión general de las estructuras del lenguaje que luego se adaptó para seguir instrucciones.</div>
-            <div style="position:absolute;left:24px;top:168px;width:652px;height:120px;">
-              <svg viewBox="0 0 640 105" width="100%" height="100%">
-                <rect x="6" y="16" width="188" height="72" rx="10" fill="#121622" stroke="#232A3E"/>
-                <text x="100" y="45" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11.5">1. PREENTRENAMIENTO</text>
-                <text x="100" y="68" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12">Sintaxis, conceptos y contexto</text>
+            <div style="position:absolute;left:80px;top:28px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;">POR QUÉ ES IMPORTANTE PARA APRENDER MEJOR</div>
 
-                <line x1="196" y1="52" x2="224" y2="52" stroke="#10B981" stroke-width="2.5"/>
-                <polygon points="220,46 232,52 220,58" fill="#10B981"/>
+            <div style="position:absolute;left:26px;top:68px;width:580px;font-size:15px;color:#F8FAFC;line-height:1.32;">
+              <strong style="color:#10B981;">No memoriza respuestas de un examen:</strong> construye un <strong style="color:#F8FAFC;">marco conceptual previo y transferible</strong> («preentrenar es leer para adquirir conocimiento; adaptar es aprender a usarlo», Huyen, p. 185; Bommasani et al., p. 4).
+            </div>
 
-                <rect x="234" y="16" width="184" height="72" rx="10" fill="#121622" stroke="#232A3E"/>
-                <text x="326" y="45" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11.5">2. ADAPTACIÓN</text>
-                <text x="326" y="68" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="12">Seguir órdenes y dialogar</text>
+            <div style="position:absolute;left:26px;top:140px;width:580px;font-size:15px;color:#F8FAFC;line-height:1.32;">
+              <strong style="color:#14B8A6;">Un mismo sustrato cognitivo compartido:</strong> dejas de ver cada app de IA como una herramienta aislada y comprendes que todas derivan de la misma base común (<em>homogeneización</em>, Bommasani et al., p. 6; <em>one-for-all</em>, Chen &amp; Liu, p. 4).
+            </div>
 
-                <line x1="420" y1="52" x2="448" y2="52" stroke="#10B981" stroke-width="2.5"/>
-                <polygon points="444,46 456,52 444,58" fill="#10B981"/>
+            <div style="position:absolute;left:24px;top:222px;width:584px;height:126px;">
+              <svg viewBox="0 0 584 126" width="100%" height="100%">
+                <rect x="4" y="16" width="174" height="92" rx="10" fill="#121622" stroke="#14B8A6" stroke-width="1.6"/>
+                <text x="91" y="42" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">1. SUSTRATO COMÚN</text>
+                <text x="91" y="64" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="600" font-size="12">Marco conceptual</text>
+                <text x="91" y="82" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="11.5">previo y transferible</text>
 
-                <rect x="458" y="16" width="176" height="72" rx="10" fill="#090B10" stroke="#10B981" stroke-width="1.5"/>
-                <text x="546" y="45" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11.5">3. RESPUESTA NUEVA</text>
-                <text x="546" y="68" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-size="12">Construida palabra a palabra</text>
+                <line x1="180" y1="62" x2="206" y2="62" stroke="#10B981" stroke-width="2.5"/>
+                <polygon points="202,56 214,62 202,68" fill="#10B981"/>
+
+                <rect x="216" y="16" width="160" height="92" rx="10" fill="#121622" stroke="#818CF8" stroke-width="1.6"/>
+                <text x="296" y="42" text-anchor="middle" fill="#818CF8" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">2. ADAPTACIÓN</text>
+                <text x="296" y="64" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="600" font-size="12">Fine-tuning, Prompt</text>
+                <text x="296" y="82" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="11.5">o adaptadores PEFT</text>
+
+                <line x1="378" y1="62" x2="404" y2="62" stroke="#10B981" stroke-width="2.5"/>
+                <polygon points="400,56 412,62 400,68" fill="#10B981"/>
+
+                <rect x="414" y="16" width="166" height="92" rx="10" fill="#090B10" stroke="#10B981" stroke-width="1.8"/>
+                <text x="497" y="42" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">3. MÚLTIPLES APPS</text>
+                <text x="497" y="64" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-weight="600" font-size="12">Resumir · Programar</text>
+                <text x="497" y="82" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="11.5">Traducir · Diagnosticar</text>
               </svg>
             </div>
           </div>
 
           <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
-            <strong style="font-family:var(--font-mono);color:#F59E0B;">REFERENCIA:</strong> Bommasani et al. (2021) · Chen &amp; Liu (2024) · Huyen (2025)
+            <strong style="font-family:var(--font-mono);color:#F59E0B;">REFERENCIA:</strong> Bommasani et al. (2021, pp. 3–7, 85) · Chen &amp; Liu (2024, pp. 3–10, 109) · Huyen (2025, pp. 42–55, 184–186)
           </div>
         </div>
       </section>
 
-      <!-- SLIDE 05: BLOQUE 2 - LEYES DE POTENCIA Y PRESUPUESTO -->
-      <section class="slide" data-slide="5" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="Leyes de Escalamiento: Las 3 Variables del Presupuesto">
+      <!-- SLIDE 05: BLOQUE 1 - FUENTES DEL CUADERNO Y EJEMPLO PRÁCTICO (80/20) -->
+      <section class="slide" data-slide="5" data-accent="#14B8A6" data-block="Bloque 1" data-topic="El Gran Cambio de Paradigma" data-title="Fuentes del Cuaderno y Aplicación Práctica (Regla 80/20)">
+        <div class="stage">
+          <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#14B8A6;opacity:0.065;"></div>
+          <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;letter-spacing:1.5px;">BLOQUE 1 · EL GRAN CAMBIO DE PARADIGMA</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">RESPALDO Y APLICACIÓN &nbsp;·&nbsp; 05 / 18</div>
+          <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Fuentes del Cuaderno y Cómo Aplicarlo a tu Estudio</div>
+          <div style="position:absolute;left:57.6px;top:106px;width:1164px;font-family:var(--font-body);font-size:16.5px;color:#CBD5E1;line-height:1.25;">Qué respaldan las tres obras clave de referencia y cómo trasladar este paradigma a tu aprendizaje diario.</div>
+
+          <!-- Left Column: 3 Fuentes del Cuaderno -->
+          <div class="panel panel-shadow anim-step" data-step="1" data-anim="wipeR" style="left:57.6px;top:166px;width:636px;height:152px;background:#121622;border-radius:11px;--delay:0ms;">
+            <div class="medallion" style="left:20px;top:22px;width:42px;height:42px;background:#14B8A6;">
+              <span style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:#090B10;">B</span>
+            </div>
+            <div style="position:absolute;left:78px;top:16px;font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#14B8A6;">BOMMASANI ET AL. (2021) · STANFORD CRFM (§1 p. 3, §1.1.1 p. 7, §4.3 p. 85)</div>
+            <div style="position:absolute;left:78px;top:36px;font-family:var(--font-head);font-size:19px;font-weight:700;color:#F8FAFC;">Carácter central pero incompleto</div>
+            <div style="position:absolute;left:78px;top:64px;width:536px;font-size:13.8px;color:#CBD5E1;line-height:1.32;">Acuñaron el término <strong style="color:#F8FAFC;">foundation models</strong> para enfatizar su rol como base común pero incompleta (<em>intermediary assets</em>), posibilitado por el <strong style="color:#F8FAFC;">aprendizaje por transferencia</strong> y la <strong style="color:#F8FAFC;">escala</strong> (Transformer + cómputo + datos).</div>
+          </div>
+
+          <div class="panel panel-shadow anim-step" data-step="2" data-anim="wipeR" style="left:57.6px;top:334px;width:636px;height:152px;background:#121622;border-radius:11px;--delay:0ms;">
+            <div class="medallion" style="left:20px;top:22px;width:42px;height:42px;background:#818CF8;">
+              <span style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:#FFFFFF;">C</span>
+            </div>
+            <div style="position:absolute;left:78px;top:16px;font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#818CF8;">CHEN &amp; LIU (2024) · SPRINGER (§1.1 pp. 3–4, §1.3 pp. 7–10, §10.1 p. 109)</div>
+            <div style="position:absolute;left:78px;top:36px;font-family:var(--font-head);font-size:19px;font-weight:700;color:#F8FAFC;">De «uno para uno» a «uno para todos»</div>
+            <div style="position:absolute;left:78px;top:64px;width:536px;font-size:13.8px;color:#CBD5E1;line-height:1.32;">Documentan el salto del principio tradicional <strong style="color:#F8FAFC;">one-for-one</strong> a la metodología <strong style="color:#F8FAFC;">one-for-all</strong> mediante representaciones genéricas (<em>task-agnostic pretraining</em>) y el ciclo preentrenamiento–adaptación (<em>training-free</em> y PEFT/LoRA).</div>
+          </div>
+
+          <div class="panel panel-shadow anim-step" data-step="3" data-anim="wipeR" style="left:57.6px;top:502px;width:636px;height:154px;background:#121622;border-radius:11px;--delay:0ms;">
+            <div class="medallion" style="left:20px;top:22px;width:42px;height:42px;background:#10B981;">
+              <span style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:#090B10;">H</span>
+            </div>
+            <div style="position:absolute;left:78px;top:16px;font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:#10B981;">HUYEN (2025) · O'REILLY (CAP. 1 pp. 40–55, TABLA 1-1, CAP. 2 pp. 184–189)</div>
+            <div style="position:absolute;left:78px;top:36px;font-family:var(--font-head);font-size:19px;font-weight:700;color:#F8FAFC;">Autosupervisión y propósito general</div>
+            <div style="position:absolute;left:78px;top:64px;width:536px;font-size:13.8px;color:#CBD5E1;line-height:1.32;">Describe cómo la <strong style="color:#F8FAFC;">autosupervisión</strong> superó el cuello de botella del etiquetado manual ($50k–$50M en ImageNet; costos médicos astronómicos) y llevó los modelos de una tarea específica a <strong style="color:#F8FAFC;">propósito general</strong>.</div>
+          </div>
+
+          <!-- Right Panel: Ejemplo Práctico de Aplicación -->
+          <div class="panel panel-shadow anim-step" data-step="4" data-anim="fade" style="left:716px;top:166px;width:506px;height:490px;background:#0F2E32;border:1px solid #14B8A6;border-radius:12px;--delay:0ms;">
+            <div style="position:absolute;left:26px;top:22px;font-family:var(--font-mono);font-size:12px;font-weight:700;color:#14B8A6;">EJEMPLO PRÁCTICO DE APLICACIÓN</div>
+            <div style="position:absolute;left:26px;top:48px;width:454px;font-family:var(--font-head);font-size:23px;font-weight:700;color:#F8FAFC;line-height:1.2;">Aprende una disciplina como un Modelo Fundacional (Regla 80 / 20)</div>
+            <div style="position:absolute;left:26px;top:112px;width:454px;font-size:14.8px;color:#CBD5E1;line-height:1.34;">Al estudiar <strong style="color:#F8FAFC;">programación</strong> o un <strong style="color:#F8FAFC;">idioma</strong>, no intentes memorizar soluciones caso por caso como si fueras un modelo aislado <em>one-for-one</em>.</div>
+
+            <div style="position:absolute;left:26px;top:182px;width:454px;height:126px;">
+              <svg viewBox="0 0 454 126" width="100%" height="100%">
+                <rect x="2" y="10" width="450" height="44" rx="8" fill="#090B10" stroke="#232A3E"/>
+                <rect x="6" y="14" width="352" height="36" rx="6" fill="#14B8A6"/>
+                <text x="182" y="37" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="12.5">80% PREENTRENAR TU BASE</text>
+                <rect x="362" y="14" width="86" height="36" rx="6" fill="#10B981"/>
+                <text x="405" y="37" text-anchor="middle" fill="#090B10" font-family="JetBrains Mono, monospace" font-weight="700" font-size="11.5">20%</text>
+
+                <rect x="2" y="68" width="218" height="50" rx="8" fill="#121622" stroke="#14B8A6" stroke-opacity="0.5"/>
+                <text x="111" y="90" text-anchor="middle" fill="#14B8A6" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">BASE TRANSFERIBLE</text>
+                <text x="111" y="108" text-anchor="middle" fill="#CBD5E1" font-family="Inter, sans-serif" font-size="11.5">Sintaxis, lógica y estructuras</text>
+
+                <line x1="224" y1="93" x2="242" y2="93" stroke="#10B981" stroke-width="2"/>
+                <polygon points="239,88 248,93 239,98" fill="#10B981"/>
+
+                <rect x="250" y="68" width="202" height="50" rx="8" fill="#0D2B24" stroke="#10B981"/>
+                <text x="351" y="90" text-anchor="middle" fill="#10B981" font-family="JetBrains Mono, monospace" font-weight="700" font-size="10.5">ADAPTACIÓN RÁPIDA</text>
+                <text x="351" y="108" text-anchor="middle" fill="#F8FAFC" font-family="Inter, sans-serif" font-size="11.5">Nuevos lenguajes y retos</text>
+              </svg>
+            </div>
+
+            <div style="position:absolute;left:26px;top:324px;width:454px;font-size:14.5px;color:#F8FAFC;line-height:1.34;">
+              <strong style="color:#14B8A6;">1. Invierte el 80% del esfuerzo inicial en «preentrenar» tu base:</strong> domina la sintaxis fundamental, la lógica general y las estructuras comunes.
+            </div>
+            <div style="position:absolute;left:26px;top:396px;width:454px;font-size:14.5px;color:#F8FAFC;line-height:1.34;">
+              <strong style="color:#10B981;">2. «Adaptarse» exige un esfuerzo marginal mínimo:</strong> consolidada esa base, resolver problemas nuevos o aprender lenguajes derivados fluye de inmediato.
+            </div>
+          </div>
+
+          <div style="position:absolute;left:57.6px;top:678px;width:1164px;font-family:var(--font-body);font-size:12.5px;color:#64748B;">
+            <strong style="font-family:var(--font-mono);color:#14B8A6;">REFERENCIA:</strong> Bommasani et al. (2021, Stanford CRFM) · Chen &amp; Liu (2024, Springer) · Huyen (2025, O'Reilly)
+          </div>
+        </div>
+      </section>
+
+      <!-- SLIDE 06: BLOQUE 2 - LEYES DE POTENCIA Y PRESUPUESTO -->
+      <section class="slide" data-slide="6" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="Leyes de Escalamiento: Las 3 Variables del Presupuesto">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">LEYES DE POTENCIAS &nbsp;·&nbsp; 05 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">LEYES DE POTENCIAS &nbsp;·&nbsp; 06 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">El rendimiento no mejora al azar: sigue leyes matemáticas</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Al aumentar de forma ordenada tres ingredientes, el error del modelo baja siguiendo una curva predecible.</div>
 
@@ -679,12 +757,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 06: BLOQUE 2 - LA CORRECCIÓN DE CHINCHILLA Y ANALOGÍA -->
-      <section class="slide" data-slide="6" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="La Ley de Chinchilla: Balance Entre Tamaño y Lectura">
+      <!-- SLIDE 07: BLOQUE 2 - LA CORRECCIÓN DE CHINCHILLA Y ANALOGÍA -->
+      <section class="slide" data-slide="7" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="La Ley de Chinchilla: Balance Entre Tamaño y Lectura">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">EL SALTO DE MADUREZ &nbsp;·&nbsp; 06 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">EL SALTO DE MADUREZ &nbsp;·&nbsp; 07 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">La Corrección de Chinchilla: Menos Ego, Más Lectura</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Al principio se construyeron modelos gigantescos pero subentrenados. DeepMind descubrió la proporción ideal.</div>
 
@@ -757,12 +835,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 07: BLOQUE 2 - EJERCICIO MENTAL CON LA CLASE -->
-      <section class="slide" data-slide="7" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="Ejercicio: ¿Qué modelo elegirías para tu app?">
+      <!-- SLIDE 08: BLOQUE 2 - EJERCICIO MENTAL CON LA CLASE -->
+      <section class="slide" data-slide="8" data-accent="#10B981" data-block="Bloque 2" data-topic="La Receta de Construcción" data-title="Ejercicio: ¿Qué modelo elegirías para tu app?">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 2 · LA RECETA DE CONSTRUCCIÓN</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">EJERCICIO EN CLASE &nbsp;·&nbsp; 07 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">EJERCICIO EN CLASE &nbsp;·&nbsp; 08 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Tu turno de decidir: ¿Cuál pondrías en producción?</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Imagina que vas a construir una aplicación usada por miles de personas todos los días.</div>
 
@@ -810,12 +888,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 08: BLOQUE 3 - HABILIDADES EMERGENTES ("MORE IS DIFFERENT") -->
-      <section class="slide" data-slide="8" data-accent="#06B6D4" data-block="Bloque 3" data-topic="Habilidades Emergentes" data-title="More is Different: Habilidades Emergentes">
+      <!-- SLIDE 09: BLOQUE 3 - HABILIDADES EMERGENTES ("MORE IS DIFFERENT") -->
+      <section class="slide" data-slide="9" data-accent="#06B6D4" data-block="Bloque 3" data-topic="Habilidades Emergentes" data-title="More is Different: Habilidades Emergentes">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#06B6D4;opacity:0.07;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#06B6D4;letter-spacing:1.5px;">BLOQUE 3 · LA SORPRESA CIENTÍFICA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">CUANDO MÁS ES DIFERENTE &nbsp;·&nbsp; 08 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">CUANDO MÁS ES DIFERENTE &nbsp;·&nbsp; 09 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Habilidades Emergentes: «Más Cantidad Crea Algo Nuevo»</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Capacidades que están en 0% en modelos pequeños y se disparan de golpe al cruzar un umbral de escala.</div>
 
@@ -904,12 +982,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 09: BLOQUE 3 - ANALOGÍA AGUA/VAPOR, MITO Y DISCUSIÓN -->
-      <section class="slide" data-slide="9" data-accent="#06B6D4" data-block="Bloque 3" data-topic="Habilidades Emergentes" data-title="La Analogía del Agua y el Vapor">
+      <!-- SLIDE 10: BLOQUE 3 - ANALOGÍA AGUA/VAPOR, MITO Y DISCUSIÓN -->
+      <section class="slide" data-slide="10" data-accent="#06B6D4" data-block="Bloque 3" data-topic="Habilidades Emergentes" data-title="La Analogía del Agua y el Vapor">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#06B6D4;opacity:0.07;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#06B6D4;letter-spacing:1.5px;">BLOQUE 3 · LA SORPRESA CIENTÍFICA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">TRANSICIÓN DE FASE &nbsp;·&nbsp; 09 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">TRANSICIÓN DE FASE &nbsp;·&nbsp; 10 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">De Cantidad a Cualidad: La Analogía del Agua y el Vapor</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Nadie programó esas habilidades manualmente: surgieron de la reorganización de la propia red.</div>
 
@@ -970,12 +1048,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 10: BLOQUE 4 - DEL FINE-TUNING AL IN-CONTEXT LEARNING -->
-      <section class="slide" data-slide="10" data-accent="#818CF8" data-block="Bloque 4" data-topic="El Usuario al Mando" data-title="Aprendizaje en Contexto: Adaptar sin Reentrenar">
+      <!-- SLIDE 11: BLOQUE 4 - DEL FINE-TUNING AL IN-CONTEXT LEARNING -->
+      <section class="slide" data-slide="11" data-accent="#818CF8" data-block="Bloque 4" data-topic="El Usuario al Mando" data-title="Aprendizaje en Contexto: Adaptar sin Reentrenar">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#4F46E5;opacity:0.08;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#818CF8;letter-spacing:1.5px;">BLOQUE 4 · EL USUARIO AL MANDO</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">APRENDIZAJE EN CONTEXTO &nbsp;·&nbsp; 10 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">APRENDIZAJE EN CONTEXTO &nbsp;·&nbsp; 11 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Adaptar sin Reentrenar: Aprendizaje en Contexto</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Desde GPT-3, el modelo aprende tareas nuevas en tiempo real solo leyendo tu texto, con su cerebro intacto.</div>
 
@@ -1043,12 +1121,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 11: BLOQUE 4 - DEMOSTRACIÓN PRÁCTICA Y ANALOGÍA DEL ACTOR -->
-      <section class="slide" data-slide="11" data-accent="#818CF8" data-block="Bloque 4" data-topic="El Usuario al Mando" data-title="Ejemplos y Razonamiento Paso a Paso">
+      <!-- SLIDE 12: BLOQUE 4 - DEMOSTRACIÓN PRÁCTICA Y ANALOGÍA DEL ACTOR -->
+      <section class="slide" data-slide="12" data-accent="#818CF8" data-block="Bloque 4" data-topic="El Usuario al Mando" data-title="Ejemplos y Razonamiento Paso a Paso">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#4F46E5;opacity:0.08;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#818CF8;letter-spacing:1.5px;">BLOQUE 4 · EL USUARIO AL MANDO</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">DEMOSTRACIÓN EN ACCIÓN &nbsp;·&nbsp; 11 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">DEMOSTRACIÓN EN ACCIÓN &nbsp;·&nbsp; 12 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Cómo Multiplicar la Precisión con un Buen Contexto</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Combinar ejemplos claros con razonamiento guiado («Pensemos paso a paso») cambia el resultado sin tocar el modelo.</div>
 
@@ -1123,12 +1201,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 12: BLOQUE 4 - DESMITIFICACIÓN CLAVE (MEMORIA DE TRABAJO) -->
-      <section class="slide" data-slide="12" data-accent="#818CF8" data-block="Bloque 4" data-topic="El Usuario al Mando" data-title="¿Chatear con el modelo lo reentrena?">
+      <!-- SLIDE 13: BLOQUE 4 - DESMITIFICACIÓN CLAVE (MEMORIA DE TRABAJO) -->
+      <section class="slide" data-slide="13" data-accent="#818CF8" data-block="Bloque 4" data-topic="El Usuario al Mando" data-title="¿Chatear con el modelo lo reentrena?">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#4F46E5;opacity:0.08;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#818CF8;letter-spacing:1.5px;">BLOQUE 4 · EL USUARIO AL MANDO</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">DESMITIFICACIÓN CLAVE &nbsp;·&nbsp; 12 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">DESMITIFICACIÓN CLAVE &nbsp;·&nbsp; 13 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">¿Chatear con la IA modifica su cerebro para siempre?</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Una confusión muy común entre lo que el modelo recuerda durante un chat y cómo fue entrenado.</div>
 
@@ -1190,12 +1268,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 13: BLOQUE 5 - DEL MODELO CRUDO AL ASISTENTE (ALINEACIÓN) -->
-      <section class="slide" data-slide="13" data-accent="#F59E0B" data-block="Bloque 5" data-topic="La Realidad Práctica" data-title="Alineación: Poner una Máscara Amable al Modelo Base">
+      <!-- SLIDE 14: BLOQUE 5 - DEL MODELO CRUDO AL ASISTENTE (ALINEACIÓN) -->
+      <section class="slide" data-slide="14" data-accent="#F59E0B" data-block="Bloque 5" data-topic="La Realidad Práctica" data-title="Alineación: Poner una Máscara Amable al Modelo Base">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F59E0B;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F59E0B;letter-spacing:1.5px;">BLOQUE 5 · LA REALIDAD PRÁCTICA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">ALINEACIÓN &nbsp;·&nbsp; 13 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">ALINEACIÓN &nbsp;·&nbsp; 14 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Del Modelo Crudo al Asistente: La Máscara de Alineación</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Lo que sale directo del preentrenamiento refleja todo internet sin filtros; después hay que enseñarle modales y seguridad.</div>
 
@@ -1264,12 +1342,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 14: BLOQUE 5 - HOMOGENEIZACIÓN Y PUNTO ÚNICO DE FALLA -->
-      <section class="slide" data-slide="14" data-accent="#F43F5E" data-block="Bloque 5" data-topic="La Realidad Práctica" data-title="Homogeneización y Punto Único de Falla">
+      <!-- SLIDE 15: BLOQUE 5 - HOMOGENEIZACIÓN Y PUNTO ÚNICO DE FALLA -->
+      <section class="slide" data-slide="15" data-accent="#F43F5E" data-block="Bloque 5" data-topic="La Realidad Práctica" data-title="Homogeneización y Punto Único de Falla">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#F43F5E;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#F43F5E;letter-spacing:1.5px;">BLOQUE 5 · LA REALIDAD PRÁCTICA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">RIESGO SISTÉMICO &nbsp;·&nbsp; 14 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">RIESGO SISTÉMICO &nbsp;·&nbsp; 15 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Homogeneización: Todos Sobre el Mismo Cimiento</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Cuando toda la sociedad construye aplicaciones sobre los mismos pocos modelos base, los defectos se multiplican juntos.</div>
 
@@ -1349,12 +1427,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 15: BLOQUE 5 - CONCLUSIÓN OPERATIVA -->
-      <section class="slide" data-slide="15" data-accent="#10B981" data-block="Bloque 5" data-topic="La Realidad Práctica" data-title="Conclusión Operativa: No Confiar a Ciegas">
+      <!-- SLIDE 16: BLOQUE 5 - CONCLUSIÓN OPERATIVA -->
+      <section class="slide" data-slide="16" data-accent="#10B981" data-block="Bloque 5" data-topic="La Realidad Práctica" data-title="Conclusión Operativa: No Confiar a Ciegas">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#10B981;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#10B981;letter-spacing:1.5px;">BLOQUE 5 · LA REALIDAD PRÁCTICA</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">USO RESPONSABLE &nbsp;·&nbsp; 15 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">USO RESPONSABLE &nbsp;·&nbsp; 16 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">En la Vida Real: Arquitecturas con Respaldo, no Confianza Ciega</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Para usar modelos fundacionales con seguridad en el mundo real, los rodeamos de tres capas protectoras.</div>
 
@@ -1399,12 +1477,12 @@
         </div>
       </section>
 
-      <!-- SLIDE 16: BLOQUE 6 - RECAPITULACIÓN DEL MAPA CONCEPTUAL -->
-      <section class="slide" data-slide="16" data-accent="#14B8A6" data-block="Bloque 6" data-topic="Síntesis y Cierre" data-title="El Mapa Completo en 5 Ideas">
+      <!-- SLIDE 17: BLOQUE 6 - RECAPITULACIÓN DEL MAPA CONCEPTUAL -->
+      <section class="slide" data-slide="17" data-accent="#14B8A6" data-block="Bloque 6" data-topic="Síntesis y Cierre" data-title="El Mapa Completo en 5 Ideas">
         <div class="stage">
           <div class="glow-orb" style="left:1017px;top:-134px;width:403px;height:403px;background:#14B8A6;opacity:0.065;"></div>
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;letter-spacing:1.5px;">BLOQUE 6 · SÍNTESIS, PREGUNTAS Y CIERRE</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">RECAPITULACIÓN &nbsp;·&nbsp; 16 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">RECAPITULACIÓN &nbsp;·&nbsp; 17 / 18</div>
           <div style="position:absolute;left:57.6px;top:58px;width:1164px;font-family:var(--font-head);font-size:37px;font-weight:700;color:#F8FAFC;line-height:1.12;">Mapa Conceptual: Cinco Ideas Para Llevar</div>
           <div style="position:absolute;left:57.6px;top:112px;width:1142px;font-family:var(--font-body);font-size:18px;color:#CBD5E1;line-height:1.25;">Todo el ciclo de vida de un Modelo Fundacional conectado de principio a fin.</div>
 
@@ -1450,14 +1528,14 @@
         </div>
       </section>
 
-      <!-- SLIDE 17: BLOQUE 6 - RONDA DE PREGUNTAS Y CIERRE -->
-      <section class="slide" data-slide="17" data-accent="#14B8A6" data-block="Bloque 6" data-topic="Síntesis y Cierre" data-title="Ronda de Preguntas y Reflexión Final">
+      <!-- SLIDE 18: BLOQUE 6 - RONDA DE PREGUNTAS Y CIERRE -->
+      <section class="slide" data-slide="18" data-accent="#14B8A6" data-block="Bloque 6" data-topic="Síntesis y Cierre" data-title="Ronda de Preguntas y Reflexión Final">
         <div class="stage">
           <div class="glow-orb" style="left:-140px;top:280px;width:540px;height:540px;background:#14B8A6;opacity:0.085;"></div>
           <div class="glow-orb" style="left:860px;top:-140px;width:540px;height:540px;background:#4F46E5;opacity:0.085;"></div>
 
           <div style="position:absolute;left:57.6px;top:30px;width:710px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#14B8A6;letter-spacing:1.5px;">BLOQUE 6 · SÍNTESIS, PREGUNTAS Y CIERRE</div>
-          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">PREGUNTA DE SALIDA &nbsp;·&nbsp; 17 / 17</div>
+          <div style="position:absolute;left:787px;top:30px;width:435px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#64748B;text-align:right;">PREGUNTA DE SALIDA &nbsp;·&nbsp; 18 / 18</div>
 
           <div style="position:absolute;left:57.6px;top:92px;width:1164px;text-align:center;font-family:var(--font-head);font-size:42px;font-weight:700;color:#F8FAFC;">Ronda de Preguntas Abiertas</div>
 
@@ -1495,7 +1573,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;max-width:1280px;margin:0 auto;">
       <div>
         <div style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--slide-accent);letter-spacing:0.12em;">NAVEGACIÓN RÁPIDA</div>
-        <h2 style="font-family:var(--font-head);font-size:28px;color:var(--white);">Índice de Diapositivas (17)</h2>
+        <h2 style="font-family:var(--font-head);font-size:28px;color:var(--white);">Índice de Diapositivas (18)</h2>
       </div>
       <button class="hud-btn" onclick="toggleOverview()">[Esc / G] Cerrar</button>
     </div>
