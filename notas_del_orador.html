@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notas del Orador (1 a 1) — Foundation Models</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body style="background:#0d1117;color:#e6edf3;font-family:'Inter',system-ui,sans-serif;margin:0;padding:32px 20px;">
+  <div style="max-width:1040px;margin:0 auto;">
+    <header style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:24px;margin-bottom:24px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;color:#388bfd;text-transform:uppercase;">DOCUMENTO DEL PROFESOR · ENLAZADO 1 A 1 CON LAS 48 DIAPOSITIVAS</div>
+      <h1 style="margin:8px 0;font-size:28px;color:#e6edf3;">Guion Magistral y Notas del Orador — Foundation Models</h1>
+      <p style="margin:0;font-size:14px;color:#8b949e;line-height:1.5;">
+        Cada tarjeta corresponde exactamente a una diapositiva de <a href="presentacion_foundation_models.html" style="color:#388bfd;">presentacion_foundation_models.html</a>. Haz clic en <strong>"Ir a Diapositiva #NN"</strong> para abrir la lámina exacta, o pulsa <code>P</code> dentro de la presentación para abrir la vista de presentador sincronizada en tiempo real.
+      </p>
+    </header>
+    <h2 style="color:#388bfd;font-size:20px;margin:28px 0 12px;border-bottom:1px solid #30363d;padding-bottom:8px;">I. El Cambio de Paradigma: De Task-Specific ML a Foundation Models</h2>
+        <article id="nota-1" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 01 / 48 · Min 00:00 – 02:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-1" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #01 (#slide-1)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">01. Foundation Models: De la Predicción Estadística a la Ingeniería de Sistemas Inteligentes</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Establecer la tesis central de la cátedra: cómo un objetivo estadístico simple (auto-supervisión a escala) transformó la inteligencia artificial en una disciplina de infraestructura y sistemas.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Bienvenidos. Hoy vamos a diseccionar rigurosamente qué es un Modelo Fundacional, por qué funciona desde el punto de vista matemático y computacional, y cómo se transforma un predictor estadístico crudo en un sistema de ingeniería confiable. No los trataremos como cajas negras mágicas: recorreremos cuatro ejes estructurales —el cambio de paradigma hacia la auto-supervisión, la mecánica interna del Transformer, la física empírica de las leyes de escalamiento y la ingeniería post-entrenamiento e inferencia.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Antes de iniciar: si tuvieran que definir en una sola frase qué diferencia estructuralmente a un Foundation Model de una red neuronal profunda tradicional como ResNet-50, ¿dónde trazarían la frontera?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Para responder con precisión a esa pregunta, veamos la estructura de los cinco módulos que recorreremos hoy.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-2" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 02 / 48 · Min 02:00 – 04:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-2" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #02 (#slide-2)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">02. Arquitectura Conceptual de la Sesión</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Presentar la hoja de ruta lógica en cinco bloques interconectados y las tres tesis rectoras.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Nuestra sesión se articula en cinco bloques progresivos. Primero analizaremos por qué la industria abandonó el entrenamiento de modelos aislados desde cero. En el segundo bloque abriremos el motor matemático del Transformer y los objetivos de pre-entrenamiento. En el tercer bloque estudiaremos las leyes empíricas de escala de Kaplan y Chinchilla junto con el fenómeno de emergencia. En el cuarto bloque pasaremos del modelo base al sistema en producción: SFT, RLHF, DPO, RAG, LoRA e inferencia eficiente. Y cerraremos en el quinto bloque con evaluación rigurosa, vulnerabilidades y riesgos sociotécnicos.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿En cuál de estos cinco eslabones creen que fracasan hoy la mayoría de los proyectos empresariales de IA: en la capacidad del modelo base o en la arquitectura del sistema alrededor del modelo?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Iniciemos una secuencia progresiva de tres láminas (Slides 3, 4 y 5) para visualizar cómo evolucionó la ingeniería del aprendizaje automático.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-3" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 03 / 48 · Min 04:00 – 05:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-3" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #03 (#slide-3)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">03. Evolución de Paradigmas (1/3): Ingeniería Manual de Características</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar el primer peldaño de la secuencia progresiva: el cuello de botella de la ingeniería manual de características en el ML clásico.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Observen la primera columna iluminada en nuestro diagrama arquitectónico. Entre 2005 y 2012, construir un sistema de visión o procesamiento de lenguaje natural implicaba que el investigador diseñara a mano los extractores de características: filtros SIFT o HOG en visión, diccionarios morfológicos y TF-IDF en texto. El algoritmo de aprendizaje —un SVM o un Gradient Boosting— sólo ajustaba una frontera de decisión final. Resolver N tareas exigía construir y mantener N pipelines completamente independientes.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué este paradigma no podía escalar aunque multiplicáramos por mil la potencia de cómputo disponible?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Al avanzar a la siguiente lámina veremos cómo el Deep Learning clásico rompió el cuello de botella de las features manuales, pero introdujo un nuevo límite.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-4" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 04 / 48 · Min 05:30 – 07:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-4" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #04 (#slide-4)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">04. Evolución de Paradigmas (2/3): Deep Learning Supervisado por Tarea</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Mostrar el segundo paso de la construcción progresiva: el auge del Deep Learning supervisado y el cuello de botella de la anotación humana.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Al pasar a la Fase 2 (2013–2017), las redes neuronales profundas reemplazaron la ingeniería manual de características por aprendizaje jerárquico de representaciones extremo a extremo. Sin embargo, el paradigma seguía siendo específico por tarea: un modelo para análisis de sentimiento, otro distinto para traducción, otro para reconocimiento de entidades. El cuello de botella se desplazó del diseño de features al costo económico y temporal de etiquetar millones de ejemplos supervisados para cada nueva aplicación.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Qué sucede cuando queremos aplicar IA a un dominio especializado —como oncología clínica o derecho tributario— donde simplemente no existen millones de pares etiquetados?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Avancemos un paso más sobre este mismo esquema para iluminar la tercera columna: la irrupción de los Modelos Fundacionales.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-5" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 05 / 48 · Min 07:00 – 09:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-5" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #05 (#slide-5)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">05. Evolución de Paradigmas (3/3): Centralización y Adaptación Fundacional</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Completar la secuencia progresiva mostrando la inversión arquitectónica: de N redes independientes a 1 modelo fundacional centralizado adaptable a N tareas.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Aquí se completa la transición. En la Fase 3 desacoplamos la adquisición de conocimiento general de la especialización en tareas. Primero entrenamos un único modelo masivo mediante objetivos auto-supervisados (Self-Supervised Learning, SSL) donde la señal de supervisión proviene de la propia estructura del dato no etiquetado. Ese modelo base concentra una representación densa del mundo y luego se adapta con costo marginal a cientos de tareas downstream.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Qué ventaja económica y de ingeniería ofrece amortizar el costo de pre-entrenamiento de un único backbone sobre cientos de productos distintos?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Formalicemos ahora la definición canónica acuñada por el grupo CRFM de Stanford en Bommasani et al. (2021).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-6" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 06 / 48 · Min 09:00 – 11:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-6" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #06 (#slide-6)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">06. Definición Canónica y los Dos Pilares de Bommasani et al. (2021)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Desglosar la definición formal de Bommasani et al. (2021) y sus dos propiedades definitorias: Emergencia y Homogeneización.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En agosto de 2021, más de cien investigadores de Stanford liderados por Rishi Bommasani publicaron &#x27;On the Opportunities and Risks of Foundation Models&#x27;. Eligieron la palabra &#x27;fundacional&#x27; deliberadamente: estos modelos operan como cimientos de ingeniería civil. Su tesis descansa sobre dos pilares: Emergencia —las capacidades de alto nivel surgen implícitamente al escalar el pre-entrenamiento— y Homogeneización —prácticamente toda la comunidad convergió hacia la arquitectura Transformer y hacia unos pocos modelos base. Eso genera un apalancamiento extraordinario, pero también el riesgo de monocultivo algorítmico.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿En qué otra industria tecnológica hemos visto que la homogeneización sobre un único núcleo de software cree tanto eficiencia masiva como vulnerabilidades sistémicas?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Aclaremos ahora una confusión frecuente incluso en literatura técnica: ¿es lo mismo un Modelo Fundacional que la IA Generativa?
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-7" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 07 / 48 · Min 11:00 – 13:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-7" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #07 (#slide-7)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">07. Fronteras Conceptuales: Foundation Models vs. IA Generativa</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Demostrar interactivamente que &#x27;Foundation Model&#x27; y &#x27;Generative AI&#x27; son conjuntos secantes pero no idénticos.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Interactuemos con este diagrama de Venn en pantalla. En el discurso público suele usarse &#x27;IA Generativa&#x27; y &#x27;Modelo Fundacional&#x27; como sinónimos, pero técnicamente son ortogonales. Si hacemos clic en la región izquierda (&#x27;FM No Generativos&#x27;), encontramos modelos como BERT, RoBERTa, CLIP o DINOv2: son modelos fundacionales puros entrenados con auto-supervisión masiva y adaptables a decenas de tareas, pero su objetivo es producir representaciones latentes o clasificación, no generar muestras abiertas. En el extremo derecho tenemos generadores clásicos específicos de dominio como StyleGAN2 entrenado en caras. Y en la intersección central verde residen los sistemas que combinan ambos mundos: GPT-4, Claude, Llama 3, Gemini o Sora.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si su objetivo de ingeniería es indexar 50 millones de documentos legales para búsqueda semántica en menos de 10 milisegundos, ¿elegirían un modelo de la región izquierda (Encoder/Bi-Encoder) o un modelo generativo pesado de la intersección?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Veamos cómo la llave maestra que habilitó todo el círculo azul de los Modelos Fundacionales es el Aprendizaje Auto-Supervisado (SSL).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-8" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 08 / 48 · Min 13:00 – 15:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-8" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #08 (#slide-8)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">08. El Motor del Pre-entrenamiento: Aprendizaje Auto-Supervisado (SSL)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Unificar bajo una sola formulación matemática las cuatro familias de objetivos auto-supervisados (CLM, MLM, InfoNCE y Denoising).</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En esta tabla tenemos las cuatro ecuaciones que gobiernan casi toda la inteligencia artificial contemporánea. ¿Qué tienen en común? En las cuatro, tomamos un objeto crudo x sin etiquetas humanas, ocultamos o transformamos una parte de él y entrenamos a la red parametrizada por theta para predecir o alinear la parte faltante. Ya sea predecir el token futuro dado el pasado (CLM), reconstruir tokens enmascarados con contexto bidireccional (MLM), acercar pares imagen-texto en la hiperesfera unitaria (InfoNCE) o revertir un proceso de ruido gaussiano (Diffusion/Flow Matching), la supervisión es intrínseca al dato.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué creen que una tarea aparentemente tan &#x27;superficial&#x27; como adivinar la siguiente palabra termina forzando a la red a aprender razonamiento causal o depuración de código?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Antes de entrar al bloque II sobre el Transformer, resumamos el costo de esta centralización: el doble filo de la homogeneización.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-9" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 09 / 48 · Min 15:00 – 16:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-9" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #09 (#slide-9)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">09. El Doble Filo de la Homogeneización Arquitectónica y de Datos</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Cerrar el Bloque I contrastando las ventajas de ingeniería de la homogeneización frente a los riesgos de monocultivo.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Cerramos nuestro primer bloque con esta dualidad estructural. En la columna izquierda vemos por qué el mundo adoptó los Modelos Fundacionales: cuando toda la industria converge sobre el bloque Transformer, cualquier avance en compiladores o kernels como FlashAttention beneficia simultáneamente a modelos de lenguaje, visión y proteínas. Pero la columna derecha nos advierte como ingenieros: esa misma convergencia crea un monocultivo. Un defecto estadístico o una vulnerabilidad de seguridad en los cimientos se multiplica por cada aplicación derivada.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Cómo diseñamos entonces una arquitectura empresarial para capturar el apalancamiento de la izquierda mitigando el punto único de fallo de la derecha?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Para responderlo necesitamos abrir la caja negra. Entremos al Bloque II: Tokenización, Embeddings y la arquitectura Transformer.
+            </div>
+          </div>
+        </article>
+        <h2 style="color:#388bfd;font-size:20px;margin:28px 0 12px;border-bottom:1px solid #30363d;padding-bottom:8px;">II. Representación, Tokenización y el Motor Transformer</h2>
+        <article id="nota-10" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 10 / 48 · Min 16:30 – 19:00 (2.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-10" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #10 (#slide-10)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">10. De Datos Crudos a Vectores: Tokenización Subword (BPE) y Geometría RoPE</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar el pipeline de discretización BPE, la matriz de embeddings y por qué RoPE es indispensable para romper la invarianza a permutaciones del Transformer.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Entramos al Bloque II. Una red neuronal sólo opera sobre tensores en R^d. El primer eslabón, muchas veces subestimado, es el tokenizador Byte-Pair Encoding (BPE). Como ilustra el diagrama superior, fusionamos iterativamente los pares de bytes más frecuentes hasta construir un vocabulario de entre 32 mil y 128 mil sub-palabras. Cada ID entero indexa la matriz de embeddings E para obtener un vector denso de dimensión d (por ejemplo, 4096). Pero atención: la operación de atención pura es un operador sobre conjuntos, invariante al orden (&#x27;el perro mordió al hombre&#x27; produciría lo mismo que &#x27;el hombre mordió al perro&#x27;). Por eso los modelos modernos aplican Rotary Position Embeddings (RoPE): rotan los vectores Query y Key un ángulo m*theta para que el producto escalar capture exactamente la distancia relativa m - n.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué un tokenizador entrenado mayoritariamente en inglés penaliza tanto en latencia como en costo financiero a un usuario que interactúa en español, árabe o quechua?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Una vez que tenemos nuestra matriz de entrada X de tamaño [longitud l por dimensión d], entremos a una secuencia progresiva de 4 láminas (Slides 11 a 14) para construir paso a paso el bloque Transformer.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-11" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 11 / 48 · Min 19:00 – 20:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-11" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #11 (#slide-11)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">11. Anatomía del Transformer (1/4): Proyecciones Lineales Query, Key y Value</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Introducir el Paso 1 del grafo computacional del Transformer: la descomposición de cada token en los subespacios Query, Key y Value.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Iniciamos nuestra segunda secuencia progresiva de cuatro láminas sobre el corazón del Transformer (Vaswani et al., 2017). En este Paso 1 iluminado a la izquierda, la matriz de entrada X de dimensión [l por d] se multiplica por tres matrices de pesos aprendidas: W_Q, W_K y W_V. La analogía exacta proviene de los sistemas de recuperación de información y memorias asociativas diferenciables: Query representa qué busca el token actual; Key representa bajo qué etiqueta se indexa cada token del contexto; y Value contiene el vector de información que se transferirá cuando haya coincidencia entre Query y Key.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Qué perdería geométricamente la red si obligáramos a que Query y Key compartieran exactamente la misma matriz de proyección (W_Q = W_K)?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Si W_Q fuera igual a W_K, la similitud sería obligatoriamente simétrica (el token A atendería a B tanto como B a A). Avancemos a la lámina 12 para ver cómo se calcula y escala esa similitud.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-12" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 12 / 48 · Min 20:30 – 22:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-12" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #12 (#slide-12)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">12. Anatomía del Transformer (2/4): Producto Escalar y Factor de Escala 1/√d_k</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar el Paso 2 del grafo: el cálculo de la matriz de afinidad QK^T y la demostración matemática de por qué se divide por la raíz cuadrada de d_k.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Al avanzar al Paso 2 en nuestro esquema, computamos todos los productos escalares entre consultas y claves: S = Q por K transpuesta. Esto produce una matriz de l por l. Pero observen el divisor raíz cuadrada de d_k. No es un detalle cosmético: si las componentes de q y k tienen media cero y varianza unitaria, la suma de d_k productos independientes tiene varianza igual a d_k. Cuando d_k vale 64 o 128, los productos escalares alcanzan magnitudes grandes, haciendo que el Softmax posterior colapse en una distribución one-hot con gradientes prácticamente nulos. Dividir por raíz de d_k restablece la varianza exactamente a 1.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué este paso permite entrenar sobre secuencias de miles de tokens en paralelo en una GPU, mientras que una LSTM debía procesar token por token secuencialmente?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Pasemos a la lámina 13 para aplicar la máscara causal, normalizar con Softmax y agregar los vectores Value.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-13" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 13 / 48 · Min 22:00 – 23:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-13" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #13 (#slide-13)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">13. Anatomía del Transformer (3/4): Enmascaramiento, Softmax y Mezcla de Valores</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar el Paso 3: cómo la máscara M preserva la causalidad y cómo la multiplicación por V construye representaciones contextualizadas.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En el Paso 3 sumamos la matriz de máscara M antes del Softmax. En un modelo autoregresivo como GPT o Llama, queremos entrenar prediciendo simultáneamente todos los tokens de la secuencia en una sola pasada matricial, pero el token en la posición i jamás puede espiar al token en la posición i+1. Al sumar menos infinito en el triángulo superior (j &gt; i), el exponencial dentro del Softmax se vuelve exactamente cero. Finalmente, multiplicamos esa distribución de probabilidad fila por fila contra la matriz V: cada token emerge como una combinación convexa ponderada de los valores relevantes de su contexto.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Cuál es la diferencia fundamental entre los pesos fijos de un filtro convolucional 3x3 y los pesos de atención A_ij que acabamos de calcular?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Completamos nuestro bloque Transformer en la lámina 14 añadiendo Multi-Head Attention, el flujo residual, Pre-RMSNorm y la red SwiGLU.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-14" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 14 / 48 · Min 23:30 – 25:30 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-14" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #14 (#slide-14)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">14. Anatomía del Transformer (4/4): Multi-Head Attention, Residual Stream y SwiGLU</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Cerrar la secuencia progresiva explicando la división del trabajo dentro del bloque Transformer: Atención (comunicación entre tokens) vs. FFN SwiGLU (cómputo y memoria por token) + Pre-RMSNorm.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Con el Paso 4 completamos el bloque Transformer moderno (estilo Llama-3, Qwen o DeepSeek). Primero, en lugar de una sola atención, ejecutamos h cabezas en paralelo y concatenamos sus salidas. Segundo, adoptamos Pre-RMSNorm antes de cada sub-capa y sumamos el resultado al flujo residual (&#x27;Residual Stream&#x27;), garantizando que los gradientes fluyan limpiamente a través de más de 100 capas. Y tercero, observen la división funcional del trabajo: el bloque de Atención mueve información horizontalmente entre distintos tokens del contexto, mientras que la red Feed-Forward con activación SwiGLU procesa cada token verticalmente y almacena cerca de dos tercios de todos los parámetros del modelo como un banco de memoria fáctica.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si quisieran editar o borrar un hecho puntual almacenado en los pesos de un LLM, ¿en qué matrices buscarían primero: en las proyecciones de atención o en las capas MLP/SwiGLU?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Experimentemos ahora en vivo en la lámina 15 con el simulador interactivo de máscaras de atención y escalamiento cuadrático O(l^2).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-15" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 15 / 48 · Min 25:30 – 28:00 (2.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-15" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #15 (#slide-15)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">15. Simulador de Enmascaramiento Causal vs. Bidireccional y Complejidad O(ℓ²)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Demostrar visual y cuantitativamente cómo la matriz de máscara define las tres familias de arquitecturas Transformer y cómo escala el costo cuadrático con la longitud de secuencia.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Probemos el simulador en pantalla. A la izquierda tenemos la matriz de atención de 6 por 6 tokens. En modo &#x27;Causal&#x27; (GPT/Llama), todas las celdas por encima de la diagonal principal están bloqueadas con menos infinito: cada fila sólo suma probabilidad sobre su pasado. Si conmutamos al botón &#x27;Bidireccional&#x27; (BERT), la matriz entera se ilumina: todos los tokens se ven entre sí simultáneamente. Y en &#x27;Prefix-LM&#x27; (T5/UL2), el prefijo de entrada es bidireccional mientras la generación es causal. Ahora observen el control deslizante de la derecha: al llevar la longitud de contexto de 8K a 128K o 1 millón de tokens, el número de pares l^2 crece de millones a un billón (10^12) de interacciones por capa.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Viendo estos números en tiempo real: ¿por qué ofrecer ventanas de 1 millón de tokens en producción sigue siendo un desafío económico aunque el modelo las soporte arquitectónicamente?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Esa diferencia entre la máscara bidireccional y la causal nos lleva directamente a comparar las tres grandes familias arquitectónicas en las siguientes láminas.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-16" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 16 / 48 · Min 28:00 – 30:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-16" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #16 (#slide-16)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">16. Taxonomía de Arquitecturas: Encoder-Only, Decoder-Only y Encoder-Decoder</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Comparar rigurosamente las tres topologías derivadas del Transformer y explicar por qué Decoder-Only dominó el escalamiento generativo mientras Encoder-Only domina la recuperación.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Esta matriz resume la evolución arquitectónica desde 2018. Los modelos Encoder-Only como BERT ven el contexto izquierdo y derecho simultáneamente, lo que los convierte en extractores de representaciones insuperables por unidad de cómputo. Los modelos Encoder-Decoder como T5 o Whisper brillan cuando mapeamos una modalidad de entrada a otra secuencia de salida. Sin embargo, para modelos fundacionales generales de gran escala, la arquitectura Decoder-Only ganó la carrera por dos razones matemáticas: aprovecha el 100% de los tokens para calcular gradientes de predicción —no sólo el 15% enmascarado— y reduce cualquier tarea a continuación de texto en contexto.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si están diseñando un clasificador de fraude que debe evaluar 20,000 transacciones por segundo con presupuesto de latencia de 5 ms, ¿desplegarían un Decoder de 70B o un Encoder destilado de 300M?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Examinemos con lupa los dos artículos fundacionales de estas familias: primero BERT (Devlin et al., 2019) y luego GPT-3 (Brown et al., 2020).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-17" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 17 / 48 · Min 30:00 – 31:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-17" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #17 (#slide-17)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">17. El Paradigma Bidireccional: BERT y Masked Language Modeling (Devlin et al., 2019)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la mecánica exacta del Masked Language Modeling en BERT, la regla 80/10/10 y su supuesto de independencia condicional.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En nuestro documento de referencia de Devlin et al. (2019), BERT demostró que para tareas de comprensión profunda del lenguaje es crucial fusionar el contexto izquierdo y derecho en todas las capas. Para evitar que un token se copie a sí mismo a través de conexiones multicapa, BERT enmascara el 15% de los tokens e intenta reconstruirlos. Observen la elegancia de ingeniería de la regla 80/10/10: si siempre usáramos el símbolo [MASK], el modelo sufriría un desfase (&#x27;pretrain-finetune discrepancy&#x27;) porque en producción jamás verá el símbolo [MASK]. Mantener un 10% aleatorio y un 10% intacto obliga al Encoder a construir una representación contextual densa para cada palabra de la oración.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué la asunción de que los tokens enmascarados se predicen de forma independiente entre sí impide que BERT redacte ensayos largos con coherencia autoregresiva?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Veamos cómo la familia GPT resolvió la generación universal mediante la factorización autoregresiva exacta.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-18" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 18 / 48 · Min 31:30 – 33:30 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-18" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #18 (#slide-18)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">18. El Paradigma Autoregresivo: Factorización de Cadena y GPT-3 (Brown et al., 2020)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la factorización exacta de la regla de la cadena en los modelos GPT y el descubrimiento del In-Context Learning en Brown et al. (2020).</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> A diferencia del modelo enmascarado de BERT, la ecuación de los modelos Decoder-Only como GPT-3 descansa en una identidad matemática exacta: la regla de la cadena de la probabilidad. La probabilidad de cualquier secuencia de texto, código o diálogo es exactamente el producto de las probabilidades condicionales de cada token dado todo su pasado. Cuando Brown et al. (2020) escalaron este objetivo de 1.5 mil millones de parámetros (GPT-2) a 175 mil millones (GPT-3), descubrieron que ya no hacía falta actualizar pesos con gradientes para resolver una tarea nueva: bastaba con escribir la descripción o unos pocos ejemplos dentro del prompt para que el modelo adaptara su comportamiento en el propio forward pass.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Cómo es posible que un modelo aprenda una tarea nueva en milisegundos dentro de la ventana de contexto si sus matrices de pesos W están completamente congeladas?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Antes de pasar a las leyes de escala que explican ese salto, veamos el detalle matemático de cómo convierte el modelo sus logits finales en texto: el muestreo estocástico.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-19" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 19 / 48 · Min 33:30 – 35:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-19" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #19 (#slide-19)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">19. Mecánica de Decodificación: Del Vector de Logits a la Secuencia Generada</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar por qué la maximización pura (Greedy) degrada la generación de texto y cómo interactúan Temperatura, Top-K y Top-p.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Una vez que la última capa del Transformer proyecta el estado oculto contra la matriz del vocabulario (el &#x27;LM Head&#x27;), obtenemos un vector de logits z de tamaño |V| (por ejemplo, 128,000 números reales). ¿Cómo elegimos la siguiente palabra? Holtzman et al. (2020) demostraron en &#x27;The Curious Case of Neural Text Degeneration&#x27; que elegir siempre el token más probable (Greedy decoding) conduce paradójicamente a bucles repetitivos antinaturales. Por eso en ingeniería ajustamos dos perillas complementarias: la Temperatura T, que reescala los logits antes del Softmax, y el muestreo de núcleo Top-p, que poda dinámicamente la cola larga de tokens improbables.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Para un agente que genera consultas SQL o JSON estricto contra una base de datos bancaria, ¿qué combinación de Temperatura y Top-p configurarían en producción?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Probemos exactamente esa intuición en nuestro tercer módulo interactivo en la lámina 20.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-20" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 20 / 48 · Min 35:00 – 37:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-20" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #20 (#slide-20)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">20. Laboratorio Interactivo: Temperatura (T) y Poda de Núcleo (Top-p)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Visualizar en tiempo real cómo la temperatura modifica la entropía de Shannon de la distribución del siguiente token y cómo Top-p poda la cola de alucinación.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Movamos los controles deslizantes de este laboratorio. Con Temperatura T = 0.2, observen cómo el token principal (&#x27;arquitectura&#x27;) absorbe casi el 95% de la masa de probabilidad y la entropía cae cerca de 0.3 bits: el modelo es casi determinista. Ahora subamos la Temperatura a T = 1.5 con Top-p = 1.0: la distribución se aplana y tokens raros o incoherentes de la cola inferior ganan probabilidad no nula de ser muestreados, disparando las alucinaciones. Pero si mantenemos T = 0.9 y ajustamos Top-p = 0.85, el modelo conserva diversidad creativa entre las tres primeras opciones válidas mientras poda a cero absoluto la cola ruidosa.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué en las APIs de modelos fundacionales se recomienda ajustar Temperatura o Top-p, pero rara vez llevar ambos simultáneamente a valores extremos?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Cerramos el Bloque II ampliando el horizonte: ¿cómo sale el Transformer del texto puro hacia la visión, el audio y la biología?
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-21" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 21 / 48 · Min 37:00 – 39:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-21" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #21 (#slide-21)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">21. Expansión Multimodal: Parches Visuales (ViT), CLIP y Modelos Visión-Lenguaje</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar cómo la tokenización de parches (ViT) y el pre-entrenamiento contrastivo (CLIP) permitieron unificar visión y lenguaje en un solo espacio latente.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En esta lámina vemos la prueba definitiva de la tesis de homogeneización de Bommasani y Chen et al. (2024). En 2021, Dosovitskiy et al. demostraron con el Vision Transformer (ViT) que si cortamos una imagen en parches de 16x16 píxeles y los tratamos como tokens, el Transformer supera a las redes convolucionales a gran escala. Simultáneamente, Radford et al. presentaron CLIP: dos encoders (uno visual y uno textual) entrenados sobre 400 millones de pares de internet para maximizar el producto escalar de los pares verdaderos en la diagonal de una matriz N por N. Finalmente, los VLMs modernos conectan ese codificador visual mediante una proyección lineal o MLP directamente a la secuencia de entrada del LLM.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué CLIP pudo clasificar imágenes en categorías que jamás había visto en un dataset supervisado (Zero-Shot Image Classification) simplemente comparando la imagen con el prompt &#x27;una foto de un {objeto}&#x27;?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Hemos comprendido la arquitectura. Pero una arquitectura por sí sola es sólo un recipiente vacío. Entremos al Bloque III: la física empírica de las Leyes de Escalamiento y la Emergencia.
+            </div>
+          </div>
+        </article>
+        <h2 style="color:#388bfd;font-size:20px;margin:28px 0 12px;border-bottom:1px solid #30363d;padding-bottom:8px;">III. Leyes de Escalamiento (Scaling Laws) y Capacidades Emergentes</h2>
+        <article id="nota-22" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 22 / 48 · Min 39:00 – 41:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-22" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #22 (#slide-22)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">22. La Hipótesis de Escala y la Física Empírica del Aprendizaje Profundo</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Introducir el Bloque III explicando las tres variables fundamentales (N, D, C) y de dónde proviene la aproximación canónica C = 6ND.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Entramos al Bloque III, el corazón cuantitativo de nuestra clase. Antes de 2020, nadie sabía si duplicar el tamaño de una red seguiría reduciendo el error o si se estancaría rápidamente. Kaplan et al. (2020) demostraron que el rendimiento sigue leyes de potencia análogas a las leyes de la termodinámica a lo largo de más de siete órdenes de magnitud. Todo el análisis gira en torno a tres variables: N (número de parámetros), D (número de tokens de entrenamiento) y C (presupuesto computacional en FLOPs). Noten la identidad fundamental C ≈ 6*N*D: en una multiplicación matriz-vector invertimos 2 operaciones en punto flotante (una multiplicación y una suma) por parámetro y por token en el forward pass, y el doble (4 FLOPs) en el backward pass para calcular los gradientes respecto a activaciones y pesos.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué contar con una ley predictiva que relaciona FLOPs con la pérdida final permite a un laboratorio decidir una inversión de 100 millones de dólares haciendo primero experimentos de 10,000 dólares?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Construyamos ahora en una secuencia progresiva de tres láminas (Slides 23, 24 y 25) las tres curvas log-log descubiertas por Kaplan et al. (2020).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-23" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 23 / 48 · Min 41:00 – 42:15 (1.25 min)</span>
+            <a href="presentacion_foundation_models.html#slide-23" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #23 (#slide-23)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">23. Leyes de Escalamiento (1/3): Dependencia con el Número de Parámetros N</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la primera curva de la secuencia progresiva: la ley de potencia respecto al número de parámetros N y la insensibilidad relativa a la forma exacta (profundidad vs. anchura).</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En el primer panel iluminado a la izquierda graficamos la pérdida de validación L en el eje vertical contra el número de parámetros N en el eje horizontal, ambos en escala logarítmica. Una ley de potencia L(N) = (N_c / N)^alpha_N se transforma en una línea recta perfecta en coordenadas log-log: log(L) = constante - 0.076 * log(N). Además, Kaplan et al. encontraron un resultado sorprendente para los arquitectos de redes: dentro de un rango razonable, la pérdida depende casi exclusivamente del número total de parámetros N, siendo notablemente insensible a la relación exacta entre número de capas (profundidad) y dimensión oculta (anchura).
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si la pendiente es -0.076 en escala logarítmica, ¿qué ocurre si intentamos escalar únicamente N manteniendo fijo un dataset pequeño D?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Si D es fijo y pequeño, la recta se curva y se aplana por sobreajuste. Avancemos a la lámina 24 para iluminar la segunda curva: el escalamiento con los datos D.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-24" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 24 / 48 · Min 42:15 – 43:30 (1.25 min)</span>
+            <a href="presentacion_foundation_models.html#slide-24" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #24 (#slide-24)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">24. Leyes de Escalamiento (2/3): Dependencia con el Volumen de Datos D</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Mostrar el segundo paso de la construcción progresiva: la ley de potencia respecto a los tokens D y la ecuación combinada L(N, D).</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Al iluminar el segundo panel central, vemos qué ocurre cuando entrenamos un modelo suficientemente grande variando la cantidad de tokens únicos D: nuevamente emerge una línea recta en escala log-log, con exponente alpha_D ≈ 0.095. La ecuación combinada L(N, D) que aparece en la tarjeta central modela la interacción exacta entre ambos cuellos de botella: si aumentamos N indefinidamente pero dejamos D fijo, el término D_c / D domina la suma y el rendimiento deja de mejorar.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>En la práctica real de un laboratorio, ni N ni D son gratuitos: lo que está fijo es el presupuesto de cómputo C en GPUs. ¿Cómo se comporta la pérdida frente a C?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Pasemos a la lámina 25 para iluminar el tercer panel: la envolvente de Pareto del cómputo C y la eficiencia muestral.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-25" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 25 / 48 · Min 43:30 – 45:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-25" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #25 (#slide-25)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">25. Leyes de Escalamiento (3/3): Frontera de Cómputo C y Eficiencia Muestral</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Completar la secuencia progresiva de Kaplan et al. (2020) mostrando la envolvente de Pareto L(C) y por qué Kaplan concluyó que debía priorizarse N sobre D.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En el tercer panel completamos la trilogía de Kaplan. Cada curva gris individual representa el entrenamiento de un modelo de tamaño distinto; la línea verde punteada que conecta los puntos tangentes inferiores es la frontera eficiente de Pareto: L(C) proporcional a C elevado a -0.050. Además, Kaplan descubrió que los modelos más grandes son más eficientes en muestras (necesitan menos pasos para alcanzar un nivel de pérdida dado). Eso llevó al equipo de OpenAI en 2020 a una conclusión audaz: si duplicas tu presupuesto de cómputo C, invierte casi todo en hacer el modelo más grande (N proporcional a C^0.73) y aumenta poco los datos (D proporcional a C^0.27). Así se diseñó GPT-3 con 175B parámetros entrenado en sólo 300B tokens.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Estaba en lo cierto Kaplan al recomendar escalar N mucho más rápido que D, o había un sesgo experimental oculto en su protocolo de tasa de aprendizaje?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Dos años después, Hoffmann et al. (2022) en DeepMind descubrieron el sesgo exacto de Kaplan y reescribieron las reglas con las Leyes de Chinchilla.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-26" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 26 / 48 · Min 45:00 – 47:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-26" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #26 (#slide-26)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">26. La Revolución Chinchilla: Frontera Óptima en Cómputo (Hoffmann et al., 2022)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Derivar la ecuación paramétrica de Chinchilla L(N,D) = E + A/N^alpha + B/D^beta y demostrar por qué N y D deben escalar equitativamente.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Aquí está la corrección histórica de Hoffmann et al. (2022). ¿Por qué Kaplan se equivocó en la proporción entre N y D? Porque en sus experimentos mantuvo fijo un calendario de tasa de aprendizaje largo para todas las corridas, perjudicando artificialmente a los modelos entrenados con más tokens. Cuando DeepMind corrigió el calendario coseno para cada horizonte D y ajustó la función de pérdida aditiva L(N,D) = E + A/N^alpha + B/D^beta (donde E es la entropía irreducible del texto natural), los exponentes alpha (0.34) y beta (0.28) resultaron casi idénticos. Al resolver el multiplicador de Lagrange sujeto a 6ND = C, tanto N óptimo como D óptimo crecen con la raíz cuadrada de C. Resultado práctico: Chinchilla, con 70B parámetros y 1.4 billones de tokens, derrotó a Gopher de 280B usando los mismos FLOPs.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Qué significa físicamente el término constante E ≈ 1.69 nats en la ecuación de Chinchilla y por qué jamás puede llegar a cero?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Experimentemos ahora con el simulador interactivo en la lámina 27 para calcular la asignación óptima de N y D bajo cualquier presupuesto de FLOPs.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-27" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 27 / 48 · Min 47:00 – 49:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-27" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #27 (#slide-27)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">27. Simulador Compute-Optimal: Kaplan (2020) vs. Chinchilla (2022)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explorar cuantitativamente la brecha entre la asignación de Kaplan y la de Chinchilla a medida que escalamos de 10^21 a 10^25 FLOPs.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Movamos el deslizador de presupuesto computacional C. En el punto de 5.76 x 10^23 FLOPs (el presupuesto de GPT-3), la receta de Kaplan nos pedía construir un monstruo de 175 mil millones de parámetros alimentado con apenas 300 mil millones de tokens (1.7 tokens por parámetro). Al lado derecho, la receta de Chinchilla asigna ese mismo cómputo a un modelo 2.5 veces más compacto (69B parámetros) pero entrenado sobre 1.38 billones de tokens (20 tokens por parámetro). Si subimos el deslizador hasta 10^25 FLOPs (escala de frontera actual), verán cómo un modelo compute-optimal puro requeriría más de 18 billones de tokens de alta calidad, chocando directamente con el &#x27;Data Wall&#x27; de texto humano público.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si Chinchilla dice que el óptimo es 20 tokens por parámetro, ¿por qué Meta entrenó Llama-3 8B con 15 billones de tokens (casi 1,900 tokens por parámetro, 100 veces más allá de Chinchilla)?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Esa pregunta nos lleva directamente a la lámina 28: la era Post-Chinchilla y la amortización del costo de inferencia.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-28" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 28 / 48 · Min 49:00 – 51:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-28" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #28 (#slide-28)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">28. Más Allá de Chinchilla: Sobre-entrenamiento para Inferencia Óptima</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar por qué la industria moderna sobre-entrena deliberadamente modelos de 7B–70B mucho más allá del ratio 20:1 de Chinchilla para minimizar el costo de inferencia.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Esta tabla resuelve la paradoja de por qué ningún modelo abierto moderno respeta el ratio 20 a 1 de Chinchilla. Chinchilla respondió la pregunta: &#x27;Dado un presupuesto fijo para entrenar una sola vez, ¿qué combinación (N, D) minimiza la pérdida?&#x27;. Pero en una empresa o servicio en la nube, el entrenamiento se paga una vez y la inferencia se paga miles de millones de veces. Como el costo en FLOPs y memoria de cada token generado en inferencia es proporcional a 2*N e independiente de cuántos tokens D vio el modelo durante su entrenamiento, resulta muchísimo más rentable gastar más cómputo en pre-entrenar un modelo de 8B con 15 billones de tokens (ratio 1,900 a 1) para que sea barato y veloz en producción.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Hasta qué punto sigue bajando la pérdida cuando sobre-entrenamos un modelo pequeño con 100 veces más tokens que Chinchilla, y cuándo empieza a saturarse su capacidad?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Mientras la pérdida global baja suavemente como un reloj, en las tareas concretas ocurre algo mucho más dramático: las Capacidades Emergentes (Wei et al., 2022).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-29" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 29 / 48 · Min 51:00 – 53:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-29" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #29 (#slide-29)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">29. Capacidades Emergentes en Grandes Modelos de Lenguaje (Wei et al., 2022)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Presentar el hallazgo de Wei et al. (2022) sobre transiciones de fase abruptas en tareas downstream al cruzar umbrales críticos de FLOPs.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Aquí surge una tensión fascinante en nuestra narrativa. Kaplan y Chinchilla nos acaban de mostrar que la pérdida promedio de entropía cruzada es una recta suave y predecible. Sin embargo, cuando Jason Wei y colegas (2022) midieron la exactitud en tareas específicas como aritmética de tres dígitos, razonamiento multitarea en MMLU o decodificación simbólica en BIG-Bench, encontraron curvas planas pegadas al azar durante cuatro órdenes de magnitud que repentinamente saltan hacia arriba alrededor de 10^22 FLOPs. Igual que el agua líquida cambia abruptamente de fase a hielo a los 0 °C aunque la temperatura baje de forma continua, ciertas capacidades funcionales sólo se manifiestan al superar una escala crítica.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si tanto las capacidades útiles (como razonar paso a paso) como los comportamientos riesgosos (como el engaño estratégico) pueden emerger abruptamente al escalar, ¿qué desafío plantea esto para la auditoría de seguridad previa al lanzamiento?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Pero, ¿son estas capacidades emergentes una transición de fase física real dentro de los pesos o un artefacto matemático de cómo medimos el éxito? Analicémoslo con nuestro quinto simulador interactivo.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-30" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 30 / 48 · Min 53:00 – 54:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-30" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #30 (#slide-30)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">30. Razonamiento Emergente: Chain-of-Thought y Escalamiento en Tiempo de Inferencia</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar desde la teoría de la complejidad computacional por qué Chain-of-Thought y el Test-Time Compute amplían la clase de problemas resolubles por un Transformer.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Detengámonos un minuto en por qué funciona realmente Chain-of-Thought (CoT). No es psicología: es teoría de circuitos computacionales. Cuando le pedimos a un Transformer de 80 capas que responda directamente &#x27;¿Cuánto es 748 por 932?&#x27; en el primer token, sólo tiene una pasada vertical de 80 capas para hacer toda la aritmética. Al generar tokens intermedios z_1, z_2, ..., z_K (&#x27;primero multiplico 748 por 2...&#x27;), el modelo utiliza su propia ventana de contexto y el KV-Cache como una cinta de máquina de Turing o memoria RAM externa, invirtiendo O(K * L) operaciones secuenciales antes de emitir la respuesta final.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿En qué tipo de aplicaciones empresariales vale la pena pagar 10 segundos y 2,000 tokens de razonamiento interno frente a responder en 200 milisegundos?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Resolvamos ahora el debate científico entre Wei et al. (2022) y Schaeffer et al. (2023) en el simulador interactivo de la lámina 31.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-31" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 31 / 48 · Min 54:30 – 56:30 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-31" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #31 (#slide-31)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">31. Simulador de Emergencia: ¿Transición de Fase o No-Linealidad de la Métrica?</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Reconciliar la tesis de emergencia (Wei 2022) con la tesis de métricas discontinuas (Schaeffer 2023) mediante simulación matemática de p^K.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En NeurIPS 2023, Schaeffer, Miranda y Koyejo publicaron el artículo premiado &#x27;Are Emergent Abilities of Large Language Models a Mirage?&#x27;. Su argumento matemático se visualiza en este simulador. Supongamos que la probabilidad p de acertar un solo paso o dígito sube suavemente con la escala: de 0.50 a 0.65, 0.80, 0.90 y 0.96. Si ponemos el deslizador en K = 1 paso, la exactitud sube de forma lineal y predecible. Pero ahora movamos el deslizador a una tarea que exige acertar K = 10 pasos seguidos (Exact Match = p^10): con p = 0.65, 0.65^10 es apenas 1.3% (parece que el modelo no sabe nada); en cambio al llegar a p = 0.95, 0.95^10 salta a 60%. ¿Quién tiene razón? Ambos: el aprendizaje subyacente en entropía cruzada es continuo, pero en el mundo real un programa de código o una cadena lógica de 10 pasos sólo funciona cuando los 10 pasos son correctos.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si están evaluando el progreso de un modelo propio durante el entrenamiento y la métrica Exact Match sigue en 0%, ¿qué métrica subyacente deberían monitorear para saber si el entrenamiento va por buen camino?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Hemos completado los tres bloques sobre el modelo base. Pero un modelo pre-entrenado crudo no es un asistente ni un producto: entremos al Bloque IV sobre Alineación e Ingeniería de IA.
+            </div>
+          </div>
+        </article>
+        <h2 style="color:#388bfd;font-size:20px;margin:28px 0 12px;border-bottom:1px solid #30363d;padding-bottom:8px;">IV. Post-Entrenamiento, Alineación e Ingeniería de IA (AI Engineering)</h2>
+        <article id="nota-32" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 32 / 48 · Min 56:30 – 58:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-32" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #32 (#slide-32)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">32. Del Predictor Autoregresivo al Sistema en Producción (Huyen, 2025)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Introducir el marco de Chip Huyen (2025): la brecha entre un modelo base pre-entrenado y un sistema de IA alineado en producción.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Entramos al Bloque IV, basado en &#x27;AI Engineering&#x27; de Chip Huyen (2025) y los trabajos seminales de alineación (Ouyang et al., 2022; Rafailov et al., 2023). El primer principio de este bloque es entender que un modelo base recién salido del pre-entrenamiento no es un asistente: es un simulador estadístico de documentos de internet. Si le preguntas algo, es igual de probable que te responda con cinco preguntas más porque cree que está autocompletando un examen universitario. Transformarlo en un sistema confiable requiere dos capas: el pipeline de post-entrenamiento (que veremos en una secuencia progresiva en las láminas 33, 34 y 35) y la arquitectura de ingeniería de contexto e inferencia.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué el post-entrenamiento consume menos del 1% del cómputo del pre-entrenamiento pero determina el 90% de la utilidad percibida por el usuario?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Recorramos nuestra cuarta secuencia progresiva (Slides 33 → 34 → 35) sobre las tres etapas de alineación post-entrenamiento.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-33" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 33 / 48 · Min 58:00 – 59:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-33" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #33 (#slide-33)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">33. Alineación Post-Entrenamiento (1/3): Supervised Fine-Tuning (SFT)</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la primera etapa del pipeline de alineación: el ajuste fino supervisado (SFT) sobre demostraciones de instrucciones.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En la Etapa 1 iluminada a la izquierda tomamos el modelo base pi_0 y lo entrenamos mediante pérdida autoregresiva estándar, pero calculando el gradiente únicamente sobre los tokens de la respuesta ideal y* dada una instrucción x. Como demostró el paper LIMA (&#x27;Less Is More for Alignment&#x27;, Zhou et al., 2023), la calidad y diversidad de estos ejemplos importa muchísimo más que su cantidad: unas decenas de miles de demostraciones rigurosas bastan para que el modelo cambie su modo operativo de &#x27;autocompletar documentos web&#x27; a &#x27;seguir instrucciones estructuradas&#x27;.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué el ajuste supervisado por imitación (SFT) por sí solo no basta para alinear completamente un modelo en tareas abiertas o creativas?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Porque imitar tokens positivos no le enseña al modelo a distinguir sutilmente qué errores debe evitar cuando genera sus propias muestras. Pasemos a la Etapa 2 en la lámina 34: RLHF.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-34" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 34 / 48 · Min 59:30 – 61:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-34" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #34 (#slide-34)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">34. Alineación Post-Entrenamiento (2/3): RLHF, Modelo Bradley-Terry y Penalización KL</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la formulación matemática de RLHF: el modelo de preferencias pareadas de Bradley-Terry y el rol crítico de la divergencia KL.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Al avanzar a la Etapa 2 en el centro del esquema, aprovechamos una asimetría cognitiva humana: para un experto es mucho más fácil y consistente evaluar cuál de dos respuestas generadas (y_w vs y_l) es mejor que redactar desde cero una respuesta perfecta. Con esos pares entrenamos un modelo de recompensa r_phi minimizando la pérdida de Bradley-Terry. Luego usamos aprendizaje por refuerzo (PPO) para que el generador maximice esa recompensa. Pero observen el término de resta beta por la divergencia de Kullback-Leibler respecto a pi_ref: si quitamos ese freno, el generador descubre rápidamente cómo engañar al modelo de recompensa emitiendo secuencias degeneradas que puntúan alto artificialmente (&#x27;Reward Hacking&#x27; o Ley de Goodhart).
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Cuál es el principal obstáculo de infraestructura e ingeniería al ejecutar PPO con cuatro modelos cargados simultáneamente en memoria GPU (Actor, Crítico, Referencia y Reward Model)?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Ese altísimo costo de memoria e inestabilidad de hiperparámetros motivó la Etapa 3 en la lámina 35: Direct Preference Optimization (DPO).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-35" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 35 / 48 · Min 61:00 – 62:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-35" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #35 (#slide-35)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">35. Alineación Post-Entrenamiento (3/3): DPO y Refuerzo con Recompensas Verificables</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Completar la secuencia progresiva explicando la derivación cerrada de DPO (Rafailov et al., 2023) y el auge de RLVR/GRPO en modelos razonadores.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En la Etapa 3 completamos el pipeline moderno. Rafailov et al. (2023) en Stanford observaron que el problema de optimización de RLHF con restricción KL tiene una solución analítica cerrada que relaciona biunívocamente la recompensa óptima r(x,y) con el logaritmo del cociente de probabilidades entre la política actual pi_theta y la política de referencia pi_ref. Al sustituir esa identidad directamente en la ecuación de Bradley-Terry, la constante de partición Z(x) se cancela y obtenemos la pérdida DPO: optimizamos preferencias humanas directamente sobre pares (y_w, y_l) sin entrenar jamás un Reward Model separado ni correr PPO. Y cuando la tarea tiene verificación objetiva —como compilar código o verificar una prueba matemática— algoritmos como GRPO usan el verificador determinista como señal de refuerzo directa.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Cuando ustedes como ingenieros toman un modelo ya alineado con SFT+DPO para construir una aplicación empresarial, ¿qué palanca de adaptación deben usar primero: Prompting, RAG o Fine-Tuning?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Respondamos esa pregunta con la matriz de decisión de arquitectura de Chip Huyen (2025) en la lámina 36.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-36" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 36 / 48 · Min 62:30 – 64:30 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-36" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #36 (#slide-36)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">36. Matriz de Decisión de Ingeniería: Prompting vs. RAG vs. Fine-Tuning</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Establecer el criterio riguroso de ingeniería para elegir entre Prompting, RAG y Fine-Tuning según el problema sea de conocimiento fáctico o de comportamiento/forma.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En consultoría e ingeniería de sistemas de IA, el error más costoso es hacer Fine-Tuning para intentar enseñarle hechos cambiantes de una empresa al modelo. Como sintetiza Chip Huyen (2025) en esta matriz: &#x27;Fine-tuning is for form; RAG is for facts&#x27;. Si necesitas que el sistema responda sobre contratos firmados hoy a las 9 de la mañana, respetando qué empleado tiene permiso de lectura sobre cada PDF y citando la página exacta, hornear esos textos en los pesos mediante Fine-Tuning es un antipatrón: es lento, alucina números y rompe los controles de acceso (ACL). Para hechos dinámicos usamos RAG; para adaptar el comportamiento, el formato estructurado o destilar un modelo grande en uno pequeño y rápido usamos Fine-Tuning.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿En qué escenario real de producción tiene sentido combinar simultáneamente RAG + Fine-Tuning (LoRA) en el mismo sistema?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Analicemos en detalle cada uno de estos cuatro pilares de ingeniería: ICL y salidas estructuradas (Slide 37), RAG híbrido (Slide 38), Agentes ReAct (Slide 39) y PEFT/LoRA interactivo (Slide 40).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-37" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 37 / 48 · Min 64:30 – 66:00 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-37" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #37 (#slide-37)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">37. Ingeniería de Contexto: Induction Heads y Decodificación Restringida por Gramática</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar el mecanismo mecanicista de las Induction Heads, el fenómeno &#x27;Lost in the Middle&#x27; y la decodificación restringida por autómatas (Structured Outputs).</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> A nivel de ingeniería de contexto, destacan dos avances fundamentales. Primero, la interpretabilidad mecanicista (Olsson et al., 2022) demostró que el aprendizaje en contexto emerge cuando pares de cabezas de atención en capas sucesivas forman &#x27;Induction Heads&#x27; capaces de copiar transformaciones abstractas vistas unos tokens atrás; sin embargo, Liu et al. (2023) probaron que la atención sufre una curva en U (&#x27;Lost in the Middle&#x27;), atendiendo mucho mejor al principio y al final del prompt que a la mitad. Segundo, cuando conectamos el modelo a código en producción, usamos Decodificación Restringida (Constrained Decoding): un autómata de estados finitos derivado del esquema JSON enmascara con menos infinito los logits inválidos en cada paso, haciendo matemáticamente imposible un error de sintaxis.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué la decodificación restringida por gramática garantiza un 100% de validez sintáctica del JSON pero no garantiza la validez semántica de los valores dentro del JSON?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Para asegurar la validez semántica y fáctica de esos valores necesitamos conectar el modelo a fuentes de verdad externas mediante RAG híbrido en la lámina 38.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-38" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 38 / 48 · Min 66:00 – 68:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-38" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #38 (#slide-38)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">38. Arquitectura RAG de Grado Producción: Búsqueda Híbrida y Cross-Encoder Reranking</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Diseccionar una arquitectura RAG de producción real: por qué la búsqueda vectorial ingenua falla y cómo se combina con BM25, RRF y un Cross-Encoder Reranker.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Observen el diagrama de arquitectura de un sistema RAG de producción (Lewis et al., 2020; Huyen, 2025). Un RAG ingenuo que sólo corta PDFs cada 500 tokens y busca por similitud coseno fracasa en producción porque los vectores densos diluyen identificadores exactos (números de serie, artículos de ley, nombres de funciones). La arquitectura estándar de la industria ejecuta en paralelo una búsqueda densa HNSW (Bi-Encoder) y una búsqueda léxica dispersa (BM25), fusiona ambas listas con Reciprocal Rank Fusion (RRF), y pasa los 50 mejores candidatos por un modelo Cross-Encoder (un Encoder bidireccional tipo BERT que calcula atención cruzada completa entre la pregunta y cada fragmento) para inyectar sólo los 5 pasajes de mayor relevancia en el prompt del generador.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué no usamos directamente el Cross-Encoder sobre los 10 millones de documentos de la base de datos en lugar de usar primero el Bi-Encoder + BM25?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Cuando en lugar de una sola consulta estática el modelo decide autónomamente qué buscar, qué herramienta invocar y cómo iterar, pasamos de RAG estático a Sistemas Agénticos en la lámina 39.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-39" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 39 / 48 · Min 68:00 – 69:30 (1.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-39" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #39 (#slide-39)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">39. Sistemas Agénticos: Ciclo ReAct, Uso de Herramientas y Error Compuesto</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la arquitectura ReAct (Yao et al., 2023) y el desafío matemático del error compuesto en agentes autónomos.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> El paradigma ReAct (Reason + Act) transforma al LLM en el controlador central de un bucle cibernético: el modelo emite un pensamiento (&#x27;Necesito consultar el saldo del cliente X&#x27;), invoca una herramienta con argumentos tipados, recibe la observación del entorno en su contexto y replanifica. Sin embargo, observen la ecuación de la izquierda: es la misma ley exponencial p^T que vimos en emergencia, pero ahora jugando en nuestra contra. Si cada paso de decisión de un agente tiene un 90% de fiabilidad, tras una cadena autónoma de 10 pasos sin verificación la probabilidad de éxito global cae al 34.8%. Por eso la ingeniería de agentes exitosa se basa en entornos con retroalimentación verificable (como ejecutar tests unitarios tras editar código) que permiten al agente detectar y corregir sus propios errores.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Qué diferencia de seguridad existe entre darle a un agente acceso a herramientas de &#x27;sólo lectura&#x27; (SELECT / búsqueda) frente a herramientas con efectos secundarios de &#x27;escritura&#x27; (DELETE / transferencias / envío de correos)?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Cuando necesitamos especializar los pesos del modelo para estas tareas sin pagar el costo de entrenar todos sus parámetros, recurrimos a PEFT y LoRA en nuestro sexto simulador interactivo (Slide 40).
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-40" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 40 / 48 · Min 69:30 – 71:30 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-40" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #40 (#slide-40)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">40. Adaptación Eficiente en Parámetros: Simulador Interactivo LoRA y QLoRA</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar la descomposición de bajo rango LoRA (Hu et al., 2022) y la cuantización NormalFloat de 4 bits en QLoRA (Dettmers et al., 2023) mediante simulación interactiva.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Interactuemos con la calculadora de LoRA (Low-Rank Adaptation). Hacer Fine-Tuning completo de un modelo de 70B en precisión de 16 bits exige más de 1,100 GB de VRAM porque por cada peso debemos almacenar el parámetro, su gradiente y dos estados de momento de Adam en 32 bits. Hu et al. (2022) se basaron en que el cambio de pesos Delta_W durante la adaptación tiene una &#x27;dimensión intrínseca&#x27; muy baja: congelamos la matriz original W_0 de tamaño d por d y entrenamos únicamente dos matrices delgadas A (r por d) y B (d por r) con rango r &lt;&lt; d. Con d = 4096 y r = 16 en el simulador, pasamos de 16.78 millones de parámetros por matriz a sólo 131 mil (una reducción del 99.22%). Y si además cuantizamos el modelo base congelado W_0 a 4 bits usando NormalFloat4 (QLoRA), afinamos un modelo de 70B en una sola GPU de 48 GB sin perder rendimiento ni añadir un solo milisegundo de latencia en inferencia.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué la matriz B de LoRA se inicializa exactamente en ceros y la matriz A con ruido gaussiano al comenzar el entrenamiento?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Porque así al inicio del paso cero el producto B*A es exactamente la matriz nula y el modelo comienza comportándose de forma idéntica al modelo base pre-entrenado sin perturbarlo. Veamos ahora en la lámina 41 la ingeniería de inferencia en producción.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-41" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 41 / 48 · Min 71:30 – 74:00 (2.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-41" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #41 (#slide-41)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">41. Ingeniería de Inferencia: Fases Prefill vs. Decode, KV-Cache y FlashAttention</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Explicar con precisión de arquitectura de computadores la bifurcación entre Prefill (Compute-Bound) y Decode (Memory-Bandwidth Bound), la ecuación del KV-Cache, FlashAttention y PagedAttention.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Todo arquitecto de IA debe dominar el diagrama Roofline de esta lámina. Servir un LLM en producción consta de dos fases con física de hardware opuesta. La Fase 1 (&#x27;Prefill&#x27;) procesa los miles de tokens de tu prompt simultáneamente: es una operación matriz-matriz de alta intensidad aritmética limitada por los FLOPs de la GPU (Compute-Bound). Pero la Fase 2 (&#x27;Decode&#x27;) genera la respuesta palabra por palabra de forma secuencial: para producir cada nuevo token, los núcleos de cómputo deben esperar a que la totalidad de los pesos del modelo (ej. 140 GB en un modelo de 70B en FP16) y todo el KV-Cache viajen por el bus de memoria desde la HBM hasta la SRAM (Memory-Bandwidth Bound). De ahí nacen las cuatro grandes innovaciones de sistemas: FlashAttention (fusionar el kernel de atención en SRAM), GQA (reducir cabezas K y V), PagedAttention en vLLM (eliminar la fragmentación de memoria paginando el KV-Cache como un sistema operativo) y Speculative Decoding (usar un modelo borrador pequeño para proponer varios tokens y verificarlos en paralelo en una sola lectura de pesos).
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué Speculative Decoding garantiza matemáticamente que la distribución de salida sea 100% idéntica a la del modelo grande original sin pérdida alguna de calidad?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Con el sistema construido y optimizado, entremos a nuestro último bloque (Bloque V): Evaluación, Alucinaciones, Seguridad y Gobernanza.
+            </div>
+          </div>
+        </article>
+        <h2 style="color:#388bfd;font-size:20px;margin:28px 0 12px;border-bottom:1px solid #30363d;padding-bottom:8px;">V. Evaluación, Seguridad, Riesgos y Frontera Sociotécnica</h2>
+        <article id="nota-42" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 42 / 48 · Min 74:00 – 76:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-42" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #42 (#slide-42)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">42. El Crisis de la Evaluación: De la Perplejidad a la Contaminación de Benchmarks</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Analizar las métricas intrínsecas (Perplejidad/BPB) frente a la saturación y contaminación de los benchmarks estáticos bajo la Ley de Goodhart.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Entramos al Bloque V. En ingeniería de IA hay una máxima: &#x27;No puedes mejorar en producción lo que no sabes medir&#x27;. En pre-entrenamiento medimos Perplejidad (el exponencial de la pérdida de entropía cruzada): una perplejidad de 10 significa que el modelo está tan indeciso en promedio como si eligiera uniformemente entre 10 palabras posibles en cada paso. Pero al evaluar capacidades downstream mediante benchmarks públicos como MMLU o GSM8K, enfrentamos una crisis metodológica severa: la contaminación del conjunto de prueba en los billones de tokens de internet y la Ley de Goodhart. Cuando se cambian los nombres y números de los problemas de GSM8K (estudio GSM-Symbolic), muchos modelos pierden decenas de puntos porcentuales porque habían memorizado patrones superficiales.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Si no podemos confiar ciegamente en las tablas de clasificación públicas (leaderboards), ¿cómo debe construir una organización su propio arnés de evaluación?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Veamos en la lámina 43 las metodologías modernas de evaluación: evaluadores basados en verificación funcional, arenas Elo y la Tríada RAG con LLM-as-a-Judge.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-43" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 43 / 48 · Min 76:00 – 78:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-43" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #43 (#slide-43)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">43. Pipelines Modernos de Evaluación: LLM-as-a-Judge, Sesgos y la Tríada RAG</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Presentar los cuatro pilares de un pipeline de evaluación en producción: pruebas funcionales Pass@k, Elo pareado, mitigación de sesgos en LLM-as-a-Judge y la Tríada RAG.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En ingeniería de producción moderna reemplazamos las métricas clásicas de solapamiento de palabras como BLEU o ROUGE —que asignan mala nota a una paráfrasis perfecta y buena nota a una contradicción con las mismas palabras— por esta arquitectura de cuatro cuadrantes. Cuando hay respuesta verificable, usamos pruebas funcionales ejecutables (Pass@k). Para salidas abiertas usamos LLM-as-a-Judge con rúbricas binarias o de 1 a 5, pero corrigiendo obligatoriamente sus tres sesgos: intercambiamos la posición de las respuestas A y B para anular el sesgo de posición y penalizamos la longitud innecesaria para neutralizar el sesgo de verbosidad. Y en sistemas RAG aplicamos la Tríada diagnóstica para saber si un fallo proviene del índice vectorial o de alucinación del generador.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué en un juez automatizado (LLM-as-a-Judge) las rúbricas binarias (Cumple / No cumple por criterio atómico) tienen mucha mayor correlación con expertos humanos que pedirle una nota subjetiva de 1 a 100?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Detengámonos en el segundo vértice de la Tríada RAG (&#x27;Groundedness&#x27;): ¿por qué alucinan exactamente los Modelos Fundacionales y cómo afecta el RLHF su calibración?
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-44" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 44 / 48 · Min 78:00 – 80:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-44" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #44 (#slide-44)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">44. Anatomía de la Alucinación y Degradación de Calibración Post-Alineación</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Distinguir entre alucinación intrínseca y extrínseca, explicar su origen estadístico en la cola larga y analizar la pérdida de calibración inducida por el post-entrenamiento.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> A menudo se dice que &#x27;la alucinación es una característica inherente del muestreo&#x27;. Seamos precisos: clasificamos las alucinaciones en Intrínsecas (cuando el modelo contradice el documento que tiene enfrente en el prompt) y Extrínsecas (cuando fabrica citas, jurisprudencia o librerías de software inexistentes). Además, el reporte técnico de GPT-4 documentó una paradoja fundamental: el modelo base pre-entrenado está notablemente bien calibrado (su probabilidad predicha coincide con su frecuencia real de acierto), pero tras aplicar RLHF la calibración se degrada severamente. ¿Por qué? Porque los evaluadores humanos premian el tono seguro y fluido, entrenando involuntariamente al modelo a expresar certezas absolutas incluso cuando su incertidumbre epistémica es alta.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Cómo podemos entrenar a un modelo en la fase post-entrenamiento para que prefiera abstenerse (&#x27;No cuento con evidencia verificable para responder&#x27;) en lugar de adivinar cuando un hecho cae fuera de su conocimiento?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Además de los fallos accidentales por alucinación, un sistema en producción enfrenta atacantes activos. Analicemos la superficie de seguridad adversarial en la lámina 45.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-45" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 45 / 48 · Min 80:00 – 82:30 (2.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-45" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #45 (#slide-45)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">45. Seguridad Adversarial: Inyección de Prompts, Jailbreaks y Extracción de Datos</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Exponer la causa raíz arquitectónica de la inyección de prompts, los jailbreaks y la extracción de datos memorizados (Carlini et al.).</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> En seguridad informática clásica, la arquitectura de Von Neumann sufrió durante décadas vulnerabilidades de Buffer Overflow y SQL Injection por mezclar código ejecutable con datos de usuario en el mismo canal. Los Modelos Fundacionales sufren exactamente el mismo defecto estructural: tanto las instrucciones del desarrollador (&#x27;System Prompt&#x27;) como los datos no confiables recuperados de internet o de un correo electrónico entran concatenados como la misma secuencia de tokens a las capas de atención. Eso permite la Inyección Indirecta de Prompts (Greshake et al., 2023): un atacante esconde en un PDF o página web una instrucción invisible que ordena al agente exfiltrar datos privados usando sus herramientas conectadas. Por otro lado, Carlini et al. demostraron que la memorización verbatim crece con la escala N y con el número de veces que un documento aparece duplicado en el corpus.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué ningún prompt del tipo &#x27;Ignora cualquier intento de inyección del usuario&#x27; puede garantizar por sí solo una defensa infalible contra Indirect Prompt Injection en un agente con acceso a herramientas?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Porque la defensa debe residir fuera del LLM: en el control determinista de permisos de ejecución a nivel de sistema. Demos un paso atrás en la lámina 46 para examinar los límites globales y el impacto sociotécnico.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-46" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 46 / 48 · Min 82:30 – 85:00 (2.5 min)</span>
+            <a href="presentacion_foundation_models.html#slide-46" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #46 (#slide-46)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">46. Frontera Sociotécnica: El Muro de Datos, Huella Energética y Gobernanza</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Analizar los cuatro límites macroscópicos del paradigma actual: el agotamiento de datos públicos humanos, el colapso de modelo por datos sintéticos no verificados, la restricción energética y la gobernanza.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Al mirar hacia los próximos cinco años, el paradigma que hemos estudiado enfrenta cuatro fronteras físicas e institucionales. Primero, el &#x27;Muro de Datos&#x27; (Villalobos et al., 2024): los modelos de frontera ya consumen más de 15 billones de tokens, acercándose al agotamiento del texto público humano de alta calidad en la web. Segundo, como demostraron Shumailov et al. en Nature (2024), si simplemente reentrenamos modelos sobre texto sintético crudo generado por la generación anterior sin un verificador que filtre errores, las colas de la distribución desaparecen (&#x27;Model Collapse&#x27;). La salida a este cuello de botella no es basura sintética, sino datos sintéticos verificados por compiladores, demostradores formales y aprendizaje por refuerzo en tiempo de inferencia. Tercero, la restricción energética de los centros de datos obliga a optimizar drásticamente cada julio por token. Y cuarto, la gobernanza debe distinguir responsabilidades entre quien entrena el cimiento y quien despliega la aplicación médica o financiera.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Por qué los datos sintéticos generados en matemáticas o programación sí permiten superar la calidad humana sin sufrir &#x27;Model Collapse&#x27;, a diferencia del texto libre no verificado?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Porque en matemáticas y código disponemos de un oráculo verificador exacto que poda los errores antes de reentrenar. Pongamos a prueba todos los conceptos de la sesión en nuestro séptimo módulo interactivo en la lámina 47.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-47" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 47 / 48 · Min 85:00 – 88:00 (3 min)</span>
+            <a href="presentacion_foundation_models.html#slide-47" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #47 (#slide-47)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">47. Verificación Conceptual Interactiva de Nivel Posgrado</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Realizar una evaluación formativa activa con la audiencia sobre los cinco bloques de la clase magistral.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Antes de nuestra lámina de cierre, resolvamos juntos en pantalla estas cinco preguntas de síntesis que recorren nuestros cinco bloques: desde la varianza del producto escalar en el Transformer y las leyes de Chinchilla hasta DPO, el cuello de botella de memoria en la fase Decode y la distinción entre RAG y Fine-Tuning. Invito a la audiencia a votar a mano alzada antes de hacer clic en cada opción.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>¿Cuál de las cinco preguntas les resultó más contraintuitiva respecto a las ideas preconcebidas con las que llegaron hoy al aula?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Cerremos nuestra sesión en la lámina 48 sintetizando las ecuaciones y principios de diseño que todo investigador e ingeniero de IA debe llevar consigo.
+            </div>
+          </div>
+        </article>
+        
+        <article id="nota-48" style="background:#161b22;border:1px solid #30363d;border-radius:6px;padding:18px 22px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#388bfd;text-transform:uppercase;">NOTA DEL ORADOR 48 / 48 · Min 88:00 – 90:00 (2 min)</span>
+            <a href="presentacion_foundation_models.html#slide-48" style="font-size:12px;font-weight:600;color:#3fb950;text-decoration:none;border:1px solid rgba(63,185,80,0.4);padding:4px 10px;border-radius:4px;">↗ Ir a Diapositiva #48 (#slide-48)</a>
+          </div>
+          <h3 style="margin:0 0 8px;font-size:18px;color:#e6edf3;">48. Síntesis Magistral: Cinco Ecuaciones y Cinco Principios de Ingeniería</h3>
+          <p style="margin:0 0 10px;font-size:13px;color:#8b949e;"><strong>Objetivo pedagógico:</strong> Consolidar las cinco ecuaciones rectoras y las referencias primarias de la cátedra, abriendo el turno de preguntas y discusión académica.</p>
+          <div style="background:#0d1117;border-left:3px solid #388bfd;padding:12px 14px;border-radius:4px;margin-bottom:10px;font-size:14px;line-height:1.65;color:#c9d1d9;">
+            <strong style="color:#e6edf3;">Guion del profesor:</strong> Llegamos al cierre de nuestra sesión. En la consola superior tienen las cinco ecuaciones que resumen todo nuestro recorrido: (1) el enrutamiento contextual diferenciable de la atención escalada; (2) la factorización autoregresiva exacta que convierte la predicción del siguiente token en un compresor universal; (3) la descomposición aditiva del riesgo de Chinchilla bajo restricción de FLOPs; (4) la equivalencia dual entre recompensa y razón de verosimilitudes regularizada por KL que fundamenta RLHF y DPO; y (5) la ecuación física de memoria del KV-Cache que gobierna la latencia en producción. Recuerden siempre nuestra tesis central: los Modelos Fundacionales no son oráculos mágicos, sino cimientos estadísticos cuya confiabilidad final depende de la ingeniería rigurosa que construimos a su alrededor. Muchas gracias; abrimos el espacio para preguntas y debate.
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+            <div style="background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#d29922;">Pregunta a la audiencia:</strong><br/>Mirando estas cinco ecuaciones en conjunto: ¿cuál creen que será reemplazada o generalizada primero en los próximos cinco años de investigación?
+            </div>
+            <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.3);border-radius:4px;padding:10px;">
+              <strong style="color:#3fb950;">Conexión con la siguiente lámina:</strong><br/>Fin de la presentación. Todas las notas detalladas y preguntas socráticas están enlazadas 1 a 1 en notas_del_orador.md y notas_del_orador.html.
+            </div>
+          </div>
+        </article>
+        
+  </div>
+</body>
+</html>
