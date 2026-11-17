@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Juegos del Hambre FM · Simulador de Estrategias y Arena Pixel Art</title>
+  <style>
+    :root {
+      --bg: #080A10;
+      --panel: #111521;
+      --panel-2: #171D2E;
+      --border: #252E46;
+      --teal: #14B8A6;
+      --green: #10B981;
+      --amber: #F59E0B;
+      --indigo: #818CF8;
+      --rose: #F43F5E;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --mono: 'JetBrains Mono', Consolas, monospace;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 16px 22px 36px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 16px;
+    }
+    .brand-tag { font-family: var(--mono); font-size: 11px; color: var(--amber); font-weight: 700; letter-spacing: 1.1px; }
+    h1 { font-size: 20px; font-weight: 800; margin-top: 2px; }
+    .budget-strip {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      background: #0B0E17;
+      border: 1px solid var(--border);
+      padding: 9px 16px;
+      border-radius: 10px;
+    }
+    .metric-box { text-align: right; }
+    .metric-box .lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+    .metric-box .val { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--text); }
+    .status-pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+    .status-ok { background: #0D2B24; color: var(--green); border: 1px solid var(--green); }
+    .status-bad { background: #2D131D; color: var(--rose); border: 1px solid var(--rose); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 470px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 1180px) { .layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .card-tag { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; color: var(--teal); }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 6px 0;
+      font-size: 13px;
+      color: #CBD5E1;
+    }
+    select, input[type="number"], input[type="text"] {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 9px;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-box {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+    .stat-box h4 {
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .badge-score {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: #0F172A;
+      color: var(--teal);
+      border: 1px solid var(--border);
+    }
+    .btn {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 13px;
+      border-radius: 8px;
+      transition: 0.15s;
+    }
+    .btn:hover { border-color: var(--teal); }
+    .btn-primary { background: var(--teal); color: #041311; border-color: var(--teal); }
+    .btn-amber { background: var(--amber); color: #1A1002; border-color: var(--amber); }
+
+    .arena-top {
+      display: grid;
+      grid-template-columns: 510px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 1400px) { .arena-top { grid-template-columns: 1fr; } }
+
+    .canvas-wrap {
+      background: #07090E;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #pixelCanvas {
+      width: 480px;
+      height: 480px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 1px solid #1E293B;
+      border-radius: 6px;
+      background: #14261C;
+    }
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .log-box {
+      background: #0A0D14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      height: 195px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .log-line { margin-bottom: 4px; border-bottom: 1px dashed #1A2234; padding-bottom: 3px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 11.5px;
+    }
+    th, td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--muted); font-size: 10.5px; }
+    .hp-bar {
+      width: 58px;
+      height: 7px;
+      background: #1E293B;
+      border-radius: 4px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    .hp-fill { height: 100%; background: var(--green); }
+    .dead-row { opacity: 0.42; text-decoration: line-through; }
+    pre.code-out {
+      background: #080B11;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      max-height: 180px;
+      overflow: auto;
+      color: #A7F3D0;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand-tag">OPTION 2 · LOS JUEGOS DEL HAMBRE DE MODELOS FUNDACIONALES</div>
+    <h1>Arena Multi-Modelo (0.5B / 1.5B / 3B) · Presupuesto de Adaptación y Visualizador Pixel Art</h1>
+  </div>
+  <div class="budget-strip">
+    <div class="metric-box">
+      <div class="lbl">MODELO ELEGIDO</div>
+      <div class="val" id="hdrModel">Qwen2.5-1.5B</div>
+    </div>
+    <div class="metric-box">
+      <div class="lbl">CÓMPUTO (MÁX 1000 TFLOPs)</div>
+      <div class="val" id="hdrFlops">0.0 TFLOPs</div>
+    </div>
+    <div class="metric-box">
+      <div class="lbl">CRÉDITOS ENTRENAMIENTO</div>
+      <div class="val" id="hdrCredits">0.0 / 100</div>
+    </div>
+    <div class="metric-box">
+      <div class="lbl">RADAR MEDIO</div>
+      <div class="val" id="hdrRadar" style="color:var(--teal)">0 / 100</div>
+    </div>
+    <div id="hdrStatus" class="status-pill status-ok">✅ DENTRO DE PRESUPUESTO</div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN DEL TRIBUTO -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-tag">1. IDENTIDAD Y MODELO BASE (ESCALA N)</span>
+      </div>
+      <div class="row">
+        <label>Nombre del Tributo / Distrito:</label>
+        <input type="text" id="inpEquipo" value="Distrito_01" oninput="recalcular()" />
+      </div>
+      <div class="row">
+        <label>Modelo Fundacional Base:</label>
+        <select id="selModelo" onchange="recalcular()">
+          <option value="Qwen/Qwen2.5-0.5B-Instruct">Qwen2.5-0.5B-Instruct (0.49B · Permite Full-FT/LoRA)</option>
+          <option value="Qwen/Qwen2.5-1.5B-Instruct" selected>Qwen2.5-1.5B-Instruct (1.54B · Equilibrado LoRA/ICL)</option>
+          <option value="Qwen/Qwen2.5-3B-Instruct">Qwen2.5-3B-Instruct (3.09B · Rey de ICL + CoT)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>Doctrina Táctica Turno 1:</label>
+        <select id="selDoctrina" onchange="recalcular()">
+          <option value="CORNUCOPIA">⚔️ CORNUCOPIA (Disputar arma +18 ATQ en el centro)</option>
+          <option value="BOSQUE" selected>🌲 BOSQUE (Huir a los bordes y asegurar supervivencia)</option>
+          <option value="CAZADOR">🏹 CAZADOR (Acechar tributos heridos)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-tag">2. TUBERÍA DE CURACIÓN DE DATOS (CALIDAD vs CANTIDAD D)</span>
+      </div>
+      <div class="row">
+        <label>Filtrar ruido y trampas (bayas venenosas / errores):</label>
+        <input type="checkbox" id="chkRuido" checked onchange="recalcular()" />
+      </div>
+      <div class="row">
+        <label>Deduplicación MinHash (3-gramas):</label>
+        <input type="checkbox" id="chkDedup" checked onchange="recalcular()" />
+      </div>
+      <div class="row">
+        <label>Umbral Jaccard MinHash (0.50 - 0.95):</label>
+        <input type="number" id="inpUmbral" value="0.82" min="0.50" max="0.95" step="0.02" onchange="recalcular()" />
+      </div>
+      <div class="row">
+        <label>Fracción de datos limpios D (0.20 - 1.00):</label>
+        <input type="number" id="inpFraccion" value="0.85" min="0.20" max="1.00" step="0.05" onchange="recalcular()" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-tag">3. ADAPTACIÓN POR HABILIDAD (4 STATS)</span>
+        <span style="font-size:11px;color:var(--muted)">Sin micro-hiperparámetros</span>
+      </div>
+      <div class="stat-grid">
+        <!-- COMER -->
+        <div class="stat-box">
+          <h4><span>🫐 Comer</span><span class="badge-score" id="sc_comer">80</span></h4>
+          <div class="row">
+            <span>Vía:</span>
+            <select id="via_comer" onchange="recalcular()">
+              <option value="ICL">ICL (Prompt)</option>
+              <option value="LORA_LIGERO" selected>LoRA Ligero</option>
+              <option value="LORA_PROFUNDO">LoRA Profundo</option>
+              <option value="FULL_FT">Full Fine-Tuning</option>
+            </select>
+          </div>
+          <div class="row">
+            <span>Ejemplos k (ICL):</span>
+            <input type="number" id="k_comer" value="4" min="0" max="10" style="width:58px" onchange="recalcular()" />
+          </div>
+          <div class="row">
+            <span>Usar CoT:</span>
+            <input type="checkbox" id="cot_comer" onchange="recalcular()" />
+          </div>
+        </div>
+
+        <!-- GUERRA -->
+        <div class="stat-box">
+          <h4><span>⚔️ Guerra</span><span class="badge-score" id="sc_guerra">85</span></h4>
+          <div class="row">
+            <span>Vía:</span>
+            <select id="via_guerra" onchange="recalcular()">
+              <option value="ICL">ICL (Prompt)</option>
+              <option value="LORA_LIGERO">LoRA Ligero</option>
+              <option value="LORA_PROFUNDO" selected>LoRA Profundo</option>
+              <option value="FULL_FT">Full Fine-Tuning</option>
+            </select>
+          </div>
+          <div class="row">
+            <span>Ejemplos k (ICL):</span>
+            <input type="number" id="k_guerra" value="4" min="0" max="10" style="width:58px" onchange="recalcular()" />
+          </div>
+          <div class="row">
+            <span>Usar CoT:</span>
+            <input type="checkbox" id="cot_guerra" onchange="recalcular()" />
+          </div>
+        </div>
+
+        <!-- CORRER -->
+        <div class="stat-box">
+          <h4><span>🏃 Correr</span><span class="badge-score" id="sc_correr">82</span></h4>
+          <div class="row">
+            <span>Vía:</span>
+            <select id="via_correr" onchange="recalcular()">
+              <option value="ICL" selected>ICL (Prompt)</option>
+              <option value="LORA_LIGERO">LoRA Ligero</option>
+              <option value="LORA_PROFUNDO">LoRA Profundo</option>
+              <option value="FULL_FT">Full Fine-Tuning</option>
+            </select>
+          </div>
+          <div class="row">
+            <span>Ejemplos k (ICL):</span>
+            <input type="number" id="k_correr" value="4" min="0" max="10" style="width:58px" onchange="recalcular()" />
+          </div>
+          <div class="row">
+            <span>Usar CoT:</span>
+            <input type="checkbox" id="cot_correr" checked onchange="recalcular()" />
+          </div>
+        </div>
+
+        <!-- SIGILO -->
+        <div class="stat-box">
+          <h4><span>🕶️ Sigilo</span><span class="badge-score" id="sc_sigilo">75</span></h4>
+          <div class="row">
+            <span>Vía:</span>
+            <select id="via_sigilo" onchange="recalcular()">
+              <option value="ICL" selected>ICL (Prompt)</option>
+              <option value="LORA_LIGERO">LoRA Ligero</option>
+              <option value="LORA_PROFUNDO">LoRA Profundo</option>
+              <option value="FULL_FT">Full Fine-Tuning</option>
+            </select>
+          </div>
+          <div class="row">
+            <span>Ejemplos k (ICL):</span>
+            <input type="number" id="k_sigilo" value="3" min="0" max="10" style="width:58px" onchange="recalcular()" />
+          </div>
+          <div class="row">
+            <span>Usar CoT:</span>
+            <input type="checkbox" id="cot_sigilo" onchange="recalcular()" />
+          </div>
+        </div>
+      </div>
+      <div id="ruleWarning" style="margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--rose);display:none;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-tag">4. RADAR DE HABILIDADES Y EXPORTACIÓN A CONFIG.PY</span>
+        <button class="btn" onclick="copiarConfig()">📋 Copiar config.py</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <canvas id="radarCanvas" width="180" height="180" style="background:#0B0E17;border:1px solid var(--border);border-radius:8px;"></canvas>
+        <div style="flex:1;font-size:12px;color:var(--muted);line-height:1.5;">
+          <div>• <b>Simular vs Bots:</b> 0 créditos. Prueba tu tributo antes de entrenar en Colab.</div>
+          <div>• <b>Bono Eficiencia:</b> <span id="lblBono" style="color:var(--green);font-weight:700">+0.0</span> estamina/hambre inicial por créditos ahorrados.</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="iniciarSimulacion(false)">🧪 Simular vs 5 Bots (Gratis)</button>
+            <button class="btn btn-amber" onclick="iniciarSimulacion(true)">🏹 Arena Final PvP (12 Distritos)</button>
+          </div>
+        </div>
+      </div>
+      <pre class="code-out" id="codeOut"></pre>
+    </div>
+  </div>
+
+  <!-- COLUMNA DERECHA: ARENA PIXEL ART + REPLAY + TABLA EN VIVO -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-tag" id="arenaModeTag">ARENA PIXEL ART 12×12 · SIMULACIÓN LOCAL</span>
+        <span style="font-family:var(--mono);font-size:12px;" id="lblTurnoInfo">Turno 1 / 25 · Zona Segura: Radio 6</span>
+      </div>
+
+      <div class="arena-top">
+        <!-- LIENZO PIXEL ART -->
+        <div class="canvas-wrap">
+          <canvas id="pixelCanvas" width="192" height="192"></canvas>
+          <div class="controls-bar">
+            <div style="display:flex;gap:6px;">
+              <button class="btn" id="btnPlay" onclick="togglePlay()">⏸ Pausa</button>
+              <button class="btn" onclick="irTurno(0)">⏮ T1</button>
+              <button class="btn" onclick="irTurno(turnoActual - 1)">◀</button>
+              <button class="btn" onclick="irTurno(turnoActual + 1)">▶</button>
+            </div>
+            <input type="range" id="sliderTurno" min="0" max="24" value="0" style="flex:1" oninput="irTurno(parseInt(this.value))" />
+            <select id="selSpeed" onchange="cambiarVelocidad()">
+              <option value="900">1x (Normal)</option>
+              <option value="450">2x (Rápido)</option>
+              <option value="1600">0.5x (Análisis)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap;">
+            <span>🟨 Cornucopia (Centro)</span>
+            <span>🟦 Bayas Seguras</span>
+            <span>🟥 Veneno/Trampa</span>
+            <span>🟪 Niebla Capitolio</span>
+            <span>🐺 Bestias (cada 5T)</span>
+          </div>
+        </div>
+
+        <!-- TABLA DE TRIBUTOS Y BITÁCORA -->
+        <div>
+          <div class="card-title">Estado de los Tributos en Tiempo Real</div>
+          <div style="max-height:265px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tributo</th>
+                  <th>Modelo</th>
+                  <th>HP</th>
+                  <th>Hambre</th>
+                  <th>Radar (C/G/Co/S)</th>
+                  <th>Kills</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyTributos"></tbody>
+            </table>
+          </div>
+
+          <div class="card-title">Bitácora del Capitolio (Eventos del Turno)</div>
+          <div class="log-box" id="logEventos"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MODELOS = {
+  "Qwen/Qwen2.5-0.5B-Instruct": { corto: "Qwen2.5-0.5B", n: 0.494e9, bono_icl: 0, bono_cot: 4 },
+  "Qwen/Qwen2.5-1.5B-Instruct": { corto: "Qwen2.5-1.5B", n: 1.540e9, bono_icl: 12, bono_cot: 16 },
+  "Qwen/Qwen2.5-3B-Instruct":   { corto: "Qwen2.5-3B",   n: 3.090e9, bono_icl: 22, bono_cot: 26 }
+};
+const MAX_FLOPS = 1.0e15;
+
+let estadoActual = null;
+let partidaTurnos = [];
+let turnoActual = 0;
+let timerPlay = null;
+let animTick = 0;
+
+function calcularTodo() {
+  const equipo = document.getElementById("inpEquipo").value.trim() || "Distrito_01";
+  const modeloId = document.getElementById("selModelo").value;
+  const doctrina = document.getElementById("selDoctrina").value;
+  const filtrarRuido = document.getElementById("chkRuido").checked;
+  const dedup = document.getElementById("chkDedup").checked;
+  const umbral = parseFloat(document.getElementById("inpUmbral").value) || 0.82;
+  const fraccion = parseFloat(document.getElementById("inpFraccion").value) || 0.85;
+
+  const infoM = MODELOS[modeloId];
+  const nDatosBase = Math.max(8, Math.round((filtrarRuido ? 46 : 62) * (dedup ? (umbral < 0.65 ? 0.55 : 1.0) : 1.35) * fraccion));
+
+  const statsKeys = ["comer", "guerra", "correr", "sigilo"];
+  const statsCfg = {};
+  const statsScores = {};
+  let flopsTotales = 0;
+  let creditosTotales = 0;
+  const errores = [];
+
+  const penRuido = filtrarRuido ? 0 : 24;
+  const penDedup = dedup ? 0 : 9;
+  const penUmbral = umbral < 0.65 ? 18 : (umbral > 0.93 ? 6 : 0);
+  const bonoDatos = Math.min(12, Math.floor(nDatosBase * 0.28));
+
+  for (const key of statsKeys) {
+    const via = document.getElementById(`via_${key}`).value;
+    const k = parseInt(document.getElementById(`k_${key}`).value) || 0;
+    const cot = document.getElementById(`cot_${key}`).checked;
+    statsCfg[key] = { via, k, cot };
+
+    if (via === "FULL_FT" && modeloId !== "Qwen/Qwen2.5-0.5B-Instruct") {
+      errores.push(`FULL_FT en '${key.toUpperCase()}' solo está permitido en Qwen2.5-0.5B (evita OOM en GPU L4).`);
+    }
+    if (via === "LORA_PROFUNDO" && modeloId === "Qwen/Qwen2.5-3B-Instruct") {
+      errores.push(`LORA_PROFUNDO en '${key.toUpperCase()}' excede el perfil seguro en el modelo 3B.`);
+    }
+
+    let flopsStat = 0;
+    let score = 50;
+    if (via === "ICL") {
+      const tokPrompt = 60 + k * (110 + (cot ? 55 : 0));
+      const tokOut = cot ? 95 : 24;
+      flopsStat = 2.0 * infoM.n * 25 * (tokPrompt + tokOut) * 1.8;
+      let base = 42 + infoM.bono_icl + Math.min(18, k * 4);
+      if (cot) base += (key === "correr" || key === "sigilo") ? infoM.bono_cot : Math.floor(infoM.bono_cot / 2);
+      else if (key === "correr") base -= 14;
+      score = base - Math.floor(penRuido / 2) - penUmbral;
+    } else if (via === "LORA_LIGERO") {
+      const tokD = nDatosBase * 110 * 2 * 3.2;
+      flopsStat = 4.08 * infoM.n * tokD + 2.0 * infoM.n * 25 * 65;
+      let base = 74 + bonoDatos + (infoM.n > 1e9 ? 4 : 0);
+      if (key === "correr" && !cot) base -= 6;
+      score = base - penRuido - penDedup - penUmbral;
+    } else if (via === "LORA_PROFUNDO") {
+      const tokD = nDatosBase * 110 * 4 * 3.2;
+      flopsStat = 4.16 * infoM.n * tokD + 2.0 * infoM.n * 25 * 65;
+      let base = 84 + bonoDatos + (infoM.n > 1e9 ? 5 : 0);
+      score = base - penRuido - penDedup - penUmbral;
+    } else {
+      const tokD = nDatosBase * 110 * 3 * 3.5;
+      flopsStat = 6.0 * infoM.n * tokD + 2.0 * infoM.n * 25 * 65;
+      let base = 88 + bonoDatos;
+      score = base - Math.floor(penRuido * 1.2) - penDedup - penUmbral;
+    }
+
+    score = Math.max(15, Math.min(99, Math.round(score)));
+    statsScores[key] = score;
+    flopsTotales += flopsStat;
+    creditosTotales += (flopsStat / MAX_FLOPS) * 100.0;
+    document.getElementById(`sc_${key}`).textContent = `${score}/100`;
+  }
+
+  creditosTotales = Math.round(creditosTotales * 10) / 10;
+  const valido = creditosTotales <= 100.0 && errores.length === 0;
+  const bonoEficiencia = valido ? Math.round(Math.max(0, (100 - creditosTotales) * 0.25) * 10) / 10 : 0;
+  const mediaRadar = Math.round(((statsScores.comer + statsScores.guerra + statsScores.correr + statsScores.sigilo) / 4) * 10) / 10;
+
+  document.getElementById("hdrModel").textContent = infoM.corto;
+  document.getElementById("hdrFlops").textContent = `${(flopsTotales / 1e12).toFixed(1)} TFLOPs`;
+  document.getElementById("hdrCredits").textContent = `${creditosTotales.toFixed(1)} / 100`;
+  document.getElementById("hdrRadar").textContent = `${mediaRadar} / 100`;
+  document.getElementById("lblBono").textContent = `+${bonoEficiencia}`;
+
+  const pill = document.getElementById("hdrStatus");
+  if (valido) {
+    pill.className = "status-pill status-ok";
+    pill.textContent = "✅ CONFIGURACIÓN VÁLIDA";
+  } else {
+    pill.className = "status-pill status-bad";
+    pill.textContent = creditosTotales > 100 ? "❌ EXCEDE 100 CRÉDITOS" : "❌ REGLA DE MODELO VIOLADA";
+  }
+
+  const warn = document.getElementById("ruleWarning");
+  if (errores.length > 0) {
+    warn.style.display = "block";
+    warn.innerHTML = errores.map(e => `⚠️ ${e}`).join("<br>");
+  } else {
+    warn.style.display = "none";
+  }
+
+  dibujarRadar(statsScores);
+  actualizarCodigoPython(equipo, modeloId, doctrina, { filtrarRuido, dedup, umbral, fraccion }, statsCfg);
+
+  return { equipo, modeloId, infoM, doctrina, statsScores, creditosTotales, bonoEficiencia, valido };
+}
+
+function dibujarRadar(s) {
+  const cv = document.getElementById("radarCanvas");
+  const ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const cx = 90, cy = 90, R = 64;
+
+  ctx.strokeStyle = "#252E46";
+  ctx.lineWidth = 1;
+  for (const r of [0.33, 0.66, 1.0]) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
+  ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
+  ctx.stroke();
+
+  const pts = [
+    [cx, cy - (s.comer / 100) * R],
+    [cx + (s.guerra / 100) * R, cy],
+    [cx, cy + (s.correr / 100) * R],
+    [cx - (s.sigilo / 100) * R, cy]
+  ];
+  ctx.fillStyle = "rgba(20, 184, 166, 0.28)";
+  ctx.strokeStyle = "#14B8A6";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#CBD5E1";
+  ctx.font = "bold 10px monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(`COMER (${s.comer})`, cx, 14);
+  ctx.fillText(`CORRER (${s.correr})`, cx, 174);
+  ctx.fillText(`G(${s.guerra})`, 162, cy + 4);
+  ctx.fillText(`S(${s.sigilo})`, 18, cy + 4);
+}
+
+function actualizarCodigoPython(equipo, modeloId, doctrina, cur, statsCfg) {
+  const fmtStat = (c) => `{ "via": "${c.via}", "modo_icl": "${c.k === 0 ? 'zero_shot' : (c.k === 1 ? 'one_shot' : 'few_shot')}", "k_ejemplos": ${c.k}, "usar_cot": ${c.cot ? 'True' : 'False'} }`;
+  const txt = `EQUIPO = "${equipo}"
+MODELO_BASE = "${modeloId}"
+DOCTRINA_ARENA = "${doctrina}"
+
+CURACION = {
+    "dedup_minhash": ${cur.dedup ? "True" : "False"},
+    "umbral_minhash": ${cur.umbral},
+    "filtrar_ruido": ${cur.filtrarRuido ? "True" : "False"},
+    "fraccion_datos_D": ${cur.fraccion},
+}
+
+STAT_COMER  = ${fmtStat(statsCfg.comer)}
+STAT_GUERRA = ${fmtStat(statsCfg.guerra)}
+STAT_CORRER = ${fmtStat(statsCfg.correr)}
+STAT_SIGILO = ${fmtStat(statsCfg.sigilo)}`;
+  document.getElementById("codeOut").textContent = txt;
+}
+
+function copiarConfig() {
+  navigator.clipboard.writeText(document.getElementById("codeOut").textContent);
+}
+
+function generarPartida(esPvP12) {
+  const cfg = calcularTodo();
+  document.getElementById("arenaModeTag").textContent = esPvP12
+    ? "🏹 ARENA FINAL PVP · LOS 12 DISTRITOS EN VIVO (12×12)"
+    : "🧪 SIMULACIÓN LOCAL GRATIS · TU TRIBUTO VS 5 AGENTES IMAGINARIOS";
+
+  const colores = [
+    "#14B8A6", "#F43F5E", "#F59E0B", "#818CF8", "#10B981", "#EC4899",
+    "#38BDF8", "#A855F7", "#84CC16", "#FB923C", "#2DD4BF", "#E879F9"
+  ];
+  const spawns = [
+    [5,4], [6,4], [7,5], [7,6], [6,7], [5,7],
+    [4,6], [4,5], [2,2], [9,2], [2,9], [9,9]
+  ];
+
+  let participantes = [];
+  const bono = Math.round(cfg.bonoEficiencia);
+  participantes.push({
+    id: 1,
+    nombre: cfg.equipo,
+    modelo: cfg.infoM.corto,
+    doctrina: cfg.doctrina,
+    color: colores[0],
+    x: cfg.doctrina === "CORNUCOPIA" ? 5 : 1,
+    y: cfg.doctrina === "CORNUCOPIA" ? 4 : 1,
+    hp: 100,
+    hambre: Math.min(100, 85 + bono),
+    estamina: Math.min(100, 85 + bono),
+    arma: 0,
+    kills: 0,
+    vivo: true,
+    accion: "LISTO",
+    stats: { ...cfg.statsScores }
+  });
+
+  if (!esPvP12) {
+    const bots = [
+      { nombre: "Cato_Carnicero", modelo: "Qwen2.5-0.5B", doctrina: "CORNUCOPIA", x: 6, y: 5, stats: { comer: 55, guerra: 92, correr: 60, sigilo: 50 } },
+      { nombre: "Foxface_Astuta", modelo: "Qwen2.5-3B",   doctrina: "BOSQUE",     x: 10, y: 2, stats: { comer: 90, guerra: 52, correr: 88, sigilo: 91 } },
+      { nombre: "Rue_Exploradora",modelo: "Qwen2.5-1.5B", doctrina: "BOSQUE",     x: 2, y: 9, stats: { comer: 86, guerra: 58, correr: 84, sigilo: 88 } },
+      { nombre: "Thresh_Tanque",  modelo: "Qwen2.5-1.5B", doctrina: "CAZADOR",    x: 9, y: 9, stats: { comer: 72, guerra: 86, correr: 70, sigilo: 68 } },
+      { nombre: "Novato_Ruidoso", modelo: "Qwen2.5-0.5B", doctrina: "CORNUCOPIA", x: 6, y: 6, stats: { comer: 35, guerra: 45, correr: 40, sigilo: 38 } }
+    ];
+    bots.forEach((b, idx) => {
+      participantes.push({
+        id: idx + 2, nombre: b.nombre, modelo: b.modelo, doctrina: b.doctrina,
+        color: colores[idx + 1], x: b.x, y: b.y, hp: 100, hambre: 82, estamina: 82,
+        arma: 0, kills: 0, vivo: true, accion: "LISTO", stats: b.stats
+      });
+    });
+  } else {
+    for (let i = 1; i < 12; i++) {
+      const mList = ["Qwen2.5-0.5B", "Qwen2.5-1.5B", "Qwen2.5-3B"];
+      const dList = ["CORNUCOPIA", "BOSQUE", "CAZADOR"];
+      const doc = dList[i % 3];
+      let [sx, sy] = spawns[i];
+      if (doc === "BOSQUE") { sx = sx < 6 ? 1 : 10; sy = sy < 6 ? 1 : 10; }
+      participantes.push({
+        id: i + 1,
+        nombre: `Distrito_${String(i + 1).padStart(2, "0")}`,
+        modelo: mList[i % 3],
+        doctrina: doc,
+        color: colores[i],
+        x: sx, y: sy, hp: 100, hambre: 84, estamina: 84, arma: 0, kills: 0, vivo: true, accion: "LISTO",
+        stats: {
+          comer: 60 + ((i * 7) % 32),
+          guerra: 58 + ((i * 11) % 34),
+          correr: 62 + ((i * 5) % 30),
+          sigilo: 56 + ((i * 9) % 34)
+        }
+      });
+    }
+  }
+
+  let seed = 1337 + cfg.statsScores.comer * 3 + cfg.statsScores.guerra * 7;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  const rInt = (a, b) => Math.floor(a + rnd() * (b - a + 1));
+
+  const turnos = [];
+  let radioSeguro = 6;
+
+  for (let t = 1; t <= 25; t++) {
+    const eventos = [];
+    if (t >= 6 && t % 4 === 2) {
+      radioSeguro = Math.max(2, radioSeguro - 1);
+      eventos.push(`⚠️ La Niebla Tóxica del Capitolio reduce la zona segura a radio ${radioSeguro}.`);
+    }
+    const bestias = (t % 5 === 0);
+    if (bestias) eventos.push(`🐺 ¡El Capitolio libera Bestias Mutantes en el perímetro!`);
+
+    for (const p of participantes) {
+      if (!p.vivo) continue;
+      p.hambre = Math.max(0, p.hambre - 6);
+      p.estamina = Math.min(100, p.estamina + 4);
+
+      const distCentro = Math.max(Math.abs(p.x - 5.5), Math.abs(p.y - 5.5));
+      if (t === 1 && p.doctrina === "CORNUCOPIA") {
+        p.x = 5 + rInt(0, 1); p.y = 5 + rInt(0, 1);
+        if (p.stats.guerra + rInt(-10, 12) >= 70) {
+          p.arma = 18;
+          p.accion = "ESPADA_CORNUCOPIA";
+          eventos.push(`⚔️ ${p.nombre} conquista arma (+18 ATQ) en la Cornucopia.`);
+        } else {
+          p.hp -= 18;
+          p.accion = "HERIDO";
+          eventos.push(`💥 ${p.nombre} sufre -18 HP luchando en la Cornucopia.`);
+        }
+      } else if (distCentro > radioSeguro) {
+        if (p.stats.correr + rInt(-10, 10) >= 70 && p.estamina >= 10) {
+          p.estamina -= 10;
+          p.x += p.x < 5 ? 1 : (p.x > 6 ? -1 : 0);
+          p.y += p.y < 5 ? 1 : (p.y > 6 ? -1 : 0);
+          p.accion = "SPRINT_CENTRO";
+          eventos.push(`🏃 ${p.nombre} calcula ruta CoT y escapa de la niebla.`);
+        } else {
+          p.hp -= 16;
+          p.accion = "NIEBLA_TOXICA";
+          eventos.push(`☠️ ${p.nombre} inhala niebla tóxica (-16 HP).`);
+        }
+      } else {
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1],[0,0]];
+        const [dx, dy] = dirs[rInt(0, dirs.length - 1)];
+        p.x = Math.max(0, Math.min(11, p.x + dx));
+        p.y = Math.max(0, Math.min(11, p.y + dy));
+        p.accion = "EXPLORAR";
+      }
+
+      if (p.hambre < 64 && p.vivo) {
+        if (p.stats.comer + rInt(-12, 12) >= 65) {
+          p.hambre = Math.min(100, p.hambre + 28);
+          p.hp = Math.min(100, p.hp + 4);
+          p.accion = "COMER_BAYAS";
+          eventos.push(`🫐 ${p.nombre} identifica alimento seguro (+28 Hambre).`);
+        } else {
+          p.hp -= 18;
+          p.accion = "VENENO";
+          eventos.push(`🍄 ${p.nombre} se intoxica con bayas venenosas (-18 HP).`);
+        }
+      }
+
+      if (bestias && distCentro >= radioSeguro - 0.5 && p.vivo) {
+        if (p.stats.sigilo + rInt(-10, 10) < 68) {
+          p.hp -= 15;
+          p.accion = "MORDIDA_BESTIA";
+          eventos.push(`🐺 Bestia mutante ataca a ${p.nombre} (-15 HP).`);
+        }
+      }
+
+      if (p.hambre === 0) p.hp -= 12;
+      if (p.hp <= 0) {
+        p.hp = 0; p.vivo = false; p.accion = "CAIDO";
+        eventos.push(`💀 ¡Cañonazo en la Arena! ${p.nombre} ha caído.`);
+      }
+    }
+
+    const vivos = participantes.filter(x => x.vivo);
+    for (let i = 0; i < vivos.length - 1; i += 2) {
+      const a = vivos[i], b = vivos[i + 1];
+      if (Math.abs(a.x - b.x) <= 2 && Math.abs(a.y - b.y) <= 2) {
+        const pa = a.stats.guerra + a.arma + rInt(-12, 12);
+        const pb = b.stats.guerra + b.arma + rInt(-12, 12);
+        const [gan, per] = pa >= pb ? [a, b] : [b, a];
+        if (per.stats.correr + per.stats.sigilo > 158 && per.estamina >= 14) {
+          per.estamina -= 14;
+          per.accion = "ESQUIVAR";
+          eventos.push(`💨 ${per.nombre} esquiva con sigilo a ${gan.nombre}.`);
+        } else {
+          const dmg = Math.max(14, Math.min(35, Math.round((gan.stats.guerra + gan.arma) * 0.28)));
+          per.hp = Math.max(0, per.hp - dmg);
+          gan.accion = "ATACAR";
+          eventos.push(`⚔️ ${gan.nombre} ataca a ${per.nombre} (-${dmg} HP).`);
+          if (per.hp === 0) {
+            per.vivo = false; per.accion = "CAIDO"; gan.kills += 1;
+            eventos.push(`💀 ¡Cañonazo! ${gan.nombre} elimina a ${per.nombre}.`);
+          }
+        }
+      }
+    }
+
+    turnos.push({
+      turno: t,
+      radioSeguro,
+      bestias,
+      eventos: eventos.length ? eventos : ["Silencio tenso en la Arena..."],
+      agentes: participantes.map(p => ({ ...p, stats: { ...p.stats } }))
+    });
+  }
+  return turnos;
+}
+
+function dibujarMapaPixelArt(frame) {
+  const cv = document.getElementById("pixelCanvas");
+  const ctx = cv.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  const TILE = 16; // 12 * 16 = 192x192 píxeles reales
+
+  for (let y = 0; y < 12; y++) {
+    for (let x = 0; x < 12; x++) {
+      const dist = Math.max(Math.abs(x - 5.5), Math.abs(y - 5.5));
+      const px = x * TILE, py = y * TILE;
+
+      // Suelo base ajedrezado
+      ctx.fillStyle = (x + y) % 2 === 0 ? "#193324" : "#152B1E";
+      ctx.fillRect(px, py, TILE, TILE);
+
+      // Cornucopia en el centro (5..6, 5..6)
+      if (x >= 5 && x <= 6 && y >= 5 && y <= 6) {
+        ctx.fillStyle = "#3B2F1E";
+        ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = "#F59E0B";
+        ctx.fillRect(px + 3, py + 3, 10, 10);
+        ctx.fillStyle = "#FEF08A";
+        ctx.fillRect(px + 5, py + 5, 6, 6);
+      } else if ((x * 7 + y * 13) % 9 === 0) {
+        // Árbol pixel art
+        ctx.fillStyle = "#4A2E1B";
+        ctx.fillRect(px + 6, py + 10, 4, 5);
+        ctx.fillStyle = "#15803D";
+        ctx.fillRect(px + 3, py + 3, 10, 8);
+        ctx.fillStyle = "#22C55E";
+        ctx.fillRect(px + 5, py + 4, 6, 4);
+      } else if ((x + y * 3) % 11 === 0) {
+        // Arbusto de bayas seguras (azul)
+        ctx.fillStyle = "#166534";
+        ctx.fillRect(px + 4, py + 6, 8, 7);
+        ctx.fillStyle = "#38BDF8";
+        ctx.fillRect(px + 5, py + 7, 2, 2);
+        ctx.fillRect(px + 9, py + 8, 2, 2);
+      } else if ((x * 5 + y) % 13 === 0) {
+        // Hongo/baya venenosa (rojo)
+        ctx.fillStyle = "#E11D48";
+        ctx.fillRect(px + 5, py + 7, 6, 4);
+        ctx.fillStyle = "#FDE047";
+        ctx.fillRect(px + 7, py + 8, 2, 2);
+      }
+
+      // Niebla tóxica del Capitolio fuera del radio seguro
+      if (dist > frame.radioSeguro) {
+        ctx.fillStyle = "rgba(190, 24, 93, 0.48)";
+        ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = "rgba(244, 63, 94, 0.7)";
+        ctx.fillRect(px + 2, py + 2, 2, 2);
+        ctx.fillRect(px + 11, py + 10, 2, 2);
+      }
+    }
+  }
+
+  // Dibujar bestias mutantes en las esquinas del borde si están activas
+  if (frame.bestias) {
+    const posBestias = [[1,5],[10,5],[5,1],[5,10]];
+    for (const [bx, by] of posBestias) {
+      const px = bx * TILE, py = by * TILE;
+      ctx.fillStyle = "#A855F7";
+      ctx.fillRect(px + 3, py + 5, 10, 7);
+      ctx.fillStyle = "#F43F5E";
+      ctx.fillRect(px + 4, py + 6, 2, 2);
+      ctx.fillRect(px + 9, py + 6, 2, 2);
+    }
+  }
+
+  // Dibujar tributos (primero caídos, luego vivos)
+  const ordenados = [...frame.agentes].sort((a, b) => (a.vivo === b.vivo ? 0 : (a.vivo ? 1 : -1)));
+  ordenados.forEach((ag, idx) => {
+    const offsetX = (idx % 2) * 2 - 1;
+    const px = ag.x * TILE + offsetX;
+    const py = ag.y * TILE;
+
+    if (!ag.vivo) {
+      // Calavera / lápida pixel art
+      ctx.fillStyle = "#475569";
+      ctx.fillRect(px + 4, py + 6, 8, 8);
+      ctx.fillStyle = "#0F172A";
+      ctx.fillRect(px + 5, py + 8, 2, 2);
+      ctx.fillRect(px + 9, py + 8, 2, 2);
+      return;
+    }
+
+    // Sombra
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(px + 4, py + 13, 8, 2);
+
+    // Cuerpo del tributo (color de su distrito)
+    ctx.fillStyle = ag.color;
+    ctx.fillRect(px + 4, py + 6, 8, 7);
+
+    // Cabeza
+    ctx.fillStyle = "#FDE68A";
+    ctx.fillRect(px + 5, py + 2, 6, 4);
+
+    // Ojos
+    ctx.fillStyle = "#0F172A";
+    ctx.fillRect(px + 6, py + 3, 1, 1);
+    ctx.fillRect(px + 9, py + 3, 1, 1);
+
+    // Espada dorada si tiene bono de Cornucopia
+    if (ag.arma > 0) {
+      ctx.fillStyle = "#FACC15";
+      ctx.fillRect(px + 12, py + 4, 2, 7);
+    }
+
+    // Barra de vida sobre la cabeza (8px ancho)
+    ctx.fillStyle = "#090D16";
+    ctx.fillRect(px + 4, py, 8, 2);
+    ctx.fillStyle = ag.hp > 40 ? "#10B981" : "#F43F5E";
+    ctx.fillRect(px + 4, py, Math.max(1, Math.round((ag.hp / 100) * 8)), 2);
+  });
+}
+
+function irTurno(idx) {
+  if (!partidaTurnos.length) return;
+  turnoActual = Math.max(0, Math.min(partidaTurnos.length - 1, idx));
+  document.getElementById("sliderTurno").value = turnoActual;
+  const f = partidaTurnos[turnoActual];
+
+  document.getElementById("lblTurnoInfo").textContent =
+    `Turno ${f.turno} / ${partidaTurnos.length} · Zona Segura: Radio ${f.radioSeguro}` + (f.bestias ? " · 🐺 BESTIAS" : "");
+
+  dibujarMapaPixelArt(f);
+
+  // Actualizar tabla
+  const tbody = document.getElementById("tbodyTributos");
+  const orden = [...f.agentes].sort((a, b) => (b.vivo - a.vivo) || (b.hp - a.hp) || (b.kills - a.kills));
+  tbody.innerHTML = orden.map(a => `
+    <tr class="${a.vivo ? '' : 'dead-row'}">
+      <td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${a.color};margin-right:6px;"></span><b>${a.nombre}</b></td>
+      <td>${a.modelo}</td>
+      <td><div class="hp-bar"><div class="hp-fill" style="width:${a.hp}%;background:${a.hp>40?'#10B981':'#F43F5E'}"></div></div>${a.hp}</td>
+      <td>${a.hambre}%</td>
+      <td>${a.stats.comer}/${a.stats.guerra}/${a.stats.correr}/${a.stats.sigilo}</td>
+      <td>${a.kills}</td>
+      <td>${a.accion}</td>
+    </tr>
+  `).join("");
+
+  // Actualizar bitácora
+  const logBox = document.getElementById("logEventos");
+  logBox.innerHTML = f.eventos.map(e => `<div class="log-line"><b>[T${f.turno}]</b> ${e}</div>`).join("");
+}
+
+function iniciarSimulacion(esPvP12) {
+  partidaTurnos = generarPartida(esPvP12);
+  document.getElementById("sliderTurno").max = partidaTurnos.length - 1;
+  irTurno(0);
+  if (timerPlay) clearInterval(timerPlay);
+  const vel = parseInt(document.getElementById("selSpeed").value) || 900;
+  document.getElementById("btnPlay").textContent = "⏸ Pausa";
+  timerPlay = setInterval(() => {
+    if (turnoActual < partidaTurnos.length - 1) {
+      irTurno(turnoActual + 1);
+    } else {
+      clearInterval(timerPlay);
+      timerPlay = null;
+      document.getElementById("btnPlay").textContent = "▶ Play";
+    }
+  }, vel);
+}
+
+function togglePlay() {
+  if (timerPlay) {
+    clearInterval(timerPlay);
+    timerPlay = null;
+    document.getElementById("btnPlay").textContent = "▶ Play";
+  } else {
+    if (turnoActual >= partidaTurnos.length - 1) turnoActual = -1;
+    const vel = parseInt(document.getElementById("selSpeed").value) || 900;
+    document.getElementById("btnPlay").textContent = "⏸ Pausa";
+    timerPlay = setInterval(() => {
+      if (turnoActual < partidaTurnos.length - 1) irTurno(turnoActual + 1);
+      else { clearInterval(timerPlay); timerPlay = null; document.getElementById("btnPlay").textContent = "▶ Play"; }
+    }, vel);
+  }
+}
+
+function cambiarVelocidad() {
+  if (timerPlay) {
+    togglePlay();
+    togglePlay();
+  }
+}
+
+function recalcular() {
+  calcularTodo();
+  if (!partidaTurnos.length) iniciarSimulacion(false);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  recalcular();
+});
+</script>
+</body>
+</html>

@@ -9,12 +9,12 @@ En lugar de cobrar una tarifa fija por hora, Colab descuenta CUs según la GPU a
 
 ## Top de GPUs en Colab Pro (de mayor a menor potencia)
 
-| Puesto | GPU | Arquitectura | VRAM | Ancho de Banda | Pico Tensor Core (BF16 / FP16 denso) | Consumo aprox. (CUs / hora) | Tiempo estimado con **100 CUs** | Acceso típico |
-|---:|---|---|---|---|---|---|---|---|
-| **1** | **NVIDIA H100** | Hopper | **80 GB HBM3** | 3.35 TB/s | **1,979 TFLOPS** (BF16/FP16) | **~17 – 20 CUs/h** | **~5 – 6 horas** | Principalmente Pro+ / alta demanda |
-| **2** | **NVIDIA A100** | Ampere | **40 GB / 80 GB HBM2e** | 1.6 – 2.0 TB/s | **312 TFLOPS** (BF16/FP16) | **~10.5 – 15 CUs/h** | **~7 – 10 horas** | Colab Pro / Pro+ |
-| **3** | **NVIDIA L4** | Ada Lovelace | **24 GB GDDR6** | 300 GB/s | **242 TFLOPS** (BF16/FP16) | **~3.0 – 4.8 CUs/h** | **~20 – 33 horas** | Colab Pro / Pro+ |
-| **4** | **NVIDIA T4** | Turing | **16 GB GDDR6** | 320 GB/s | **65 TFLOPS** (FP16; **sin** BF16 nativo) | **~1.1 – 1.8 CUs/h** | **~55 – 90 horas** | Gratis / Pro / Pro+ |
+| Puesto | GPU | Arquitectura | VRAM | Ancho de Banda | Pico Tensor Core (BF16 / FP16 denso) | Consumo aprox. (CUs / hora) | **Tiempo al mes (100 CUs)** | **Clases de 1.5 h al mes** | Acceso típico |
+|---:|---|---|---|---|---|---|---|---|---|
+| **1** | **NVIDIA H100** | Hopper | **80 GB HBM3** | 3.35 TB/s | **1,979 TFLOPS** (BF16/FP16) | **~17 – 20 CUs/h** | **~5 – 6 horas / mes** | ~3 – 4 clases | Principalmente Pro+ / alta demanda |
+| **2** | **NVIDIA A100** | Ampere | **40 GB / 80 GB HBM2e** | 1.6 – 2.0 TB/s | **312 TFLOPS** (BF16/FP16) | **~10.5 – 15 CUs/h** | **~7 – 10 horas / mes** | ~4 – 6 clases | Colab Pro / Pro+ |
+| **3** | **NVIDIA L4** | Ada Lovelace | **24 GB GDDR6** | 300 GB/s | **242 TFLOPS** (BF16/FP16) | **~3.0 – 4.8 CUs/h** | **~20 – 33 horas / mes** | ~13 – 22 clases | Colab Pro / Pro+ |
+| **4** | **NVIDIA T4** | Turing | **16 GB GDDR6** | 320 GB/s | **65 TFLOPS** (FP16; **sin** BF16 nativo) | **~1.1 – 1.8 CUs/h** | **~55 – 90 horas / mes** | ~36 – 60 clases | Gratis / Pro / Pro+ |
 
 *(Las cifras de TFLOPS corresponden a cómputo denso; con esparsidad estructurada 2:4 pueden duplicarse).*
 
