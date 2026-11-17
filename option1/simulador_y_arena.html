@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FM Grand Prix · Simulador de FLOPs, Curación y Arena del Piloto</title>
+  <style>
+    :root {
+      --bg: #090B10;
+      --panel: #121622;
+      --panel-2: #181E2E;
+      --border: #232A3E;
+      --teal: #14B8A6;
+      --green: #10B981;
+      --amber: #F59E0B;
+      --indigo: #818CF8;
+      --rose: #F43F5E;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --mono: 'JetBrains Mono', Consolas, monospace;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 18px 24px 40px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 22px;
+      margin-bottom: 18px;
+    }
+    .brand-tag { font-family: var(--mono); font-size: 11.5px; color: var(--teal); font-weight: 700; letter-spacing: 1.2px; }
+    h1 { font-size: 22px; font-weight: 800; margin-top: 3px; }
+    .budget-strip {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      background: #0D1018;
+      border: 1px solid var(--border);
+      padding: 10px 18px;
+      border-radius: 10px;
+    }
+    .metric-box { text-align: right; }
+    .metric-box .lbl { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+    .metric-box .val { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); }
+    .status-pill {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 8px;
+    }
+    .status-ok { background: #0D2B24; color: var(--green); border: 1px solid var(--green); }
+    .status-bad { background: #2D131D; color: var(--rose); border: 1px solid var(--rose); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 510px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    @media (max-width: 1120px) { .layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .card-tag { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.8px; }
+    .card-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 8px 0;
+      font-size: 13.5px;
+      color: #CBD5E1;
+    }
+    select, input[type="number"], input[type="text"] {
+      background: #0D1018;
+      color: var(--text);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+    input[type="range"] { width: 140px; accent-color: var(--teal); }
+    .via-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .via-btn {
+      background: #0D1018;
+      border: 1px solid #334155;
+      color: var(--muted);
+      padding: 7px 6px;
+      border-radius: 7px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .via-btn.active-ICL { background: #0D2B24; color: var(--green); border-color: var(--green); }
+    .via-btn.active-LORA { background: #1C1E3A; color: var(--indigo); border-color: var(--indigo); }
+    .via-btn.active-FULL_FT { background: #261A0D; color: var(--amber); border-color: var(--amber); }
+
+    .hint-box {
+      background: #0D1018;
+      border-left: 3px solid var(--teal);
+      padding: 8px 11px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #CBD5E1;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .btn {
+      background: var(--teal);
+      color: #090B10;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-secondary {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid #334155;
+    }
+    .preset-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .preset-btn {
+      background: #181E2E;
+      color: #CBD5E1;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      padding: 6px 11px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .preset-btn:hover { border-color: var(--teal); color: var(--text); }
+
+    .arena-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    @media (max-width: 900px) { .arena-grid { grid-template-columns: 1fr; } }
+
+    canvas {
+      width: 100%;
+      height: 290px;
+      background: #0D1018;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: block;
+    }
+    .log-box {
+      background: #0D1018;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      height: 290px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .phase-scores {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .score-tile {
+      background: #0D1018;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .score-tile .s-lbl { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+    .score-tile .s-val { font-family: var(--mono); font-size: 22px; font-weight: 800; margin-top: 4px; }
+    pre.code-modal {
+      background: #06080C;
+      border: 1px solid var(--teal);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: #E2E8F0;
+      max-height: 210px;
+      overflow-y: auto;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="brand-tag">RETO DE CLASE · UN SOLO MODELO BASE (Qwen2.5-0.5B · N = 4.94×10⁸)</div>
+      <h1>FM Grand Prix: Curación, C ≈ 6·N·D y Las 3 Vías de Adaptación</h1>
+    </div>
+    <div class="budget-strip">
+      <div class="metric-box">
+        <div class="lbl">ENTRENAMIENTO (6·N·D)</div>
+        <div class="val" id="hudFlopsTrain">0.00 TFLOPs</div>
+      </div>
+      <div class="metric-box">
+        <div class="lbl">INFERENCIA (2·N·T)</div>
+        <div class="val" id="hudFlopsInf">0.00 TFLOPs</div>
+      </div>
+      <div class="metric-box">
+        <div class="lbl">TIEMPO GPU L4 (~60 TF/s)</div>
+        <div class="val" id="hudTime">0.0 s</div>
+      </div>
+      <div class="metric-box">
+        <div class="lbl">PRESUPUESTO (MÁX 100)</div>
+        <div class="val" id="hudCredits">0.0 / 100</div>
+      </div>
+      <div class="status-pill status-ok" id="hudStatus">VÁLIDA</div>
+    </div>
+  </header>
+
+  <div class="preset-bar">
+    <span style="font-family:var(--mono);font-size:12px;color:var(--muted);align-self:center;">PROBAR ESCENARIO EN 1 CLIC:</span>
+    <button class="preset-btn" onclick="cargarPreset('baseline')">1️⃣ Baseline (Zero-shot sin curar · Choca)</button>
+    <button class="preset-btn" onclick="cargarPreset('exceso')">2️⃣ Fuerza Bruta (Full FT en todo · Pasa de 100 créd)</button>
+    <button class="preset-btn" onclick="cargarPreset('trampa_minhash')">3️⃣ MinHash muy agresivo (Borra curvas · Choca)</button>
+    <button class="preset-btn" onclick="cargarPreset('optimo')">4️⃣ Estrategia Ganadora (ICL + CoT + LoRA curado)</button>
+  </div>
+
+  <div class="layout">
+    <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN -->
+    <div>
+      <!-- ESTACIÓN 0: CURACIÓN -->
+      <div class="card" style="border-color:#14B8A6;">
+        <div class="card-header">
+          <span class="card-tag" style="color:var(--teal);">BLOQUE 1 · TUBERÍA DE CURACIÓN DE DATOS</span>
+          <span style="font-family:var(--mono);font-size:11.5px;color:var(--teal);" id="curacionStats">D = 0 ejemplos</span>
+        </div>
+        <div class="row">
+          <label><input type="checkbox" id="dedup_minhash" checked onchange="recalcular()" /> Activar Deduplicación MinHash (3-gramas)</label>
+        </div>
+        <div class="row">
+          <span>Umbral similitud MinHash: <strong id="lbl_umbral">0.82</strong></span>
+          <input type="range" id="umbral_minhash" min="0.50" max="0.98" step="0.02" value="0.82" oninput="recalcular()" />
+        </div>
+        <div class="row">
+          <label><input type="checkbox" id="filtrar_ruido" checked onchange="recalcular()" /> Filtrar etiquetas corruptas, JSON rotos y choques</label>
+        </div>
+        <div class="row">
+          <span>Fracción de datos limpios (D): <strong id="lbl_frac">80%</strong></span>
+          <input type="range" id="fraccion_datos_D" min="0.20" max="1.00" step="0.05" value="0.80" oninput="recalcular()" />
+        </div>
+        <div class="hint-box" id="curacionHint"></div>
+      </div>
+
+      <!-- ESTACIONES 1, 2 Y 3 -->
+      <div id="fasesContainer"></div>
+
+      <!-- CONEXIÓN GCP -->
+      <div class="card">
+        <div class="card-tag" style="color:var(--amber);margin-bottom:8px;">CONEXIÓN A SERVIDOR GCP Y EXPORTACIÓN</div>
+        <div class="row">
+          <span>URL API GCP:</span>
+          <input type="text" id="gcp_url" value="http://127.0.0.1:8000" style="width:240px;" />
+        </div>
+        <div class="row">
+          <span>TEAM_TOKEN:</span>
+          <input type="text" id="team_token" value="token_estudiante_01" style="width:240px;" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button class="btn" onclick="simularMision()">▶ Jugar / Evaluar las 3 Fases Ahora</button>
+          <button class="btn btn-secondary" onclick="mostrarConfigPy()">📋 Ver / Copiar config.py</button>
+        </div>
+        <pre class="code-modal" id="codeModal"></pre>
+      </div>
+    </div>
+
+    <!-- COLUMNA DERECHA: SIMULADOR EN 1ª PERSONA -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-tag" style="color:var(--green);">RESULTADOS EN VIVO · 1 MODELO BASE EN 3 FASES</span>
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted);" id="simModeBadge">Modo: Simulador Interactivo Local</span>
+        </div>
+
+        <div class="phase-scores">
+          <div class="score-tile">
+            <div class="s-lbl">FASE 1 · TABLERO</div>
+            <div class="s-val" id="scF1" style="color:var(--teal);">—</div>
+          </div>
+          <div class="score-tile">
+            <div class="s-lbl">FASE 2 · FRENADO</div>
+            <div class="s-val" id="scF2" style="color:var(--indigo);">—</div>
+          </div>
+          <div class="score-tile">
+            <div class="s-lbl">FASE 3 · PISTA (15 TRAMOS)</div>
+            <div class="s-val" id="scF3" style="color:var(--amber);">—</div>
+          </div>
+          <div class="score-tile" style="border-color:var(--green);">
+            <div class="s-lbl">PUNTAJE TOTAL (+BONO)</div>
+            <div class="s-val" id="scTotal" style="color:var(--green);">—</div>
+          </div>
+        </div>
+
+        <div class="arena-grid">
+          <div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:6px;">PISTA EN VIVO (FASE 3 · 15 TRAMOS DE SENSORES)</div>
+            <canvas id="trackCanvas" width="460" height="290"></canvas>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:6px;">RAYOS X: QUÉ RESPONDIÓ EL MODELO EN CADA FASE</div>
+            <div class="log-box" id="xrayLog">Pulsa <strong>«▶ Jugar / Evaluar las 3 Fases Ahora»</strong> o elige uno de los 4 escenarios arriba para vivir la partida en 1.ª persona.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const N_PARAMS = 4.94e8;
+const GPU_L4_FLOPS = 6.0e13;
+
+const FASES_META = [
+  { id: 1, tag: "FASE 1 · INTERPRETAR SENSORES (Texto -> JSON)", color: "#14B8A6", crudo: 80, limpioBase: 40, dupBase: 25, ruidoBase: 15 },
+  { id: 2, tag: "FASE 2 · CÁLCULO DE FRENADO Y ESQUIVE (Física 3 pasos)", color: "#818CF8", crudo: 75, limpioBase: 40, dupBase: 20, ruidoBase: 15 },
+  { id: 3, tag: "FASE 3 · ¡A LA PISTA! CONDUCIR EL AGENTE (15 Tramos)", color: "#F59E0B", crudo: 170, limpioBase: 90, dupBase: 45, ruidoBase: 35 }
+];
+
+const state = {
+  f1: { via: "ICL", modo_icl: "few_shot", k_ejemplos: 4, usar_cot: false, temperature: 0.0, max_tokens: 40, lora_r: 8, lora_alpha: 16, epochs: 2, lr: 0.0003 },
+  f2: { via: "ICL", modo_icl: "few_shot", k_ejemplos: 3, usar_cot: true,  temperature: 0.0, max_tokens: 110, lora_r: 8, lora_alpha: 16, epochs: 3, lr: 0.0003 },
+  f3: { via: "LORA", modo_icl: "few_shot", k_ejemplos: 5, usar_cot: false, temperature: 0.1, max_tokens: 24, lora_r: 8, lora_alpha: 16, epochs: 3, lr: 0.0005 }
+};
+
+function renderFasesUI() {
+  const container = document.getElementById("fasesContainer");
+  container.innerHTML = FASES_META.map(f => {
+    const st = state["f" + f.id];
+    return `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-tag" style="color:${f.color};">${f.tag}</span>
+          <span style="font-family:var(--mono);font-size:11.5px;color:${f.color};" id="cost_f${f.id}">0 créd · 0 TF</span>
+        </div>
+        <div class="via-tabs">
+          <button class="via-btn ${st.via==='ICL'?'active-ICL':''}" onclick="setVia(${f.id},'ICL')">Vía 2: ICL (Prompt)</button>
+          <button class="via-btn ${st.via==='LORA'?'active-LORA':''}" onclick="setVia(${f.id},'LORA')">Vía 3: LoRA (B·A)</button>
+          <button class="via-btn ${st.via==='FULL_FT'?'active-FULL_FT':''}" onclick="setVia(${f.id},'FULL_FT')">Vía 1: Full FT (100%)</button>
+        </div>
+        ${st.via === 'ICL' ? `
+          <div class="row">
+            <span>Modo In-Context:</span>
+            <select onchange="updateField(${f.id},'modo_icl',this.value)">
+              <option value="zero_shot" ${st.modo_icl==='zero_shot'?'selected':''}>Zero-shot (0 ejemplos)</option>
+              <option value="one_shot" ${st.modo_icl==='one_shot'?'selected':''}>One-shot (1 ejemplo)</option>
+              <option value="few_shot" ${st.modo_icl==='few_shot'?'selected':''}>Few-shot (k ejemplos)</option>
+            </select>
+          </div>
+          ${st.modo_icl === 'few_shot' ? `
+          <div class="row">
+            <span>Ejemplos en prompt (k = ${st.k_ejemplos}):</span>
+            <input type="range" min="2" max="15" value="${st.k_ejemplos}" oninput="updateField(${f.id},'k_ejemplos',parseInt(this.value))" />
+          </div>` : ''}
+          <div class="row">
+            <label><input type="checkbox" ${st.usar_cot?'checked':''} onchange="updateField(${f.id},'usar_cot',this.checked)" /> Activar «Pensemos paso a paso» (Chain-of-Thought)</label>
+          </div>
+          <div class="row">
+            <span>Max tokens salida: <strong>${st.max_tokens}</strong></span>
+            <input type="range" min="20" max="150" step="10" value="${st.max_tokens}" oninput="updateField(${f.id},'max_tokens',parseInt(this.value))" />
+          </div>
+        ` : ''}
+        ${st.via === 'LORA' ? `
+          <div class="row">
+            <span>Rango LoRA (r):</span>
+            <select onchange="updateField(${f.id},'lora_r',parseInt(this.value))">
+              ${[2,4,8,16,32].map(r => `<option value="${r}" ${st.lora_r===r?'selected':''}>r = ${r} (${(r*0.05).toFixed(2)}% params)</option>`).join('')}
+            </select>
+          </div>
+          <div class="row">
+            <span>Épocas sobre datos curados (epochs = ${st.epochs}):</span>
+            <input type="range" min="1" max="8" value="${st.epochs}" oninput="updateField(${f.id},'epochs',parseInt(this.value))" />
+          </div>
+        ` : ''}
+        ${st.via === 'FULL_FT' ? `
+          <div class="row">
+            <span>Épocas reentrenando 100% de W₀ (epochs = ${st.epochs}):</span>
+            <input type="range" min="1" max="8" value="${st.epochs}" oninput="updateField(${f.id},'epochs',parseInt(this.value))" />
+          </div>
+          <div class="hint-box" style="border-color:var(--amber);">⚠️ Actualiza los 494M de pesos: alto costo en FLOPs (6·N·D) y créditos.</div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function setVia(fId, via) {
+  state["f" + fId].via = via;
+  renderFasesUI();
+  recalcular();
+}
+
+function updateField(fId, field, val) {
+  state["f" + fId][field] = val;
+  renderFasesUI();
+  recalcular();
+}
+
+function calcularFase(fMeta, st, cur) {
+  let nSobreviven = fMeta.limpioBase;
+  if (!cur.dedup) nSobreviven += fMeta.dupBase;
+  if (!cur.ruido) nSobreviven += fMeta.ruidoBase;
+  if (cur.dedup && cur.umbral < 0.65) {
+    nSobreviven = Math.max(6, Math.floor(nSobreviven * 0.35)); // borró curvas útiles!
+  }
+  const nD = Math.max(4, Math.round(nSobreviven * cur.frac));
+  const nCalls = fMeta.id === 3 ? 15 : 20;
+  const tokPorEj = 85;
+  let flopsTrain = 0, flopsInf = 0, creditos = 0;
+
+  if (st.via === "ICL") {
+    const k = st.modo_icl === "zero_shot" ? 0 : (st.modo_icl === "one_shot" ? 1 : st.k_ejemplos);
+    const tokPrompt = 45 + k * (tokPorEj + (st.usar_cot ? 45 : 0));
+    const tokOut = st.usar_cot ? st.max_tokens : 18;
+    flopsInf = 2.0 * N_PARAMS * (nCalls * (tokPrompt + tokOut));
+    const mult = fMeta.id === 3 ? 1.6 : 1.0;
+    creditos = +(mult * (2.0 + k * 2.2 + (st.usar_cot ? 8.0 : 0.0) + st.max_tokens * 0.04)).toFixed(1);
+  } else if (st.via === "LORA") {
+    const tokD = nD * tokPorEj * st.epochs;
+    flopsTrain = (4.0 + 0.05 * (st.lora_r / 8.0)) * N_PARAMS * tokD;
+    flopsInf = 2.0 * N_PARAMS * (nCalls * 55);
+    creditos = +(10.0 + (nD * st.epochs * 0.06) + (st.lora_r * 0.9)).toFixed(1);
+  } else {
+    const tokD = nD * tokPorEj * st.epochs;
+    flopsTrain = 6.0 * N_PARAMS * tokD;
+    flopsInf = 2.0 * N_PARAMS * (nCalls * 55);
+    creditos = +(32.0 + (nD * st.epochs * 0.14)).toFixed(1);
+  }
+  return { nD, flopsTrain, flopsInf, creditos };
+}
+
+function leerCuracion() {
+  return {
+    dedup: document.getElementById("dedup_minhash").checked,
+    umbral: parseFloat(document.getElementById("umbral_minhash").value),
+    ruido: document.getElementById("filtrar_ruido").checked,
+    frac: parseFloat(document.getElementById("fraccion_datos_D").value)
+  };
+}
+
+function recalcular() {
+  const cur = leerCuracion();
+  document.getElementById("lbl_umbral").textContent = cur.umbral.toFixed(2);
+  document.getElementById("lbl_frac").textContent = Math.round(cur.frac * 100) + "%";
+
+  let totTrain = 0, totInf = 0, totCred = 0, totD = 0;
+  FASES_META.forEach(fm => {
+    const r = calcularFase(fm, state["f" + fm.id], cur);
+    totTrain += r.flopsTrain;
+    totInf += r.flopsInf;
+    totCred += r.creditos;
+    totD += r.nD;
+    const el = document.getElementById("cost_f" + fm.id);
+    if (el) el.textContent = `${r.creditos.toFixed(1)} créd · ${((r.flopsTrain+r.flopsInf)/1e12).toFixed(2)} TF`;
+  });
+
+  document.getElementById("curacionStats").textContent = `D total = ${totD} ejemplos activos`;
+  const hint = document.getElementById("curacionHint");
+  if (!cur.ruido) {
+    hint.innerHTML = "⚠️ <strong>Filtro de ruido APAGADO:</strong> entran JSON rotos, cuentas falsas y pilotos que chocaron.";
+    hint.style.borderColor = "#F43F5E";
+  } else if (cur.dedup && cur.umbral < 0.65) {
+    hint.innerHTML = "⚠️ <strong>Umbral MinHash muy agresivo (&lt;0.65):</strong> estás borrando ejemplos buenos de curvas difíciles.";
+    hint.style.borderColor = "#F59E0B";
+  } else {
+    hint.innerHTML = "✅ <strong>Tubería balanceada:</strong> eliminas duplicados y basura conservando diversidad para entrenar.";
+    hint.style.borderColor = "#10B981";
+  }
+
+  document.getElementById("hudFlopsTrain").textContent = (totTrain / 1e12).toFixed(2) + " TFLOPs";
+  document.getElementById("hudFlopsInf").textContent = (totInf / 1e12).toFixed(2) + " TFLOPs";
+  document.getElementById("hudTime").textContent = ((totTrain + totInf) / GPU_L4_FLOPS).toFixed(1) + " s";
+  document.getElementById("hudCredits").textContent = `${totCred.toFixed(1)} / 100`;
+
+  const stEl = document.getElementById("hudStatus");
+  if (totCred <= 100.0) {
+    stEl.textContent = "VÁLIDA (≤100)";
+    stEl.className = "status-pill status-ok";
+  } else {
+    stEl.textContent = "EXCEDE 100 CRÉD";
+    stEl.className = "status-pill status-bad";
+  }
+  return { cur, totCred, totTrain, totInf };
+}
+
+function cargarPreset(nombre) {
+  if (nombre === "baseline") {
+    document.getElementById("dedup_minhash").checked = false;
+    document.getElementById("filtrar_ruido").checked = false;
+    document.getElementById("umbral_minhash").value = 0.85;
+    document.getElementById("fraccion_datos_D").value = 1.0;
+    state.f1 = { ...state.f1, via: "ICL", modo_icl: "zero_shot", usar_cot: false };
+    state.f2 = { ...state.f2, via: "ICL", modo_icl: "zero_shot", usar_cot: false };
+    state.f3 = { ...state.f3, via: "ICL", modo_icl: "zero_shot", usar_cot: false };
+  } else if (nombre === "exceso") {
+    document.getElementById("dedup_minhash").checked = false;
+    document.getElementById("filtrar_ruido").checked = true;
+    document.getElementById("fraccion_datos_D").value = 1.0;
+    state.f1 = { ...state.f1, via: "FULL_FT", epochs: 5 };
+    state.f2 = { ...state.f2, via: "FULL_FT", epochs: 5 };
+    state.f3 = { ...state.f3, via: "FULL_FT", epochs: 5 };
+  } else if (nombre === "trampa_minhash") {
+    document.getElementById("dedup_minhash").checked = true;
+    document.getElementById("umbral_minhash").value = 0.52;
+    document.getElementById("filtrar_ruido").checked = true;
+    document.getElementById("fraccion_datos_D").value = 0.40;
+    state.f1 = { ...state.f1, via: "ICL", modo_icl: "few_shot", k_ejemplos: 3 };
+    state.f2 = { ...state.f2, via: "ICL", modo_icl: "few_shot", k_ejemplos: 3, usar_cot: true, max_tokens: 40 };
+    state.f3 = { ...state.f3, via: "LORA", lora_r: 4, epochs: 2 };
+  } else if (nombre === "optimo") {
+    document.getElementById("dedup_minhash").checked = true;
+    document.getElementById("umbral_minhash").value = 0.82;
+    document.getElementById("filtrar_ruido").checked = true;
+    document.getElementById("fraccion_datos_D").value = 0.80;
+    state.f1 = { ...state.f1, via: "ICL", modo_icl: "few_shot", k_ejemplos: 4, usar_cot: false, max_tokens: 40 };
+    state.f2 = { ...state.f2, via: "ICL", modo_icl: "few_shot", k_ejemplos: 3, usar_cot: true, max_tokens: 110 };
+    state.f3 = { ...state.f3, via: "LORA", lora_r: 8, epochs: 3 };
+  }
+  renderFasesUI();
+  recalcular();
+  simularMision();
+}
+
+function simularMision() {
+  const { cur, totCred } = recalcular();
+  const penRuido = cur.ruido ? 0 : 26;
+  const penUmbral = (cur.dedup && cur.umbral < 0.65) ? 22 : 0;
+  const penPocosDatos = cur.frac < 0.45 ? 14 : 0;
+
+  // Evaluar Fase 1
+  let s1 = 96 - penRuido - penUmbral;
+  if (state.f1.via === "ICL") {
+    if (state.f1.modo_icl === "zero_shot") s1 = 44;
+    else if (state.f1.modo_icl === "one_shot") s1 = 76 - penRuido;
+    else if (state.f1.k_ejemplos < 3) s1 -= 10;
+  }
+  s1 = Math.max(15, Math.min(100, s1));
+
+  // Evaluar Fase 2
+  let s2 = 32;
+  const f2CotOk = state.f2.usar_cot && state.f2.max_tokens >= 80;
+  if (state.f2.via === "ICL") {
+    if (f2CotOk && state.f2.modo_icl !== "zero_shot") s2 = 92 - penRuido - penUmbral;
+    else if (state.f2.usar_cot && state.f2.max_tokens < 80) s2 = 54; // se cortó el pensamiento!
+    else s2 = 34;
+  } else {
+    s2 = 88 - penRuido - penUmbral - penPocosDatos;
+  }
+  s2 = Math.max(15, Math.min(100, s2));
+
+  // Evaluar Fase 3 (Pista de 15 tramos)
+  let s3 = 40;
+  if (state.f3.via === "LORA" || state.f3.via === "FULL_FT") {
+    s3 = 96 - penRuido - penUmbral - penPocosDatos - (state.f3.lora_r === 2 ? 8 : 0);
+  } else {
+    s3 = (state.f3.modo_icl === "few_shot" ? 68 : 35) - penRuido;
+  }
+  s3 = Math.max(10, Math.min(100, s3));
+
+  const bono = (totCred <= 100 && s1 >= 80 && s2 >= 80 && s3 >= 80) ? +((100 - totCred) * 0.4).toFixed(1) : 0;
+  const total = totCred > 100 ? 0 : +(((s1 + s2 + s3) / 3) + bono).toFixed(1);
+
+  document.getElementById("scF1").textContent = s1 + "%";
+  document.getElementById("scF2").textContent = s2 + "%";
+  document.getElementById("scF3").textContent = s3 + "%";
+  document.getElementById("scTotal").textContent = totCred > 100 ? "DESCALIF." : total + " pts";
+
+  // Generar Rayos X detallados
+  const log = [];
+  if (totCred > 100) {
+    log.push(`<span style="color:#F43F5E;font-weight:700;">❌ PRESUPUESTO EXCEDIDO (${totCred.toFixed(1)} / 100 créditos).</span> Reduce Full FT o el número de ejemplos k.`);
+  }
+  log.push(`<strong style="color:#14B8A6;">[FASE 1 · ${state.f1.via}] Nota: ${s1}%</strong>`);
+  if (s1 >= 85) log.push(`  ✅ Input: "ALERTA peatón cebra tramo 2" &rarr; <code>{"evento":"PEATON","urgencia":"ALTA"}</code>`);
+  else log.push(`  ❌ Input: "ALERTA peatón cebra tramo 2" &rarr; <code>${!cur.ruido ? '{"evento":"LIBRE"} (contaminado por ruido)' : '"Creo que hay un peatón..." (sin formato JSON)'}</code>`);
+
+  log.push(`<br><strong style="color:#818CF8;">[FASE 2 · ${state.f2.via}] Nota: ${s2}%</strong>`);
+  if (s2 >= 85) log.push(`  ✅ Input: "V=20m/s, Obs=38m" &rarr; <em>"Reacción=10m + Frenado=40m = 50m &gt; 38m"</em> &rarr; <code>NO</code>`);
+  else if (state.f2.usar_cot && state.f2.max_tokens < 80) log.push(`  ⚠️ CoT activado pero <code>max_tokens=${state.f2.max_tokens}</code> muy corto: se cortó a mitad de la cuenta!`);
+  else log.push(`  ❌ Sin Chain-of-Thought: adivina en el 1er token &rarr; responde <code>SI</code> y choca.`);
+
+  log.push(`<br><strong style="color:#F59E0B;">[FASE 3 · ${state.f3.via}] Nota Pista: ${s3}%</strong>`);
+  const choques = s3 >= 90 ? 0 : (s3 >= 70 ? 2 : 5);
+  log.push(`  🏎️ Carrera de 15 tramos: <strong>${15 - choques}/15 limpios (${choques} choques)</strong> · Bono eficiencia: +${bono} pts`);
+  document.getElementById("xrayLog").innerHTML = log.join("<br>");
+
+  animarPista(choques);
+}
+
+let animId = null;
+function animarPista(numChoques) {
+  if (animId) cancelAnimationFrame(animId);
+  const cv = document.getElementById("trackCanvas");
+  const ctx = cv.getContext("2d");
+  const pts = [
+    [60,230],[140,245],[230,245],[330,235],[400,195],
+    [410,125],[355,75],[270,85],[215,130],[155,120],
+    [115,65],[65,70],[45,125],[50,180],[60,230]
+  ];
+  let step = 0;
+  function frame() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    // Dibujar asfalto
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+    ctx.strokeStyle = "#1E293B";
+    ctx.lineWidth = 28;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Línea central
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Nodos de los 15 tramos
+    pts.forEach((p, i) => {
+      const esChoque = (numChoques > 0) && ((i === 4) || (numChoques > 2 && (i === 7 || i === 10 || i === 12)));
+      ctx.beginPath();
+      ctx.arc(p[0], p[1], 5, 0, Math.PI * 2);
+      ctx.fillStyle = esChoque ? "#F43F5E" : "#10B981";
+      ctx.fill();
+    });
+
+    // Posición del carro interpolada
+    const idx = Math.floor(step) % (pts.length - 1);
+    const frac = step - Math.floor(step);
+    const p0 = pts[idx], p1 = pts[idx + 1];
+    const cx = p0[0] + (p1[0] - p0[0]) * frac;
+    const cy = p0[1] + (p1[1] - p0[1]) * frac;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 9, 0, Math.PI * 2);
+    ctx.fillStyle = "#14B8A6";
+    ctx.fill();
+    ctx.strokeStyle = "#F8FAFC";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    step += 0.06;
+    if (step < pts.length - 1) animId = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function mostrarConfigPy() {
+  const cur = leerCuracion();
+  const code = `CURACION = {
+    "dedup_minhash": ${cur.dedup ? "True" : "False"},
+    "umbral_minhash": ${cur.umbral.toFixed(2)},
+    "filtrar_ruido": ${cur.ruido ? "True" : "False"},
+    "fraccion_datos_D": ${cur.frac.toFixed(2)},
+}
+FASE_1 = ${JSON.stringify(state.f1, null, 4).replace(/true/g,"True").replace(/false/g,"False")}
+FASE_2 = ${JSON.stringify(state.f2, null, 4).replace(/true/g,"True").replace(/false/g,"False")}
+FASE_3 = ${JSON.stringify(state.f3, null, 4).replace(/true/g,"True").replace(/false/g,"False")}`;
+  const pre = document.getElementById("codeModal");
+  pre.style.display = pre.style.display === "block" ? "none" : "block";
+  pre.textContent = code;
+  navigator.clipboard?.writeText(code);
+}
+
+renderFasesUI();
+recalcular();
+simularMision();
+</script>
+</body>
+</html>
