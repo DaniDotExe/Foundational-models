@@ -11,6 +11,7 @@ import os
 import re
 import threading
 import time
+import traceback
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, Header, HTTPException
@@ -67,8 +68,9 @@ def cargar_modelo_base():
     tok = AutoTokenizer.from_pretrained(MODEL_ID)
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-    mdl = AutoModelForCausalLM.from_pretrained(MODEL_ID, torch_dtype=dtype, device_map="auto")
+    mdl = AutoModelForCausalLM.from_pretrained(MODEL_ID, torch_dtype=dtype).to(device)
     mdl.eval()
     MODELO_CARGADO["tokenizer"] = tok
     MODELO_CARGADO["base_model"] = mdl
@@ -162,8 +164,8 @@ def _correr_fase_gpu(tok, base_mdl, fase: int, ejemplos: List[dict], cfg_f: dict
         peft_mdl = get_peft_model(base_mdl, lcfg)
         _entrenar_sft(tok, peft_mdl, ejemplos, int(cfg_f.get("epochs", 3)), float(cfg_f.get("lr", 5e-4)))
         res = _evaluar_modelo(tok, peft_mdl, fase, [], cfg_f)
-        # Limpiar adaptador para dejar W0 intacto
-        base_mdl.delete_adapter("default") if hasattr(base_mdl, "delete_adapter") else None
+        # Restaurar base_mdl limpio sin capas LoRA
+        peft_mdl.unload()
         del peft_mdl
         torch.cuda.empty_cache()
         return res
@@ -205,17 +207,22 @@ def ejecutar_mision(req: MisionRequest, x_team_token: str = Header(default="")):
         raise HTTPException(status_code=400, detail=f"Presupuesto excedido: {creditos:.1f} / {MAX_CREDITOS} créditos.")
 
     t0 = time.time()
-    if os.environ.get("RUN_REAL_GPU", "0") == "1":
-        with gpu_lock:
-            tok, base_mdl = cargar_modelo_base()
-            r1 = _correr_fase_gpu(tok, base_mdl, 1, req.ejemplos_curados.get("fase1", []), cfg.get("fase1", {}))
-            r2 = _correr_fase_gpu(tok, base_mdl, 2, req.ejemplos_curados.get("fase2", []), cfg.get("fase2", {}))
-            r3 = _correr_fase_gpu(tok, base_mdl, 3, req.ejemplos_curados.get("fase3", []), cfg.get("fase3", {}))
-            s1, s2, s3 = r1["score"], r2["score"], r3["score"]
-            muestras = {"fase1": r1["muestras"], "fase2": r2["muestras"], "fase3": r3["muestras"]}
-    else:
-        s1, s2, s3 = 85.0, 85.0, 85.0
-        muestras = {"aviso": "Ejecutado sin RUN_REAL_GPU=1 (modo demo)"}
+    try:
+        if os.environ.get("RUN_REAL_GPU", "0") == "1":
+            with gpu_lock:
+                tok, base_mdl = cargar_modelo_base()
+                r1 = _correr_fase_gpu(tok, base_mdl, 1, req.ejemplos_curados.get("fase1", []), cfg.get("fase1", {}))
+                r2 = _correr_fase_gpu(tok, base_mdl, 2, req.ejemplos_curados.get("fase2", []), cfg.get("fase2", {}))
+                r3 = _correr_fase_gpu(tok, base_mdl, 3, req.ejemplos_curados.get("fase3", []), cfg.get("fase3", {}))
+                s1, s2, s3 = r1["score"], r2["score"], r3["score"]
+                muestras = {"fase1": r1["muestras"], "fase2": r2["muestras"], "fase3": r3["muestras"]}
+        else:
+            s1, s2, s3 = 85.0, 85.0, 85.0
+            muestras = {"aviso": "Ejecutado sin RUN_REAL_GPU=1 (modo demo)"}
+    except Exception as exc:
+        tb = traceback.format_exc()
+        print(f"[ERROR GPU] {tb}")
+        raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {exc}\n{tb}")
 
     bono = round(max(0.0, (MAX_CREDITOS - creditos) * 0.4), 1) if (s1 >= 75 and s2 >= 75 and s3 >= 75) else 0.0
     total = round((s1 + s2 + s3) / 3.0 + bono, 1)

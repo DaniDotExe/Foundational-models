@@ -181,6 +181,9 @@ def main():
                 r_gcp = json.loads(resp.read().decode("utf-8"))
                 print("\n[GCP OK] Respuesta del servidor:", json.dumps(r_gcp, indent=2, ensure_ascii=False))
                 reporte_fases["resultado_gcp"] = r_gcp
+        except urllib.error.HTTPError as e:
+            detalle = e.read().decode("utf-8", errors="replace")
+            print(f"\n[ERROR SERVIDOR HTTP {e.code}] {detalle}")
         except urllib.error.URLError as e:
             print(f"\n[AVISO] No se pudo conectar a GCP en {url}: {e}. Abre simulador_y_arena.html para jugar en local.")
 

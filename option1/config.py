@@ -7,9 +7,9 @@
 
 # >>>>>>>>>>  EDITA DESDE AQUÍ  >>>>>>>>>>
 
-EQUIPO = "Equipo_Prueba"
+EQUIPO = "Dani"
 TEAM_TOKEN = "token_estudiante_01"
-GCP_API_URL = "http://127.0.0.1:8000"   # Tu profesor te dará la IP/URL de GCP al iniciar la clase
+GCP_API_URL = "https://shares-loud-latitude-routine.trycloudflare.com/"   # Tu profesor te dará la IP/URL de GCP al iniciar la clase
 
 # --- BLOQUE 1: TUBERÍA DE CURACIÓN DE DATOS (Aplica a los datasets de las 3 fases) ---
 CURACION = {
