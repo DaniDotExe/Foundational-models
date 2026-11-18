@@ -82,7 +82,7 @@ pip install -r "participante\requirements.txt"
 ### 2. Terminal 1 — Iniciar el Backend (GPU)
 ```bat
 cd /d "backend_server"
-uvicorn server:app --host 0.0.0.0 --port 8000
+python -m uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 Espera a ver `Application startup complete.` y deja esta ventana abierta.
 - Ranking en vivo en tu navegador: `http://127.0.0.1:8000/ranking`
