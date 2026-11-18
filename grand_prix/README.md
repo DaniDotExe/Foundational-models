@@ -7,7 +7,7 @@ Plataforma educativa competitiva de conducción autónoma para comparar **In-Con
 ## 1. Arquitectura Cliente–Servidor
 
 ```text
-fewshot_grand_prix/
+grand_prix/
 ├── backend_server/               # GPU Server (RTX 3060 Ti local o Colab A100/L4)
 │   ├── .env / .env.example       # Configuración del modelo, límites anti-trampa y penalización
 │   ├── requirements.txt
@@ -38,10 +38,10 @@ fewshot_grand_prix/
 
 ### Paso A: Levantar el Backend (`backend_server/`)
 
-Abre una terminal en `fewshot_grand_prix/backend_server/`:
+Abre una terminal en `grand_prix/backend_server/`:
 
 ```bash
-cd fewshot_grand_prix/backend_server
+cd grand_prix/backend_server
 pip install -r requirements.txt
 cp .env.example .env   # (en Windows PowerShell: Copy-Item .env.example .env)
 uvicorn server:app --host 0.0.0.0 --port 8000
@@ -58,10 +58,10 @@ Verifica en tu navegador o terminal que la GPU y el modelo quedaron activos:
 
 ### Paso B: Ejecutar el Cliente del Estudiante (`cliente_estudiante/`)
 
-Abre una **segunda terminal** en `fewshot_grand_prix/cliente_estudiante/`:
+Abre una **segunda terminal** en `grand_prix/cliente_estudiante/`:
 
 ```bash
-cd fewshot_grand_prix/cliente_estudiante
+cd grand_prix/cliente_estudiante
 pip install -r requirements.txt
 cp .env.example .env   # (en Windows PowerShell: Copy-Item .env.example .env)
 python juego_pistas.py
@@ -88,24 +88,24 @@ python juego_pistas.py --modo 4 --headless   # Evaluación oficial Pistas B
 
 Para atender hasta **12 estudiantes en paralelo** en clase sin cambiar una sola línea de código del backend:
 
-### Celda 1: Clonar o subir `fewshot_grand_prix/backend_server` e instalar dependencias
+### Celda 1: Clonar o subir `grand_prix/backend_server` e instalar dependencias
 ```python
 # En Google Colab Pro (Entorno -> NVIDIA A100 o L4)
 !nvidia-smi
-!pip -q install -r /content/fewshot_grand_prix/backend_server/requirements.txt
+!pip -q install -r /content/grand_prix/backend_server/requirements.txt
 
 # Instalar cloudflared para túnel público sin cuenta ni contraseña
 !wget -q -O /usr/local/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
 !chmod +x /usr/local/bin/cloudflared
 ```
 
-*(Si subes la carpeta comprimida en `.zip` a Colab, descomprímela en `/content/fewshot_grand_prix` antes de correr la celda siguiente).*
+*(Si subes la carpeta comprimida en `.zip` a Colab, descomprímela en `/content/grand_prix` antes de correr la celda siguiente).*
 
 ### Celda 2: Iniciar FastAPI (`server.py`) y publicar URL `trycloudflare.com`
 ```python
 import os, re, subprocess, time, urllib.request
 
-os.chdir("/content/fewshot_grand_prix/backend_server")
+os.chdir("/content/grand_prix/backend_server")
 
 # Asegurar .env activo
 if not os.path.exists(".env") and os.path.exists(".env.example"):
