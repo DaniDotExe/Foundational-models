@@ -6,6 +6,7 @@ para la evaluación oficial penalizada.
 from __future__ import annotations
 
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -31,8 +32,11 @@ class ServerBridge:
         self.server_url = (
             server_url or os.getenv("SERVER_URL", "http://127.0.0.1:8000")
         ).rstrip("/")
-        self.student_id = student_id or os.getenv("STUDENT_ID", "estudiante_01")
-        self.student_name = student_name or os.getenv("STUDENT_NAME", "Oscar_Prueba")
+        self.student_name = (
+            student_name or os.getenv("STUDENT_NAME", "Oscar_Prueba")
+        ).strip() or "Oscar_Prueba"
+        id_base = student_id or os.getenv("STUDENT_ID", "").strip() or self.student_name
+        self.student_id = re.sub(r"[^a-zA-Z0-9_-]", "_", id_base).lower() or "participante"
         self.timeout_sec = float(
             timeout_sec
             if timeout_sec is not None
@@ -72,7 +76,7 @@ class ServerBridge:
             "precision_sensores": int(config_datos.get("precision_sensores", 50)),
             "ventana_historia": int(config_datos.get("ventana_historia", 3)),
         }
-        train_timeout = max(180.0, self.timeout_sec * 30.0)
+        train_timeout = max(600.0, self.timeout_sec * 60.0)
         resp = self.session.post(
             f"{self.server_url}/entrenar_lora",
             json=payload,

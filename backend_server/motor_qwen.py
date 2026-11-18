@@ -492,10 +492,10 @@ class MotorQwen:
                     muestras_balanceadas.extend(lista)
 
             # Preparar pares tokenizados supervisando EXCLUSIVAMENTE la clasificación entre las 4 acciones {0,1,2,3}
-            # en el último token e inyectando historiales contrafactuales (H=[0..0], H=[2..2]) para que el modelo atienda a S y C
+            # en el último token e inyectando historial contrafactual (H=[0..0]) para que el modelo atienda a S y C
             encoded_samples: List[tuple[List[int], int]] = []
             vent = max(1, min(8, int(ventana_historia)))
-            historiales_cf = [[0] * vent, [2] * vent]
+            historiales_cf = [[0] * vent]
 
             for m in muestras_balanceadas:
                 accion = int(m.get("accion", 0))
@@ -518,7 +518,7 @@ class MotorQwen:
 
             pad_id = int(self.tokenizer.pad_token_id)
             optimizer = torch.optim.AdamW(trainable_params, lr=float(learning_rate))
-            batch_size = min(8, len(encoded_samples))
+            batch_size = min(24, len(encoded_samples))
 
             self.peft_model.train()
             historial_loss: List[float] = []
