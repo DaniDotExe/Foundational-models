@@ -55,14 +55,40 @@ class ServerBridge:
         resp.raise_for_status()
         return resp.json()
 
+    def listar_adaptadores(self) -> List[str]:
+        """Consulta GET /adaptadores/{student_id} (máx. 3 modelos LoRA por alumno)."""
+        try:
+            resp = self.session.get(
+                f"{self.server_url}/adaptadores/{self.student_id}",
+                timeout=max(10.0, self.timeout_sec),
+            )
+            if resp.status_code == 404:
+                return []
+            resp.raise_for_status()
+            return list(resp.json().get("adaptadores", []))
+        except requests.RequestException:
+            return []
+
+    def eliminar_adaptador(self, adapter_name: str) -> bool:
+        """Elimina un adaptador específico vía DELETE /adaptadores/{student_id}/{adapter_name}."""
+        resp = self.session.delete(
+            f"{self.server_url}/adaptadores/{self.student_id}/{adapter_name}",
+            timeout=max(10.0, self.timeout_sec),
+        )
+        if resp.status_code == 404:
+            return False
+        resp.raise_for_status()
+        return bool(resp.json().get("eliminado", False))
+
     def entrenar_lora(
         self,
         jugadas: List[Dict[str, Any]],
         config_lora: Dict[str, Any],
         config_datos: Dict[str, Any],
+        adapter_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Envía las jugadas grabadas a POST /entrenar_lora."""
-        payload = {
+        payload: Dict[str, Any] = {
             "student_id": self.student_id,
             "jugadas": jugadas,
             "lora_r": int(config_lora.get("lora_r", 8)),
@@ -76,6 +102,8 @@ class ServerBridge:
             "precision_sensores": int(config_datos.get("precision_sensores", 50)),
             "ventana_historia": int(config_datos.get("ventana_historia", 3)),
         }
+        if adapter_name:
+            payload["adapter_name"] = adapter_name
         # Intentar primero entrenamiento asíncrono (evita Error 524 de Cloudflare a los 100 s)
         resp = self.session.post(
             f"{self.server_url}/entrenar_lora_async",
@@ -107,10 +135,13 @@ class ServerBridge:
         deadline = time.monotonic() + max(600.0, self.timeout_sec * 60.0)
         while time.monotonic() < deadline:
             time.sleep(2.0)
-            st_resp = self.session.get(
-                f"{self.server_url}/entrenar_lora_estado/{self.student_id}",
-                timeout=max(15.0, self.timeout_sec),
-            )
+            try:
+                st_resp = self.session.get(
+                    f"{self.server_url}/entrenar_lora_estado/{self.student_id}",
+                    timeout=max(20.0, self.timeout_sec * 2.0),
+                )
+            except requests.RequestException:
+                continue
             if st_resp.status_code >= 400:
                 try:
                     detail = st_resp.json().get("detail", st_resp.text)
@@ -136,15 +167,24 @@ class ServerBridge:
         velocidad: Optional[float] = None,
         cp_dist: Optional[float] = None,
         cp_ang: Optional[float] = None,
+        adapter_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Consulta POST /decidir_accion con reintentos y mide RTT real en milisegundos."""
         est = estrategia.upper().strip()
+        jugadas_envio = None
+        if est in ("ICL", "LORA_ICL") and jugadas_referencia:
+            if len(jugadas_referencia) > 300:
+                n_tot = len(jugadas_referencia)
+                jugadas_envio = [jugadas_referencia[int(i * (n_tot - 1) / 299)] for i in range(300)]
+            else:
+                jugadas_envio = jugadas_referencia
+
         payload: Dict[str, Any] = {
             "student_id": self.student_id,
             "estrategia": est,
             "estado_actual": [float(x) for x in estado_actual[:5]],
             "historial": [int(a) for a in historial],
-            "jugadas_referencia": jugadas_referencia if est == "ICL" else None,
+            "jugadas_referencia": jugadas_envio,
             "k_shots": int(config_icl.get("k_shots", 10)),
             "seleccion": str(config_icl.get("seleccion", "knn")),
             "pesos_sensores": list(
@@ -161,6 +201,8 @@ class ServerBridge:
             payload["cp_dist"] = float(cp_dist)
         if cp_ang is not None:
             payload["cp_ang"] = float(cp_ang)
+        if adapter_name:
+            payload["adapter_name"] = adapter_name
 
         t0 = time.perf_counter()
         last_err: Optional[Exception] = None
@@ -219,14 +261,17 @@ class ServerBridge:
         self,
         estrategia: str,
         resultados_pistas: Dict[str, Dict[str, Any]],
+        num_ejemplos: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Envía los resultados oficiales de B1, B2, B3 a POST /registrar_puntaje."""
-        payload = {
+        payload: Dict[str, Any] = {
             "student_id": self.student_id,
             "student_name": self.student_name,
             "estrategia": estrategia.upper().strip(),
             "resultados_pistas": resultados_pistas,
         }
+        if num_ejemplos is not None:
+            payload["num_ejemplos"] = int(num_ejemplos)
         resp = self.session.post(
             f"{self.server_url}/registrar_puntaje",
             json=payload,
@@ -238,6 +283,15 @@ class ServerBridge:
             except Exception:
                 detail = resp.text
             raise RuntimeError(f"Error registrando puntaje ({resp.status_code}): {detail}")
+        return resp.json()
+
+    def obtener_trayectorias_b(self) -> Dict[str, Any]:
+        """Descarga GET /trayectorias_b para reproducir la carrera conjunta de todos los alumnos."""
+        resp = self.session.get(
+            f"{self.server_url}/trayectorias_b",
+            timeout=max(15.0, self.timeout_sec * 2.0),
+        )
+        resp.raise_for_status()
         return resp.json()
 
     @staticmethod

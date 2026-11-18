@@ -29,6 +29,7 @@ logging.basicConfig(
 
 # Lock global para aislar operaciones críticas en GPU entre hilos concurrentes
 gpu_lock = threading.Lock()
+train_lock = threading.Lock()
 
 ACCIONES_VALIDAS = {0, 1, 2, 3}
 TARGET_MODULES_PERMITIDOS = {
@@ -74,6 +75,7 @@ ADAPTERS_DIR.mkdir(parents=True, exist_ok=True)
 MAX_K_SHOTS: int = _env_int("MAX_K_SHOTS", 30)
 MAX_LORA_EPOCHS: int = _env_int("MAX_LORA_EPOCHS", 15)
 MAX_LORA_R: int = _env_int("MAX_LORA_R", 32)
+MAX_LORA_SAMPLES: int = _env_int("MAX_LORA_SAMPLES", 300)
 LATENCY_PENALTY_WEIGHT: float = _env_float("LATENCY_PENALTY_WEIGHT", 1.5)
 
 
@@ -333,8 +335,47 @@ class MotorQwen:
             },
         }
 
-    def _ruta_adaptador(self, student_id: str) -> Path:
-        return self.adapters_dir / sanitizar_student_id(student_id)
+    def _ruta_adaptador(self, akey: str) -> Path:
+        return self.adapters_dir / sanitizar_student_id(akey)
+
+    def _adapter_key(self, sid: str, adapter_name: Optional[str] = None) -> str:
+        if adapter_name and adapter_name.strip() and adapter_name.strip() != "default":
+            return f"{sid}__{sanitizar_student_id(adapter_name)}"
+        return sid
+
+    def listar_adaptadores(self, student_id: str) -> List[str]:
+        """Devuelve los adaptadores LoRA guardados en disco para `student_id`."""
+        sid = sanitizar_student_id(student_id)
+        prefijo = f"{sid}__"
+        encontrados: List[tuple[float, str]] = []
+        for p in self.adapters_dir.iterdir():
+            if not p.is_dir():
+                continue
+            if p.name == sid and (self._resolver_dir_carga_peft(p, p.name) / "adapter_config.json").exists():
+                encontrados.append((p.stat().st_mtime, "default"))
+            elif p.name.startswith(prefijo) and (self._resolver_dir_carga_peft(p, p.name) / "adapter_config.json").exists():
+                encontrados.append((p.stat().st_mtime, p.name[len(prefijo):]))
+        encontrados.sort(key=lambda x: x[0])
+        return [name for _, name in encontrados]
+
+    def eliminar_adaptador(self, student_id: str, adapter_name: str) -> bool:
+        """Elimina un adaptador específico de memoria GPU y disco."""
+        import shutil
+
+        sid = sanitizar_student_id(student_id)
+        akey = self._adapter_key(sid, adapter_name)
+        with gpu_lock:
+            if self.peft_model is not None and akey in self.peft_model.peft_config:
+                try:
+                    self.peft_model.delete_adapter(akey)
+                except Exception:
+                    pass
+            self.loaded_adapters.discard(akey)
+        ruta = self._ruta_adaptador(akey)
+        if ruta.exists():
+            shutil.rmtree(ruta, ignore_errors=True)
+            return True
+        return False
 
     def _resolver_dir_carga_peft(self, student_dir: Path, sid: str) -> Path:
         """Localiza el directorio real que contiene adapter_config.json."""
@@ -393,10 +434,12 @@ class MotorQwen:
         num_ejemplos: int,
         precision_sensores: int = 50,
         ventana_historia: int = 3,
+        adapter_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Entrena un adaptador LoRA aislado para `student_id` y lo guarda en disco."""
         self.inicializar()
         sid = sanitizar_student_id(student_id)
+        akey = self._adapter_key(sid, adapter_name)
 
         if not (1 <= lora_r <= MAX_LORA_R):
             raise ValueError(f"lora_r={lora_r} excede el límite permitido [1, {MAX_LORA_R}].")
@@ -410,7 +453,7 @@ class MotorQwen:
         if not jugadas:
             raise ValueError("La lista de jugadas está vacía; graba primero jugadas en las pistas A.")
 
-        n_cap = max(1, min(int(num_ejemplos), len(jugadas)))
+        n_cap = max(1, min(int(num_ejemplos), len(jugadas), MAX_LORA_SAMPLES))
         if len(jugadas) > n_cap:
             indices = np.linspace(0, len(jugadas) - 1, num=n_cap, dtype=int)
             muestras = [jugadas[i] for i in indices]
@@ -440,38 +483,39 @@ class MotorQwen:
         from peft import LoraConfig, get_peft_model
 
         t0 = time.perf_counter()
-        with gpu_lock:
-            lora_config = LoraConfig(
-                r=int(lora_r),
-                lora_alpha=int(lora_alpha),
-                target_modules=list(target_modules),
-                lora_dropout=0.05,
-                bias="none",
-                task_type="CAUSAL_LM",
-            )
-
-            if self.peft_model is None:
-                self.peft_model = get_peft_model(
-                    self.base_model, lora_config, adapter_name=sid
+        with train_lock:
+            with gpu_lock:
+                lora_config = LoraConfig(
+                    r=int(lora_r),
+                    lora_alpha=int(lora_alpha),
+                    target_modules=list(target_modules),
+                    lora_dropout=0.05,
+                    bias="none",
+                    task_type="CAUSAL_LM",
                 )
-            else:
-                if sid in self.peft_model.peft_config:
-                    self.peft_model.delete_adapter(sid)
-                self.peft_model.add_adapter(sid, lora_config)
-                self.peft_model.set_adapter(sid)
 
-            # Activar gradientes exclusivamente para el adaptador de este estudiante
-            trainable_params = []
-            for name, param in self.peft_model.named_parameters():
-                es_del_alumno = f".{sid}." in name
-                param.requires_grad = es_del_alumno
-                if es_del_alumno:
-                    trainable_params.append(param)
+                if self.peft_model is None:
+                    self.peft_model = get_peft_model(
+                        self.base_model, lora_config, adapter_name=akey
+                    )
+                else:
+                    if akey in self.peft_model.peft_config:
+                        self.peft_model.delete_adapter(akey)
+                    self.peft_model.add_adapter(akey, lora_config)
+                    self.peft_model.set_adapter(akey)
 
-            if not trainable_params:
-                raise RuntimeError(f"No se encontraron parámetros entrenables para el adaptador '{sid}'.")
+                # Activar gradientes exclusivamente para el adaptador de este estudiante
+                trainable_params = []
+                for name, param in self.peft_model.named_parameters():
+                    es_del_alumno = f".{akey}." in name
+                    param.requires_grad = es_del_alumno
+                    if es_del_alumno:
+                        trainable_params.append(param)
 
-            # Balancear clases minoritarias y romper confusión causal del historial H
+                if not trainable_params:
+                    raise RuntimeError(f"No se encontraron parámetros entrenables para el adaptador '{akey}'.")
+
+            # Balancear clases minoritarias y romper confusión causal del historial H (fuera de gpu_lock)
             por_accion: Dict[int, List[Dict[str, Any]]] = {a: [] for a in ACCIONES_VALIDAS}
             for m in muestras:
                 acc = int(m.get("accion", 0))
@@ -518,9 +562,8 @@ class MotorQwen:
 
             pad_id = int(self.tokenizer.pad_token_id)
             optimizer = torch.optim.AdamW(trainable_params, lr=float(learning_rate))
-            batch_size = min(24, len(encoded_samples))
+            batch_size = min(64, len(encoded_samples))
 
-            self.peft_model.train()
             historial_loss: List[float] = []
 
             for _epoch in range(int(epochs)):
@@ -539,60 +582,67 @@ class MotorQwen:
                         attn_mask_b.append([0] * pad_n + [1] * len(ids))
                         labels_b.append(acc_target)
 
-                    input_tensor = torch.tensor(input_ids_b, dtype=torch.long, device=self.device)
-                    mask_tensor = torch.tensor(attn_mask_b, dtype=torch.long, device=self.device)
-                    label_tensor = torch.tensor(labels_b, dtype=torch.long, device=self.device)
+                    # Ceder gpu_lock entre batches para que las simulaciones [3]/[4] no se bloqueen ni hagan timeout
+                    with gpu_lock:
+                        self.peft_model.set_adapter(akey)
+                        self.peft_model.train()
+                        input_tensor = torch.tensor(input_ids_b, dtype=torch.long, device=self.device)
+                        mask_tensor = torch.tensor(attn_mask_b, dtype=torch.long, device=self.device)
+                        label_tensor = torch.tensor(labels_b, dtype=torch.long, device=self.device)
 
-                    optimizer.zero_grad(set_to_none=True)
-                    outputs = self.peft_model(
-                        input_ids=input_tensor,
-                        attention_mask=mask_tensor,
-                        use_cache=False,
-                        logits_to_keep=1,
-                    )
-                    logits_last = outputs.logits[:, -1, :]
-                    action_logits = logits_last[:, self.action_token_ids].float()
-                    loss = torch.nn.functional.cross_entropy(action_logits, label_tensor)
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
-                    optimizer.step()
-                    epoch_losses.append(float(loss.detach().cpu().item()))
+                        optimizer.zero_grad(set_to_none=True)
+                        outputs = self.peft_model(
+                            input_ids=input_tensor,
+                            attention_mask=mask_tensor,
+                            use_cache=False,
+                            logits_to_keep=1,
+                        )
+                        logits_last = outputs.logits[:, -1, :]
+                        action_logits = logits_last[:, self.action_token_ids].float()
+                        loss = torch.nn.functional.cross_entropy(action_logits, label_tensor)
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
+                        optimizer.step()
+                        epoch_losses.append(float(loss.detach().cpu().item()))
+                    time.sleep(0.005)
 
                 historial_loss.append(round(float(np.mean(epoch_losses)), 4))
 
-            del optimizer
-            if self.device == "cuda":
-                torch.cuda.empty_cache()
+            with gpu_lock:
+                del optimizer
+                if self.device == "cuda":
+                    torch.cuda.empty_cache()
 
-            self.peft_model.eval()
-            for p in trainable_params:
-                p.requires_grad = False
+                self.peft_model.eval()
+                for p in trainable_params:
+                    p.requires_grad = False
 
-            student_dir = self._ruta_adaptador(sid)
-            student_dir.mkdir(parents=True, exist_ok=True)
-            # Guardar adaptador del estudiante en adapters_cache/{student_id}
-            if sid == "default":
-                self.peft_model.save_pretrained(str(student_dir))
-            else:
-                try:
-                    self.peft_model.save_pretrained(
-                        str(self.adapters_dir), selected_adapters=[sid]
-                    )
-                except TypeError:
+                student_dir = self._ruta_adaptador(akey)
+                student_dir.mkdir(parents=True, exist_ok=True)
+                # Guardar adaptador del estudiante en adapters_cache/{akey}
+                if akey == "default":
                     self.peft_model.save_pretrained(str(student_dir))
+                else:
+                    try:
+                        self.peft_model.save_pretrained(
+                            str(self.adapters_dir), selected_adapters=[akey]
+                        )
+                    except TypeError:
+                        self.peft_model.save_pretrained(str(student_dir))
 
-            self.loaded_adapters.add(sid)
-            if self.device == "cuda":
-                torch.cuda.synchronize()
+                self.loaded_adapters.add(akey)
+                if self.device == "cuda":
+                    torch.cuda.synchronize()
 
         elapsed = round(time.perf_counter() - t0, 3)
         loss_final = historial_loss[-1] if historial_loss else 0.0
         logger.info(
             "LoRA entrenado para %s | ejemplos=%d | epochs=%d | loss_final=%.4f | tiempo=%.2fs",
-            sid, len(muestras), epochs, loss_final, elapsed,
+            akey, len(muestras), epochs, loss_final, elapsed,
         )
         return {
             "student_id": sid,
+            "adapter_name": adapter_name or "default",
             "tiempo_entrenamiento_s": elapsed,
             "loss_final": loss_final,
             "historial_loss": historial_loss,
@@ -637,19 +687,21 @@ class MotorQwen:
         velocidad: Optional[float] = None,
         cp_dist: Optional[float] = None,
         cp_ang: Optional[float] = None,
+        adapter_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Predice la siguiente acción discreta {0,1,2,3} usando ICL o LoRA."""
         self.inicializar()
         sid = sanitizar_student_id(student_id)
+        akey = self._adapter_key(sid, adapter_name)
         modo = estrategia.upper().strip()
-        if modo not in {"ICL", "LORA"}:
-            raise ValueError("estrategia debe ser 'ICL' o 'LORA'.")
+        if modo not in {"ICL", "LORA", "LORA_ICL"}:
+            raise ValueError("estrategia debe ser 'ICL', 'LORA' o 'LORA_ICL'.")
 
         if k_shots > MAX_K_SHOTS:
             raise ValueError(f"k_shots={k_shots} excede el límite permitido ({MAX_K_SHOTS}).")
 
         ejemplos_icl: List[Dict[str, Any]] = []
-        if modo == "ICL" and jugadas_referencia:
+        if modo in {"ICL", "LORA_ICL"} and jugadas_referencia:
             ejemplos_icl = seleccionar_ejemplos_icl(
                 estado_actual=estado_actual,
                 jugadas_referencia=jugadas_referencia,
@@ -661,7 +713,7 @@ class MotorQwen:
             )
 
         lineas = [SYSTEM_HEADER]
-        if modo == "ICL":
+        if modo in {"ICL", "LORA_ICL"}:
             for ej in ejemplos_icl:
                 lineas.append(
                     formatear_ejemplo(
@@ -714,7 +766,7 @@ class MotorQwen:
                     else:
                         outputs = self.base_model(**inputs, use_cache=False, logits_to_keep=1)
                 else:
-                    self._asegurar_adaptador_cargado(sid)
+                    self._asegurar_adaptador_cargado(akey)
                     outputs = self.peft_model(**inputs, use_cache=False, logits_to_keep=1)
 
                 logits_last = outputs.logits[0, -1, :]

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import html
 import json
+import logging
 import os
 import sys
 import threading
@@ -44,8 +45,18 @@ load_dotenv(BASE_DIR / ".env")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 RANKING_PATH = BASE_DIR / "ranking.json"
+TRAYECTORIAS_PATH = BASE_DIR / "trayectorias_b.json"
 _train_jobs_lock = threading.Lock()
 _train_jobs: Dict[str, Dict[str, Any]] = {}
+_student_examples_lock = threading.Lock()
+_student_trained_examples: Dict[str, int] = {}
+logger = logging.getLogger("grandprix_server")
+
+F1_PUNTOS = [25.0, 18.0, 15.0, 12.0, 10.0, 8.0, 6.0, 4.0, 2.0, 1.0]
+PESO_CARRERA = 0.55
+PESO_VELOCIDAD = 0.20
+PESO_DATOS = 0.15
+PESO_LIMPIEZA = 0.10
 ranking_lock = threading.Lock()
 
 app = FastAPI(
@@ -86,11 +97,12 @@ class EntrenarLoraRequest(BaseModel):
     velocidad: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_dist: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_ang: Optional[float] = Field(default=None, ge=-1.0, le=1.0)
+    adapter_name: Optional[str] = None
 
 
 class DecidirAccionRequest(BaseModel):
     student_id: str
-    estrategia: str = Field(..., pattern="^(ICL|LORA|icl|lora)$")
+    estrategia: str = Field(..., pattern="^(ICL|LORA|LORA_ICL|icl|lora|lora_icl)$")
     estado_actual: List[float] = Field(..., min_length=5, max_length=5)
     historial: List[int] = Field(default_factory=list)
     jugadas_referencia: Optional[List[JugadaEjemplo]] = None
@@ -104,6 +116,7 @@ class DecidirAccionRequest(BaseModel):
     velocidad: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_dist: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_ang: Optional[float] = Field(default=None, ge=-1.0, le=1.0)
+    adapter_name: Optional[str] = None
 
 
 class ResultadoPistaB(BaseModel):
@@ -115,6 +128,7 @@ class ResultadoPistaB(BaseModel):
     completada: bool = False
     choques: int = Field(default=0, ge=0)
     tiempo_fuera_s: float = Field(default=0.0, ge=0.0)
+    trayectoria: Optional[List[List[float]]] = None
 
 
 class RegistrarPuntajeRequest(BaseModel):
@@ -122,6 +136,7 @@ class RegistrarPuntajeRequest(BaseModel):
     student_name: str
     estrategia: str
     resultados_pistas: Union[Dict[str, ResultadoPistaB], List[ResultadoPistaB]]
+    num_ejemplos: Optional[int] = Field(default=None, ge=0)
 
 
 def _cargar_ranking() -> Dict[str, Dict[str, Any]]:
@@ -143,15 +158,118 @@ def _guardar_ranking(data: Dict[str, Dict[str, Any]]) -> None:
     )
 
 
-def _ordenar_ranking(data: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
-    return sorted(
-        data.values(),
-        key=lambda row: (
-            -float(row.get("score_final", -1e9)),
-            -float(row.get("progreso_promedio_pct", 0.0)),
-            float(row.get("tiempo_total_penalizado_s", 1e9)),
+def _cargar_trayectorias() -> Dict[str, Dict[str, Any]]:
+    if not TRAYECTORIAS_PATH.exists():
+        return {}
+    try:
+        data = json.loads(TRAYECTORIAS_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _guardar_trayectorias(data: Dict[str, Dict[str, Any]]) -> None:
+    TRAYECTORIAS_PATH.write_text(
+        json.dumps(data, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def _puntos_f1(pos_idx_0: int, progreso_pct: float) -> float:
+    if progreso_pct <= 0.0:
+        return 0.0
+    if pos_idx_0 < len(F1_PUNTOS):
+        return F1_PUNTOS[pos_idx_0]
+    return 0.5
+
+
+def _calcular_rankings_f1(
+    data: Dict[str, Dict[str, Any]],
+) -> tuple[
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+]:
+    rows = [dict(v) for v in data.values()]
+    for r in rows:
+        n_ej = max(1, int(r.get("num_ejemplos") or 200))
+        r["num_ejemplos"] = n_ej
+        r["eficiencia_datos"] = round(float(r.get("progreso_promedio_pct", 0.0)) / n_ej, 3)
+
+    top_carrera = sorted(
+        rows,
+        key=lambda r: (
+            -int(r.get("pistas_completadas", 0)),
+            -float(r.get("progreso_promedio_pct", 0.0)),
+            float(r.get("tiempo_fisico_total_s", 1e9)),
         ),
     )
+    for i, r in enumerate(top_carrera):
+        r["pos_carrera"] = i + 1
+        r["pts_carrera"] = _puntos_f1(i, float(r.get("progreso_promedio_pct", 0.0)))
+
+    top_velocidad = sorted(
+        rows,
+        key=lambda r: (
+            float(r.get("latencia_promedio_ms", 1e9)),
+            -float(r.get("progreso_promedio_pct", 0.0)),
+        ),
+    )
+    for i, r in enumerate(top_velocidad):
+        r["pos_velocidad"] = i + 1
+        r["pts_velocidad"] = _puntos_f1(i, float(r.get("progreso_promedio_pct", 0.0)))
+
+    top_datos = sorted(
+        rows,
+        key=lambda r: (
+            0 if float(r.get("progreso_promedio_pct", 0.0)) >= 20.0 else 1,
+            -float(r.get("eficiencia_datos", 0.0)),
+            -float(r.get("progreso_promedio_pct", 0.0)),
+        ),
+    )
+    for i, r in enumerate(top_datos):
+        r["pos_datos"] = i + 1
+        prog = float(r.get("progreso_promedio_pct", 0.0))
+        r["pts_datos"] = _puntos_f1(i, prog) if prog >= 20.0 else 0.0
+
+    top_limpieza = sorted(
+        rows,
+        key=lambda r: (
+            int(r.get("choques_totales", 999)),
+            -float(r.get("progreso_promedio_pct", 0.0)),
+            float(r.get("tiempo_fisico_total_s", 1e9)),
+        ),
+    )
+    for i, r in enumerate(top_limpieza):
+        r["pos_limpieza"] = i + 1
+        r["pts_limpieza"] = _puntos_f1(i, float(r.get("progreso_promedio_pct", 0.0)))
+
+    for r in rows:
+        r["puntos_f1"] = round(
+            PESO_CARRERA * r["pts_carrera"]
+            + PESO_VELOCIDAD * r["pts_velocidad"]
+            + PESO_DATOS * r["pts_datos"]
+            + PESO_LIMPIEZA * r["pts_limpieza"],
+            2,
+        )
+
+    general = sorted(
+        rows,
+        key=lambda r: (
+            -float(r.get("puntos_f1", 0.0)),
+            -float(r.get("pts_carrera", 0.0)),
+            -float(r.get("progreso_promedio_pct", 0.0)),
+            float(r.get("tiempo_fisico_total_s", 1e9)),
+        ),
+    )
+    return general, top_carrera, top_velocidad, top_datos, top_limpieza
+
+
+def _ordenar_ranking(data: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    general, _, _, _, _ = _calcular_rankings_f1(data)
+    return general
 
 
 @app.on_event("startup")
@@ -169,6 +287,27 @@ def root() -> RedirectResponse:
 def health() -> Dict[str, Any]:
     """Verifica GPU activa, VRAM libre y modelo cargado."""
     return motor_global.info_salud()
+
+
+@app.get("/adaptadores/{student_id}")
+def listar_adaptadores_estudiante(student_id: str) -> Dict[str, Any]:
+    """Lista los adaptadores LoRA guardados (máx. 3 por participante)."""
+    try:
+        sid = sanitizar_student_id(student_id)
+        return {"student_id": sid, "adaptadores": motor_global.listar_adaptadores(sid)}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.delete("/adaptadores/{student_id}/{adapter_name}")
+def eliminar_adaptador_estudiante(student_id: str, adapter_name: str) -> Dict[str, Any]:
+    """Elimina un adaptador LoRA específico del estudiante."""
+    try:
+        sid = sanitizar_student_id(student_id)
+        ok = motor_global.eliminar_adaptador(sid, adapter_name)
+        return {"student_id": sid, "adapter_name": adapter_name, "eliminado": ok}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/entrenar_lora")
@@ -198,7 +337,11 @@ def entrenar_lora(req: EntrenarLoraRequest) -> Dict[str, Any]:
             num_ejemplos=req.num_ejemplos,
             precision_sensores=req.precision_sensores,
             ventana_historia=req.ventana_historia,
+            adapter_name=req.adapter_name,
         )
+        sid_clean = sanitizar_student_id(req.student_id)
+        with _student_examples_lock:
+            _student_trained_examples[sid_clean] = int(resultado.get("ejemplos_entrenados", len(jugadas_dict)))
         return resultado
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -208,6 +351,10 @@ def entrenar_lora(req: EntrenarLoraRequest) -> Dict[str, Any]:
 
 def _ejecutar_job_lora(sid: str, req: EntrenarLoraRequest) -> None:
     try:
+        logger.info(
+            "[ENTRENANDO] %s | ejemplos=%d | epochs=%d | r=%d",
+            sid, len(req.jugadas), req.epochs, req.lora_r,
+        )
         jugadas_dict = [j.model_dump() for j in req.jugadas]
         resultado = motor_global.entrenar_lora(
             student_id=req.student_id,
@@ -220,10 +367,18 @@ def _ejecutar_job_lora(sid: str, req: EntrenarLoraRequest) -> None:
             num_ejemplos=req.num_ejemplos,
             precision_sensores=req.precision_sensores,
             ventana_historia=req.ventana_historia,
+            adapter_name=req.adapter_name,
+        )
+        with _student_examples_lock:
+            _student_trained_examples[sid] = int(resultado.get("ejemplos_entrenados", len(jugadas_dict)))
+        logger.info(
+            "[LORA LISTO] %s | loss=%.4f | tiempo=%.1fs",
+            sid, resultado.get("loss_final", 0.0), resultado.get("tiempo_entrenamiento_s", 0.0),
         )
         with _train_jobs_lock:
             _train_jobs[sid] = {"status": "done", "result": resultado, "error": None}
     except Exception as exc:
+        logger.error("[LORA ERROR] %s | %s", sid, exc)
         with _train_jobs_lock:
             _train_jobs[sid] = {"status": "error", "result": None, "error": str(exc)}
 
@@ -303,6 +458,11 @@ def decidir_accion(req: DecidirAccionRequest) -> Dict[str, Any]:
             velocidad=req.velocidad,
             cp_dist=req.cp_dist,
             cp_ang=req.cp_ang,
+            adapter_name=req.adapter_name,
+        )
+        logger.info(
+            "[SIMULANDO] %s | %s | acc=%s | gpu=%.1fms",
+            req.student_id, req.estrategia.upper(), resultado["accion"], resultado["latencia_gpu_ms"],
         )
         return {
             "accion": resultado["accion"],
@@ -357,10 +517,19 @@ def registrar_puntaje(req: RegistrarPuntajeRequest) -> Dict[str, Any]:
         2,
     )
 
+    est_limpia = req.estrategia.upper().strip()
+    if req.num_ejemplos is not None and req.num_ejemplos > 0:
+        num_ejemplos_usados = int(req.num_ejemplos)
+    else:
+        with _student_examples_lock:
+            num_ejemplos_usados = int(_student_trained_examples.get(sid, 200))
+
     entrada = {
+        "entry_id": f"{sid}__{est_limpia}",
         "student_id": sid,
         "student_name": req.student_name.strip() or sid,
-        "estrategia": req.estrategia.upper().strip(),
+        "estrategia": est_limpia,
+        "num_ejemplos": num_ejemplos_usados,
         "progreso_promedio_pct": progreso_promedio_pct,
         "pistas_b": {
             p: {
@@ -383,20 +552,38 @@ def registrar_puntaje(req: RegistrarPuntajeRequest) -> Dict[str, Any]:
         "actualizado_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     }
 
+    entry_key = f"{sid}__{est_limpia}"
     with ranking_lock:
         ranking = _cargar_ranking()
-        ranking[sid] = entrada
+        ranking[entry_key] = entrada
         _guardar_ranking(ranking)
         ordenado = _ordenar_ranking(ranking)
 
+        tray_all = _cargar_trayectorias()
+        tray_pistas = {
+            p: pistas_map[p].trayectoria
+            for p in requeridas
+            if pistas_map[p].trayectoria
+        }
+        if tray_pistas:
+            tray_all[entry_key] = {
+                "entry_id": entry_key,
+                "student_id": sid,
+                "student_name": entrada["student_name"],
+                "estrategia": est_limpia,
+                "pistas": tray_pistas,
+            }
+            _guardar_trayectorias(tray_all)
+
+    reg_final = next((row for row in ordenado if row.get("entry_id", f"{row['student_id']}__{row['estrategia']}") == entry_key), entrada)
     posicion = next(
-        (idx + 1 for idx, row in enumerate(ordenado) if row["student_id"] == sid),
+        (idx + 1 for idx, row in enumerate(ordenado) if row.get("entry_id", f"{row['student_id']}__{row['estrategia']}") == entry_key),
         len(ordenado),
     )
     return {
         "posicion": posicion,
         "total_estudiantes": len(ordenado),
-        "registro": entrada,
+        "registro": reg_final,
     }
 
 
@@ -413,18 +600,44 @@ def ranking_json() -> Dict[str, Any]:
     }
 
 
+@app.get("/trayectorias_b")
+def obtener_trayectorias_b() -> Dict[str, Any]:
+    """Devuelve las trayectorias frame a frame de B1, B2 y B3 para el visor multi-carro."""
+    with ranking_lock:
+        tray_all = _cargar_trayectorias()
+    por_pista: Dict[str, List[Dict[str, Any]]] = {"B1": [], "B2": [], "B3": []}
+    for entry in tray_all.values():
+        pistas = entry.get("pistas", {})
+        for p in ("B1", "B2", "B3"):
+            if p in pistas and pistas[p]:
+                por_pista[p].append({
+                    "entry_id": entry.get("entry_id"),
+                    "student_name": entry.get("student_name"),
+                    "estrategia": entry.get("estrategia"),
+                    "trayectoria": pistas[p],
+                })
+    return {"pistas": por_pista}
+
+
 @app.get("/ranking", response_class=HTMLResponse)
 def ranking_html() -> str:
-    """Dashboard HTML en vivo con auto-refresco cada 5 segundos para proyectar en clase."""
+    """Dashboard HTML en vivo con Campeonato General F1 y 4 sub-rankings explicados."""
     with ranking_lock:
-        filas = _ordenar_ranking(_cargar_ranking())
+        filas, top_carrera, top_velocidad, top_datos, top_limpieza = _calcular_rankings_f1(_cargar_ranking())
+
+    def _badge_cls(est: str) -> str:
+        if est == "LORA":
+            return "badge-lora"
+        if est == "LORA_ICL":
+            return "badge-both"
+        return "badge-icl"
 
     filas_html = []
     for idx, row in enumerate(filas, start=1):
         nombre = html.escape(str(row.get("student_name", row.get("student_id", "-"))))
         sid = html.escape(str(row.get("student_id", "")))
         est = html.escape(str(row.get("estrategia", "-")))
-        badge_cls = "badge-lora" if est == "LORA" else "badge-icl"
+        badge_cls = _badge_cls(est)
 
         pistas_b = row.get("pistas_b", {})
         pills = []
@@ -436,11 +649,9 @@ def ranking_html() -> str:
 
         medalla = {1: "🥇 ", 2: "🥈 ", 3: "🥉 "}.get(idx, "")
         progreso_prom = float(row.get("progreso_promedio_pct", 0.0))
-        t_pen = float(row.get("tiempo_total_penalizado_s", 0.0))
         t_fis = float(row.get("tiempo_fisico_total_s", 0.0))
-        lat_s = float(row.get("latencia_total_s", 0.0))
         lat_ms = float(row.get("latencia_promedio_ms", 0.0))
-        score = float(row.get("score_final", 0.0))
+        pts_f1 = float(row.get("puntos_f1", 0.0))
 
         filas_html.append(
             f"""
@@ -452,15 +663,14 @@ def ranking_html() -> str:
               </td>
               <td><span class="badge {badge_cls}">{est}</span></td>
               <td>
-                <div class="pct-main">{progreso_prom:.1f}%</div>
+                <div class="pct-main">{progreso_prom:.1f}% <span class="time-sub">({t_fis:.1f}s)</span></div>
                 <div class="pills">{''.join(pills)}</div>
               </td>
-              <td>
-                <div class="time-main">{t_pen:.2f} s</div>
-                <div class="time-sub">Físico {t_fis:.1f}s + {LATENCY_PENALTY_WEIGHT}×{lat_s:.2f}s</div>
-              </td>
-              <td class="lat">{lat_ms:.1f} ms</td>
-              <td class="score">{score:.2f}</td>
+              <td class="sub-pts">#{row['pos_carrera']} <span class="pts-tag">({row['pts_carrera']:.1f})</span></td>
+              <td class="sub-pts">#{row['pos_velocidad']} <span class="pts-tag">({row['pts_velocidad']:.1f})</span><div class="time-sub">{lat_ms:.0f} ms</div></td>
+              <td class="sub-pts">#{row['pos_datos']} <span class="pts-tag">({row['pts_datos']:.1f})</span><div class="time-sub">{row['num_ejemplos']} ej</div></td>
+              <td class="sub-pts">#{row['pos_limpieza']} <span class="pts-tag">({row['pts_limpieza']:.1f})</span><div class="time-sub">{row['choques_totales']} choq</div></td>
+              <td class="score">{pts_f1:.2f}</td>
             </tr>
             """
         )
@@ -468,7 +678,41 @@ def ranking_html() -> str:
     cuerpo_tabla = (
         "\n".join(filas_html)
         if filas_html
-        else '<tr><td colspan="7" class="empty">Aún no hay evaluaciones oficiales registradas en Pistas B. Ejecuta el modo [4] en el cliente.</td></tr>'
+        else '<tr><td colspan="9" class="empty">Aún no hay evaluaciones oficiales registradas en Pistas B. Ejecuta el modo [4] en el cliente.</td></tr>'
+    )
+
+    def _render_subtabla(lista: List[Dict[str, Any]], metrica_fn: Any, pts_key: str) -> str:
+        if not lista:
+            return '<tr><td colspan="4" class="empty">Sin datos aún.</td></tr>'
+        out = []
+        for i, r in enumerate(lista, start=1):
+            nm = html.escape(str(r.get("student_name", r.get("student_id", "-"))))
+            es = html.escape(str(r.get("estrategia", "-")))
+            out.append(
+                f"<tr><td class='pos'>#{i}</td><td><strong>{nm}</strong> <span class='badge {_badge_cls(es)}'>{es}</span></td>"
+                f"<td class='lat'>{metrica_fn(r)}</td><td class='score'>{r[pts_key]:.1f} pts</td></tr>"
+            )
+        return "\n".join(out)
+
+    sub_carrera = _render_subtabla(
+        top_carrera,
+        lambda r: f"{r['pistas_completadas']}/3 | {r['progreso_promedio_pct']:.1f}% | {r['tiempo_fisico_total_s']:.1f}s",
+        "pts_carrera",
+    )
+    sub_velocidad = _render_subtabla(
+        top_velocidad,
+        lambda r: f"{r['latencia_promedio_ms']:.1f} ms/frame",
+        "pts_velocidad",
+    )
+    sub_datos = _render_subtabla(
+        top_datos,
+        lambda r: f"{r['eficiencia_datos']:.2f} %/ej ({r['num_ejemplos']} ej)",
+        "pts_datos",
+    )
+    sub_limpieza = _render_subtabla(
+        top_limpieza,
+        lambda r: f"{r['choques_totales']} choques | {r['progreso_promedio_pct']:.1f}%",
+        "pts_limpieza",
     )
 
     return f"""<!DOCTYPE html>
@@ -477,7 +721,7 @@ def ranking_html() -> str:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="refresh" content="5" />
-  <title>UIS Grand Prix Foundationals Models — Ranking en Vivo</title>
+  <title>UIS Grand Prix Foundationals Models — Ranking F1 en Vivo</title>
   <style>
     :root {{
       --bg: #070b14;
@@ -492,36 +736,40 @@ def ranking_html() -> str:
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      padding: 28px;
+      padding: 24px;
       background: radial-gradient(circle at top right, #111c33, var(--bg) 60%);
       color: var(--text);
       font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
     }}
-    .wrap {{ max-width: 1180px; margin: 0 auto; }}
+    .wrap {{ max-width: 1280px; margin: 0 auto; }}
     header {{
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       flex-wrap: wrap;
       gap: 12px;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }}
-    h1 {{ margin: 0; font-size: 2rem; letter-spacing: -0.02em; }}
-    .sub {{ color: var(--muted); font-size: 0.95rem; margin-top: 4px; }}
-    .meta {{
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 0.85rem;
+    h1 {{ margin: 0; font-size: 1.9rem; letter-spacing: -0.02em; }}
+    h2 {{ margin: 22px 0 10px 0; font-size: 1.15rem; color: var(--text); }}
+    .sub {{ color: var(--muted); font-size: 0.92rem; margin-top: 4px; }}
+    .meta {{ display: flex; gap: 10px; flex-wrap: wrap; font-size: 0.84rem; }}
+    .chip {{ background: var(--card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 999px; color: #cbd5e1; }}
+    .chip strong {{ color: var(--accent); }}
+    .explain-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
     }}
-    .chip {{
+    .explain-card {{
       background: var(--card);
       border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 999px;
-      color: #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
     }}
-    .chip strong {{ color: var(--accent); }}
+    .explain-card h3 {{ margin: 0 0 6px 0; font-size: 0.98rem; color: var(--accent); }}
+    .explain-card p {{ margin: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.45; }}
     .table-card {{
       background: var(--card);
       border: 1px solid var(--border);
@@ -529,80 +777,105 @@ def ranking_html() -> str:
       overflow: hidden;
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
     }}
+    .sub-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }}
     table {{ width: 100%; border-collapse: collapse; }}
     th {{
       text-align: left;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       color: var(--muted);
       background: #0b111e;
-      padding: 14px 16px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--border);
     }}
     td {{
-      padding: 14px 16px;
+      padding: 12px 14px;
       border-bottom: 1px solid rgba(30, 41, 59, 0.7);
       vertical-align: middle;
     }}
     tr:last-child td {{ border-bottom: none; }}
     tr:hover td {{ background: rgba(255, 255, 255, 0.02); }}
-    .pos {{ font-weight: 800; font-size: 1.05rem; white-space: nowrap; }}
-    .student-name {{ font-weight: 700; font-size: 1rem; }}
-    .student-id {{ font-size: 0.78rem; color: var(--muted); font-family: monospace; }}
+    .pos {{ font-weight: 800; font-size: 1rem; white-space: nowrap; }}
+    .student-name {{ font-weight: 700; font-size: 0.96rem; }}
+    .student-id {{ font-size: 0.76rem; color: var(--muted); font-family: monospace; }}
     .badge {{
       display: inline-block;
-      padding: 4px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
       font-weight: 700;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       letter-spacing: 0.04em;
     }}
     .badge-icl {{ background: rgba(20, 184, 166, 0.16); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.4); }}
     .badge-lora {{ background: rgba(99, 102, 241, 0.18); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.45); }}
-    .pct-main {{ font-weight: 700; font-size: 1rem; }}
-    .pills {{ display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }}
-    .pill {{
-      font-size: 0.72rem;
-      padding: 2px 7px;
-      border-radius: 6px;
-      font-family: monospace;
-    }}
+    .badge-both {{ background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.45); }}
+    .pct-main {{ font-weight: 700; font-size: 0.95rem; }}
+    .pills {{ display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }}
+    .pill {{ font-size: 0.7rem; padding: 2px 6px; border-radius: 5px; font-family: monospace; }}
     .pill-ok {{ background: rgba(34, 197, 94, 0.15); color: #86efac; }}
     .pill-part {{ background: rgba(245, 158, 11, 0.15); color: #fcd34d; }}
-    .time-main {{ font-weight: 600; }}
-    .time-sub {{ font-size: 0.76rem; color: var(--muted); }}
-    .lat {{ font-family: monospace; color: #cbd5e1; }}
-    .score {{ font-weight: 800; font-size: 1.15rem; color: var(--amber); font-family: monospace; }}
-    .empty {{ text-align: center; padding: 48px 20px; color: var(--muted); }}
-    footer {{ margin-top: 14px; font-size: 0.8rem; color: var(--muted); text-align: right; }}
+    .sub-pts {{ font-weight: 700; font-size: 0.9rem; }}
+    .pts-tag {{ color: var(--accent); font-weight: 600; font-size: 0.82rem; }}
+    .time-sub {{ font-size: 0.74rem; color: var(--muted); font-weight: 400; }}
+    .lat {{ font-family: monospace; color: #cbd5e1; font-size: 0.85rem; }}
+    .score {{ font-weight: 800; font-size: 1.08rem; color: var(--amber); font-family: monospace; }}
+    .empty {{ text-align: center; padding: 36px 20px; color: var(--muted); }}
+    footer {{ margin-top: 16px; font-size: 0.82rem; color: var(--muted); text-align: right; }}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div>
-        <h1>🏁 UIS Grand Prix Foundationals Models</h1>
-        <div class="sub">Tabla de posiciones oficial en vivo · Evaluación en pistas ocultas B1, B2 y B3</div>
+        <h1>🏁 UIS Grand Prix — Campeonato F1 en Vivo</h1>
+        <div class="sub">Evaluación oficial en pistas ocultas B1, B2 y B3 · Escala F1 por categoría: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 pts</div>
       </div>
       <div class="meta">
         <span class="chip">Modelo base: <strong>{html.escape(MODEL_ID)}</strong></span>
-        <span class="chip">Penalización latencia: <strong>{LATENCY_PENALTY_WEIGHT}×</strong></span>
-        <span class="chip">Equipos: <strong>{len(filas)}</strong></span>
+        <span class="chip">Participaciones: <strong>{len(filas)}</strong></span>
         <span class="chip">Auto-refresco: <strong>5s</strong></span>
       </div>
     </header>
+
+    <div class="explain-grid">
+      <div class="explain-card">
+        <h3>🏁 1. Carrera (Peso 55%)</h3>
+        <p>Premia quién completa más pistas B (B1, B2, B3). En empate, ordena por mayor % de progreso y menor tiempo físico total.</p>
+      </div>
+      <div class="explain-card">
+        <h3>⚡ 2. Velocidad Inferencia (Peso 20%)</h3>
+        <p>Premia menor latencia promedio (ms/frame) en GPU. Aquí brilla LoRA (zero-shot) frente a prompts largos de ICL.</p>
+      </div>
+      <div class="explain-card">
+        <h3>🧬 3. Eficiencia Few-Shot (Peso 15%)</h3>
+        <p>Premia lograr mayor % de progreso usando menos datos (% / #ejemplos). Requiere al menos 20% de progreso promedio.</p>
+      </div>
+      <div class="explain-card">
+        <h3>🛡️ 4. Conducción Limpia (Peso 10%)</h3>
+        <p>Premia la menor cantidad de choques contra obstáculos fijos y móviles en B1–B3 (desempata por mayor progreso %).</p>
+      </div>
+    </div>
+
+    <h2>🏆 Tabla General del Campeonato (0.55·Carrera + 0.20·Velocidad + 0.15·Eficiencia + 0.10·Limpieza)</h2>
     <div class="table-card">
       <table>
         <thead>
           <tr>
-            <th>Posición</th>
+            <th>Pos</th>
             <th>Estudiante</th>
             <th>Estrategia</th>
-            <th>% Promedio Pistas B</th>
-            <th>Tiempo Total</th>
-            <th>Latencia Promedio ms</th>
-            <th>Score Final</th>
+            <th>Pistas B</th>
+            <th>🏁 Carrera (55%)</th>
+            <th>⚡ Velocidad (20%)</th>
+            <th>🧬 Few-Shot (15%)</th>
+            <th>🛡️ Limpieza (10%)</th>
+            <th>Pts F1</th>
           </tr>
         </thead>
         <tbody>
@@ -610,7 +883,35 @@ def ranking_html() -> str:
         </tbody>
       </table>
     </div>
-    <footer>Fórmula: Score = (% Promedio × 10) + (Pistas Completadas × 150) − (Tiempo Físico + {LATENCY_PENALTY_WEIGHT} × Latencia Total) × 2.5</footer>
+
+    <div class="sub-grid">
+      <div class="table-card">
+        <table>
+          <thead><tr><th colspan="4">🏁 Top Carrera (55%) — Completadas · % · Tiempo</th></tr></thead>
+          <tbody>{sub_carrera}</tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th colspan="4">⚡ Top Velocidad de Inferencia (20%) — ms/frame</th></tr></thead>
+          <tbody>{sub_velocidad}</tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th colspan="4">🧬 Top Eficiencia Few-Shot (15%) — % progreso / dato</th></tr></thead>
+          <tbody>{sub_datos}</tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th colspan="4">🛡️ Top Conducción Limpia (10%) — Menos choques</th></tr></thead>
+          <tbody>{sub_limpieza}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer>Cada participante puede registrar una entrada por estrategia (ICL, LORA, LORA_ICL) para compararlas directamente.</footer>
   </div>
 </body>
 </html>"""

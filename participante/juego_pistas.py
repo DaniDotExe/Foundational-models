@@ -24,6 +24,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dotenv import load_dotenv
@@ -597,6 +598,7 @@ def simular_pista_autonoma_headless(
     frame = 0
     latencias_rtt_ms: List[float] = []
     latencias_gpu_ms: List[float] = []
+    trayectoria: List[List[float]] = []
 
     while est.tiempo_carrera < TIEMPO_LIMITE_PRUEBA and est.vueltas < VUELTAS_OBJETIVO:
         if frame % DECIDE_EVERY_N_FRAMES == 0:
@@ -617,6 +619,7 @@ def simular_pista_autonoma_headless(
             latencias_rtt_ms.append(float(resp["rtt_ms"]))
             latencias_gpu_ms.append(float(resp["latencia_gpu_ms"]))
 
+        trayectoria.append([round(est.x, 2), round(est.y, 2), round(est.angulo, 3), int(accion_actual)])
         paso_simulacion(est, accion_actual, clave_pista)
         hist.append(accion_actual)
         frame += 1
@@ -633,6 +636,7 @@ def simular_pista_autonoma_headless(
         "completada": est.vueltas >= VUELTAS_OBJETIVO,
         "choques": est.colisiones_obstaculos,
         "tiempo_fuera_s": round(est.tiempo_fuera, 3),
+        "trayectoria": trayectoria,
     }
 
 
@@ -652,11 +656,17 @@ def ejecutar_evaluacion_oficial_headless(bridge: ServerBridge) -> Dict[str, Any]
             f"latencia={r['latencia_acumulada_s']:.3f}s ({r['latencia_promedio_ms']:.1f}ms)"
         )
 
-    respuesta = bridge.registrar_puntaje(cfg.ESTRATEGIA, resultados)
+    num_ej = (
+        len(jugadas_ref)
+        if cfg.ESTRATEGIA.upper().strip() == "ICL"
+        else min(len(jugadas_ref), int(cfg.CONFIG_LORA.get("num_ejemplos", 200)))
+    )
+    respuesta = bridge.registrar_puntaje(cfg.ESTRATEGIA, resultados, num_ejemplos=num_ej)
     reg = respuesta["registro"]
+    pts_lbl = reg.get("puntos_f1", reg.get("score_final", 0.0))
     print(
         f"\n[RANKING] Posición #{respuesta['posicion']}/{respuesta['total_estudiantes']} | "
-        f"Score Final: {reg['score_final']} | % Promedio B: {reg['progreso_promedio_pct']}%"
+        f"Puntos F1: {pts_lbl} | % Promedio B: {reg['progreso_promedio_pct']}%"
     )
     return respuesta
 
@@ -709,6 +719,8 @@ class JuegoPygame:
         self._bg_cancel_event = threading.Event()
         self._bg_thread: Optional[threading.Thread] = None
         self._bg_results: Dict[str, Dict[str, Any]] = {}
+        self.loras_disponibles: List[str] = self.bridge.listar_adaptadores()
+        self.lora_activo: Optional[str] = self.loras_disponibles[-1] if self.loras_disponibles else None
         self._chequear_salud_silenciosa()
 
     def _chequear_salud_silenciosa(self) -> None:
@@ -1080,10 +1092,14 @@ class JuegoPygame:
                 (129, 140, 248) if cfg.ESTRATEGIA == "LORA" else self.BORDE,
             )
 
+            usa_icl = cfg.ESTRATEGIA in {"ICL", "LORA_ICL"}
+            usa_lora = cfg.ESTRATEGIA in {"LORA", "LORA_ICL"}
+
             # Tarjeta Izquierda: ICL y Datos
             pg.draw.rect(self.screen, self.PANEL_BG, pg.Rect(90, 148, 490, 360), border_radius=12)
-            pg.draw.rect(self.screen, self.BORDE, pg.Rect(90, 148, 490, 360), 2, border_radius=12)
-            self.screen.blit(self.font_h2.render("ICL (Sin modificar pesos)", True, self.ACCENT), (115, 154))
+            pg.draw.rect(self.screen, self.ACCENT if usa_icl else self.BORDE, pg.Rect(90, 148, 490, 360), 2, border_radius=12)
+            icl_lbl = "ICL (Prompt) [ACTIVO]" if usa_icl else "ICL (Prompt) [INACTIVO]"
+            self.screen.blit(self.font_h2.render(icl_lbl, True, self.ACCENT if usa_icl else self.MUTED), (115, 154))
             self.screen.blit(self.font_body.render("k_shots (1..30):", True, self.TEXTO), (115, 187))
             self._dibujar_boton(btn_icl_k_m, "-", self.BG, self.BORDE)
             k_surf = self.font_body.render(str(cfg.CONFIG_ICL["k_shots"]), True, self.TEXTO)
@@ -1108,8 +1124,9 @@ class JuegoPygame:
 
             # Tarjeta Derecha: LoRA
             pg.draw.rect(self.screen, self.PANEL_BG, pg.Rect(630, 148, 500, 360), border_radius=12)
-            pg.draw.rect(self.screen, self.BORDE, pg.Rect(630, 148, 500, 360), 2, border_radius=12)
-            self.screen.blit(self.font_h2.render("LoRA (Adapta pesos PEFT)", True, (165, 180, 252)), (655, 154))
+            pg.draw.rect(self.screen, (129, 140, 248) if usa_lora else self.BORDE, pg.Rect(630, 148, 500, 360), 2, border_radius=12)
+            lora_lbl = "LoRA (Pesos PEFT) [ACTIVO]" if usa_lora else "LoRA (Pesos PEFT) [INACTIVO]"
+            self.screen.blit(self.font_h2.render(lora_lbl, True, (165, 180, 252) if usa_lora else self.MUTED), (655, 154))
 
             self.screen.blit(self.font_body.render("Num ejemplos:", True, self.TEXTO), (655, 187))
             self._dibujar_boton(btn_lora_ej_m, "-20", self.BG, self.BORDE)
@@ -1148,14 +1165,17 @@ class JuegoPygame:
         pg = self.pygame
         botones = [
             (1, "[1] Grabar Jugadas (Pistas P1, P2, P3)", "Conduce con teclado y guarda data/mis_jugadas.json"),
-            (2, "[2] Entrenar Piloto (Solo ESTRATEGIA == LORA)", "Envia tus jugadas al servidor para entrenar adaptador PEFT"),
+            (2, "[2] Entrenar Piloto (LORA o LORA+ICL)", "Envia tus jugadas al servidor para entrenar adaptador PEFT"),
             (3, "[3] Modo Autonomo - Prueba (Pistas P)", "Prueba en vivo tu piloto consultando al servidor"),
             (4, "[4] Evaluacion Oficial (Pistas B1, B2, B3)", "Corre las 3 pistas ocultas y registra tu puntaje al ranking"),
         ]
-        btn_editar_nombre = pg.Rect(self.ANCHO - 560, 82, 145, 32)
-        btn_icl = pg.Rect(self.ANCHO - 405, 82, 95, 32)
-        btn_lora = pg.Rect(self.ANCHO - 302, 82, 95, 32)
-        btn_config = pg.Rect(self.ANCHO - 197, 82, 107, 32)
+        btn_editar_nombre = pg.Rect(self.ANCHO - 655, 82, 130, 32)
+        btn_icl = pg.Rect(self.ANCHO - 515, 82, 72, 32)
+        btn_lora = pg.Rect(self.ANCHO - 435, 82, 80, 32)
+        btn_lora_icl = pg.Rect(self.ANCHO - 347, 82, 110, 32)
+        btn_config = pg.Rect(self.ANCHO - 227, 82, 137, 32)
+        btn_lora_sel = pg.Rect(self.ANCHO - 320, 122, 230, 28)
+        btn_carrera_todos = pg.Rect(self.ANCHO - 320, 160, 230, 28)
         btn_copiar_cmd = pg.Rect(self.ANCHO - 250, 142, 160, 28)
         btn_cola_abrir = pg.Rect(self.ANCHO - 375, 626, 140, 28)
         btn_cola_cancel = pg.Rect(self.ANCHO - 225, 626, 135, 28)
@@ -1177,6 +1197,8 @@ class JuegoPygame:
                         return 4
                     if event.key == pg.K_h:
                         self._chequear_salud_silenciosa()
+                    if event.key == pg.K_g:
+                        self._pantalla_carrera_todos()
                     if event.key == pg.K_ESCAPE:
                         return None
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
@@ -1188,9 +1210,21 @@ class JuegoPygame:
                         self.estado_menu_msg = "Estrategia cambiada a ICL (sin modificar pesos)."
                     elif btn_lora.collidepoint((mx, my)):
                         cfg.ESTRATEGIA = "LORA"
-                        self.estado_menu_msg = "Estrategia cambiada a LORA (usa [2] para entrenar si aun no lo has hecho)."
+                        self.estado_menu_msg = "Estrategia cambiada a LORA (zero-shot con tus pesos; usa [2] para entrenar)."
+                    elif btn_lora_icl.collidepoint((mx, my)):
+                        cfg.ESTRATEGIA = "LORA_ICL"
+                        self.estado_menu_msg = "Estrategia cambiada a LORA+ICL (usa tus pesos LoRA + k_shots en contexto)."
                     elif btn_config.collidepoint((mx, my)):
                         self._pantalla_configurar()
+                    elif btn_carrera_todos.collidepoint((mx, my)):
+                        self._pantalla_carrera_todos()
+                    elif cfg.ESTRATEGIA in {"LORA", "LORA_ICL"} and self.loras_disponibles and btn_lora_sel.collidepoint((mx, my)):
+                        if self.lora_activo in self.loras_disponibles:
+                            idx_l = (self.loras_disponibles.index(self.lora_activo) + 1) % len(self.loras_disponibles)
+                        else:
+                            idx_l = 0
+                        self.lora_activo = self.loras_disponibles[idx_l]
+                        self.estado_menu_msg = f"Adaptador LoRA activo: {self.lora_activo}"
                     elif btn_cola_abrir.collidepoint((mx, my)):
                         with self._bg_lock:
                             hay_cola = bool(self._bg_active_track or self._bg_queue or self._bg_results)
@@ -1248,7 +1282,17 @@ class JuegoPygame:
                 (35, 36, 78) if cfg.ESTRATEGIA == "LORA" else self.PANEL_BG,
                 (129, 140, 248) if cfg.ESTRATEGIA == "LORA" else self.BORDE,
             )
+            self._dibujar_boton(
+                btn_lora_icl,
+                "LORA+ICL",
+                (52, 36, 16) if cfg.ESTRATEGIA == "LORA_ICL" else self.PANEL_BG,
+                self.WARN if cfg.ESTRATEGIA == "LORA_ICL" else self.BORDE,
+            )
             self._dibujar_boton(btn_config, "Configurar", (24, 38, 62), self.ACCENT)
+            if cfg.ESTRATEGIA in {"LORA", "LORA_ICL"} and self.loras_disponibles:
+                lbl_la = f"LoRA activo: {self.lora_activo or self.loras_disponibles[-1]}"
+                self._dibujar_boton(btn_lora_sel, lbl_la, (35, 36, 78), (129, 140, 248))
+            self._dibujar_boton(btn_carrera_todos, "Ver Carrera Todos (B1-B3)", (52, 36, 16), self.WARN)
 
             if self.salud_servidor:
                 srv_txt = (
@@ -1889,11 +1933,63 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _elegir_lora_a_sobrescribir(self, existentes: List[str]) -> Optional[str]:
+        pg = self.pygame
+        btns = [pg.Rect(240, 270 + i * 64, self.ANCHO - 480, 48) for i in range(len(existentes))]
+        btn_cancel = pg.Rect(self.ANCHO // 2 - 110, 280 + len(existentes) * 64, 220, 44)
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return None
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    return None
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if btn_cancel.collidepoint(pos):
+                        return None
+                    for i, b in enumerate(btns):
+                        if b.collidepoint(pos):
+                            return existentes[i]
+
+            self.screen.fill(self.BG)
+            self.screen.blit(
+                self.font_title.render("Limite de 3 modelos LoRA alcanzado", True, self.WARN),
+                (240, 170),
+            )
+            self.screen.blit(
+                self.font_body.render("Elige cual de tus 3 adaptadores deseas sobrescribir con este nuevo entrenamiento:", True, self.TEXTO),
+                (240, 215),
+            )
+            for i, b in enumerate(btns):
+                self._dibujar_boton(b, f"Sobrescribir: {existentes[i]}", (56, 38, 16), self.WARN)
+            self._dibujar_boton(btn_cancel, "Cancelar", self.PANEL_BG, self.BORDE)
+            pg.display.flip()
+            self.clock.tick(30)
+
     def _modo_entrenar_lora(self) -> None:
         pg = self.pygame
+        if cfg.ESTRATEGIA.upper().strip() not in {"LORA", "LORA_ICL"}:
+            self.estado_menu_msg = "Solo para estrategias LORA o LORA+ICL. Cambia la estrategia arriba."
+            return
+        jugadas = cargar_jugadas()
+        if not jugadas:
+            self.estado_menu_msg = "Error: no hay jugadas en data/mis_jugadas.json. Graba primero en [1]."
+            return
+
+        existentes = self.bridge.listar_adaptadores()
+        if len(existentes) >= 3:
+            a_borrar = self._elegir_lora_a_sobrescribir(existentes[:3])
+            if not a_borrar:
+                self.estado_menu_msg = "Entrenamiento LoRA cancelado."
+                return
+            self.bridge.eliminar_adaptador(a_borrar)
+            existentes = self.bridge.listar_adaptadores()
+
+        nuevo_nombre = f"v{len(existentes) + 1}_{time.strftime('%H%M%S')}"
+
         self.screen.fill(self.BG)
         self.screen.blit(
-            self.font_title.render("Entrenando adaptador LoRA en el servidor...", True, self.ACCENT),
+            self.font_title.render(f"Entrenando adaptador LoRA '{nuevo_nombre}'...", True, self.ACCENT),
             (100, 260),
         )
         self.screen.blit(
@@ -1903,9 +1999,16 @@ class JuegoPygame:
         pg.display.flip()
 
         try:
-            res = ejecutar_entrenamiento_lora(self.bridge)
+            res = self.bridge.entrenar_lora(
+                jugadas,
+                cfg.CONFIG_LORA,
+                cfg.CONFIG_DATOS,
+                adapter_name=nuevo_nombre,
+            )
+            self.loras_disponibles = self.bridge.listar_adaptadores()
+            self.lora_activo = nuevo_nombre
             self.estado_menu_msg = (
-                f"LoRA entrenado OK ({res['ejemplos_entrenados']} ej, "
+                f"LoRA '{nuevo_nombre}' OK ({res['ejemplos_entrenados']} ej, "
                 f"loss={res['loss_final']}, t={res['tiempo_entrenamiento_s']}s)."
             )
         except Exception as exc:
@@ -1961,6 +2064,7 @@ class JuegoPygame:
                             velocidad=velocidad_normalizada(est.velocidad),
                             cp_dist=cp_dist_ang[0],
                             cp_ang=cp_dist_ang[1],
+                            adapter_name=self.lora_activo,
                         )
                         accion_actual = int(resp["accion"])
                         ultimo_rtt_ms = float(resp["rtt_ms"])
@@ -2156,6 +2260,10 @@ class JuegoPygame:
 
         lat_acum_s = round(sum(latencias_rtt_ms) / 1000.0, 4)
         lat_prom_ms = round(sum(latencias_rtt_ms) / max(1, len(latencias_rtt_ms)), 2)
+        tray = [
+            [round(f["est"].x, 2), round(f["est"].y, 2), round(f["est"].angulo, 3), int(f["accion"])]
+            for f in frames_grabados
+        ]
         return {
             "pista": clave_pista,
             "progreso_pct": calcular_progreso_pct(est, clave_pista),
@@ -2165,6 +2273,7 @@ class JuegoPygame:
             "completada": est.vueltas >= VUELTAS_OBJETIVO,
             "choques": est.colisiones_obstaculos,
             "tiempo_fuera_s": round(est.tiempo_fuera, 3),
+            "trayectoria": tray,
         }
 
     def _reproducir_frames_autonomo(
@@ -2293,6 +2402,7 @@ class JuegoPygame:
                                 velocidad=velocidad_normalizada(est.velocidad),
                                 cp_dist=cp_dist_ang[0],
                                 cp_ang=cp_dist_ang[1],
+                                adapter_name=self.lora_activo,
                             )
                             accion_actual = int(resp["accion"])
                             ultimo_rtt_ms = float(resp["rtt_ms"])
@@ -2512,10 +2622,219 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _pantalla_carrera_todos(self) -> None:
+        pg = self.pygame
+        try:
+            datos = self.bridge.obtener_trayectorias_b().get("pistas", {})
+        except Exception as exc:
+            self.estado_menu_msg = f"Error cargando carreras: {exc}"
+            return
+
+        paleta = [
+            (45, 212, 191),
+            (250, 204, 21),
+            (129, 140, 248),
+            (248, 113, 113),
+            (74, 222, 128),
+            (251, 146, 60),
+            (244, 114, 182),
+            (56, 189, 248),
+            (192, 132, 252),
+            (163, 230, 53),
+            (253, 186, 116),
+            (94, 234, 212),
+        ]
+        pista_sel = "B1"
+        modo_legendario = False
+        pausado = False
+        frame_idx = 0
+        estados_leg: List[Dict[str, Any]] = []
+
+        def _iniciar_pista(clave: str) -> None:
+            nonlocal frame_idx, estados_leg
+            frame_idx = 0
+            estados_leg = []
+            for idx_e, item in enumerate(datos.get(clave, [])):
+                est_c = estado_inicial(clave)
+                estados_leg.append({
+                    "nombre": f"{item.get('student_name', '?')} ({item.get('estrategia', '-')})",
+                    "color": paleta[idx_e % len(paleta)],
+                    "tray": item.get("trayectoria", []),
+                    "est": est_c,
+                    "choques_pvp": 0,
+                })
+
+        _iniciar_pista(pista_sel)
+
+        while True:
+            x0 = self.AREA_PISTA_W
+            btn_b1 = pg.Rect(x0 + 18, 56, 76, 30)
+            btn_b2 = pg.Rect(x0 + 102, 56, 76, 30)
+            btn_b3 = pg.Rect(x0 + 186, 56, 76, 30)
+            btn_modo = pg.Rect(x0 + 18, 96, 310, 34)
+            btn_reset = pg.Rect(x0 + 18, 138, 150, 30)
+            btn_volver = pg.Rect(x0 + 178, 138, 150, 30)
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        return
+                    if event.key == pg.K_SPACE:
+                        pausado = not pausado
+                    elif event.key == pg.K_r:
+                        _iniciar_pista(pista_sel)
+                    elif event.key == pg.K_m:
+                        modo_legendario = not modo_legendario
+                        _iniciar_pista(pista_sel)
+                    elif event.key == pg.K_1:
+                        pista_sel = "B1"
+                        _iniciar_pista(pista_sel)
+                    elif event.key == pg.K_2:
+                        pista_sel = "B2"
+                        _iniciar_pista(pista_sel)
+                    elif event.key == pg.K_3:
+                        pista_sel = "B3"
+                        _iniciar_pista(pista_sel)
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if btn_b1.collidepoint(pos):
+                        pista_sel = "B1"
+                        _iniciar_pista(pista_sel)
+                    elif btn_b2.collidepoint(pos):
+                        pista_sel = "B2"
+                        _iniciar_pista(pista_sel)
+                    elif btn_b3.collidepoint(pos):
+                        pista_sel = "B3"
+                        _iniciar_pista(pista_sel)
+                    elif btn_modo.collidepoint(pos):
+                        modo_legendario = not modo_legendario
+                        _iniciar_pista(pista_sel)
+                    elif btn_reset.collidepoint(pos):
+                        _iniciar_pista(pista_sel)
+                    elif btn_volver.collidepoint(pos):
+                        return
+
+            # Dibujar pista y obstáculos
+            self.screen.fill(self.BG)
+            puntos = PISTAS[pista_sel]["puntos"]
+            ancho = PISTAS[pista_sel]["ancho"]
+            escala_ref = self._w2s(0.0, 0.0)[2]
+            poly = [self._w2s(px, py)[:2] for px, py in puntos]
+            if len(poly) >= 2:
+                pg.draw.lines(self.screen, (42, 52, 65), True, poly, max(8, int(ancho * 2.0 * escala_ref)))
+                pg.draw.lines(self.screen, (71, 85, 105), True, poly, 2)
+            mx0, my0, _ = self._w2s(puntos[0][0], puntos[0][1])
+            pg.draw.circle(self.screen, self.WARN, (mx0, my0), 7)
+
+            t_act = frame_idx * DT
+            for ox, oy, rad in obtener_obstaculos_pista(pista_sel, t_act):
+                osx, osy, _ = self._w2s(ox, oy)
+                pg.draw.circle(self.screen, self.BAD, (osx, osy), max(4, int(rad * escala_ref)))
+
+            # Avanzar física si está en Modo Legendario
+            max_frames = max((len(c["tray"]) for c in estados_leg), default=0)
+            if not pausado and frame_idx < max_frames:
+                if modo_legendario:
+                    for c in estados_leg:
+                        tray = c["tray"]
+                        est_c = c["est"]
+                        if est_c.vueltas < VUELTAS_OBJETIVO and tray:
+                            f_use = min(frame_idx, len(tray) - 1)
+                            acc = int(tray[f_use][3]) if len(tray[f_use]) >= 4 else 0
+                            paso_simulacion(est_c, acc, pista_sel)
+                    # Colisiones elásticas entre carros (hitbox activo)
+                    n_c = len(estados_leg)
+                    for i in range(n_c):
+                        for j in range(i + 1, n_c):
+                            ei = estados_leg[i]["est"]
+                            ej = estados_leg[j]["est"]
+                            dx = ej.x - ei.x
+                            dy = ej.y - ei.y
+                            dist = math.hypot(dx, dy)
+                            min_d = RADIO_CARRO * 2.1
+                            if dist < min_d:
+                                nx = dx / dist if dist > 1e-6 else 1.0
+                                ny = dy / dist if dist > 1e-6 else 0.0
+                                push = (min_d - dist) * 0.55
+                                ei.x -= nx * push
+                                ei.y -= ny * push
+                                ej.x += nx * push
+                                ej.y += ny * push
+                                ei.velocidad *= 0.85
+                                ej.velocidad *= 0.85
+                                estados_leg[i]["choques_pvp"] += 1
+                                estados_leg[j]["choques_pvp"] += 1
+                frame_idx += 1
+
+            # Dibujar todos los carros superpuestos
+            for c in estados_leg:
+                tray = c["tray"]
+                if not tray:
+                    continue
+                if modo_legendario:
+                    cx, cy, cang = c["est"].x, c["est"].y, c["est"].angulo
+                else:
+                    f_use = min(frame_idx, len(tray) - 1)
+                    cx, cy, cang = float(tray[f_use][0]), float(tray[f_use][1]), float(tray[f_use][2])
+
+                sx, sy, esc = self._w2s(cx, cy)
+                col = c["color"]
+                pts_tri = [
+                    (sx + math.cos(cang) * 0.42 * esc, sy + math.sin(cang) * 0.42 * esc),
+                    (sx + math.cos(cang + 2.4) * 0.30 * esc, sy + math.sin(cang + 2.4) * 0.30 * esc),
+                    (sx + math.cos(cang - 2.4) * 0.30 * esc, sy + math.sin(cang - 2.4) * 0.30 * esc),
+                ]
+                pg.draw.polygon(self.screen, col, pts_tri)
+                lbl_c = self.font_small.render(c["nombre"][:14], True, col)
+                self.screen.blit(lbl_c, (sx - lbl_c.get_width() // 2, sy - 20))
+
+            # Panel lateral de control
+            pg.draw.rect(self.screen, self.PANEL_BG, (x0, 0, self.ANCHO - x0, self.ALTO))
+            pg.draw.line(self.screen, self.BORDE, (x0, 0), (x0, self.ALTO), 2)
+            self.screen.blit(self.font_h2.render(f"Carrera Todos — {pista_sel}", True, self.ACCENT), (x0 + 18, 18))
+            self._dibujar_boton(btn_b1, "B1", (24, 38, 62) if pista_sel == "B1" else self.BG, self.ACCENT if pista_sel == "B1" else self.BORDE)
+            self._dibujar_boton(btn_b2, "B2", (24, 38, 62) if pista_sel == "B2" else self.BG, self.ACCENT if pista_sel == "B2" else self.BORDE)
+            self._dibujar_boton(btn_b3, "B3", (24, 38, 62) if pista_sel == "B3" else self.BG, self.ACCENT if pista_sel == "B3" else self.BORDE)
+
+            if modo_legendario:
+                self._dibujar_boton(btn_modo, "MODO LEGENDARIO (Choques ON)", (68, 22, 28), self.BAD)
+            else:
+                self._dibujar_boton(btn_modo, "Modo Fantasma (Transparente)", (15, 52, 48), self.ACCENT)
+            self._dibujar_boton(btn_reset, "Reiniciar (R)", self.BG, self.BORDE)
+            self._dibujar_boton(btn_volver, "Volver (ESC)", self.BG, self.BORDE)
+
+            self.screen.blit(
+                self.font_small.render(f"Frame {frame_idx}/{max_frames}" + (" [PAUSA]" if pausado else ""), True, self.MUTED),
+                (x0 + 18, 180),
+            )
+            if not estados_leg:
+                self.screen.blit(
+                    self.font_body.render("Aun no hay trayectorias en esta pista.", True, self.WARN),
+                    (x0 + 18, 220),
+                )
+            else:
+                y_l = 210
+                for c in estados_leg[:14]:
+                    extra = f" | PvP:{c['choques_pvp']}" if modo_legendario else ""
+                    self.screen.blit(
+                        self.font_small.render(f"{c['nombre'][:18]}{extra}", True, c["color"]),
+                        (x0 + 18, y_l),
+                    )
+                    y_l += 24
+
+            self.screen.blit(
+                self.font_small.render("SPACE: Pausa | M: Fantasma/Legendario", True, self.MUTED),
+                (x0 + 18, self.ALTO - 34),
+            )
+            pg.display.flip()
+            self.clock.tick(30)
+
     def _modo_evaluacion_b(self) -> None:
         jugadas_ref = cargar_jugadas()
-        if cfg.ESTRATEGIA.upper().strip() == "ICL" and not jugadas_ref:
-            self.estado_menu_msg = "Error: graba jugadas en [1] antes de correr evaluacion ICL."
+        if cfg.ESTRATEGIA.upper().strip() in {"ICL", "LORA_ICL"} and not jugadas_ref:
+            self.estado_menu_msg = f"Error: graba jugadas en [1] antes de correr evaluacion {cfg.ESTRATEGIA}."
             return
         resultados: Dict[str, Dict[str, Any]] = {}
         for clave in PISTAS_TEST:
@@ -2526,11 +2845,17 @@ class JuegoPygame:
             resultados[clave] = r
 
         try:
-            resp = self.bridge.registrar_puntaje(cfg.ESTRATEGIA, resultados)
+            num_ej = (
+                len(jugadas_ref)
+                if cfg.ESTRATEGIA.upper().strip() == "ICL"
+                else min(len(jugadas_ref), int(cfg.CONFIG_LORA.get("num_ejemplos", 200)))
+            )
+            resp = self.bridge.registrar_puntaje(cfg.ESTRATEGIA, resultados, num_ejemplos=num_ej)
             reg = resp["registro"]
+            pts_lbl = reg.get("puntos_f1", reg.get("score_final", 0.0))
             self.estado_menu_msg = (
                 f"Ranking #{resp['posicion']}/{resp['total_estudiantes']} | "
-                f"Score={reg['score_final']} | %B={reg['progreso_promedio_pct']}%"
+                f"Pts F1={pts_lbl} | %B={reg['progreso_promedio_pct']}%"
             )
         except Exception as exc:
             self.estado_menu_msg = f"Error al enviar puntaje: {exc}"
