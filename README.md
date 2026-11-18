@@ -14,7 +14,7 @@ Plataforma educativa competitiva de conducción autónoma para comparar **In-Con
 │   ├── server.py                 # API FastAPI + Leaderboard HTML en vivo en /ranking
 │   └── adapters_cache/           # Pesos LoRA aislados por student_id (ignorado en Git)
 │
-└── cliente_estudiante/           # PC del estudiante (CPU + Pygame)
+└── participante/           # PC del estudiante (CPU + Pygame)
     ├── .env / .env.example       # SERVER_URL, STUDENT_ID, STUDENT_NAME, timeouts
     ├── requirements.txt
     ├── config_estudiante.py      # Panel único de hiperparámetros (ICL vs LORA)
@@ -75,7 +75,7 @@ Solo necesitas abrir **2 ventanas de terminal (`cmd.exe`)** con tu entorno activ
 ### 1. Instalar librerías (solo la primera vez)
 ```bat
 pip install -r "backend_server\requirements.txt"
-pip install -r "cliente_estudiante\requirements.txt"
+pip install -r "participante\requirements.txt"
 ```
 > *Si usas Python 3.14 y `pygame` falla al instalar, usa `pip install pygame-ce`.*
 
@@ -89,7 +89,7 @@ Espera a ver `Application startup complete.` y deja esta ventana abierta.
 
 ### 3. Terminal 2 — Abrir el Simulador
 ```bat
-cd /d "cliente_estudiante"
+cd /d "participante"
 python juego_pistas.py
 ```
 
@@ -100,7 +100,7 @@ python juego_pistas.py
 ### Uso rápido dentro del Simulador
 
 1. **`[1]` Grabar Jugadas (`P1`, `P2`, `P3`):** elige pista (`P1 | P2 | P3`), ajusta `Cada N frames`, pulsa **`INICIAR GRABACION`**, maneja con **Flechas** o **`W/A/S/D`** (`R` reinicia) y pulsa **`Guardar y Salir`**. *(Ya trae 120 ejemplos semilla en `data/mis_jugadas.json`).*
-2. En `cliente_estudiante\config_estudiante.py`, elige **`ESTRATEGIA = "ICL"`** o **`"LORA"`**.
+2. En `participante\config_estudiante.py`, elige **`ESTRATEGIA = "ICL"`** o **`"LORA"`**.
 3. Si elegiste `"LORA"`, ejecuta **`[2]` Entrenar Piloto**.
 4. Prueba en **`[3]` Modo Autónomo - Prueba (`P1–P3`)**.
 5. Compite en **`[4]` Evaluación Oficial (`B1–B3`)** y mira tu posición en `/ranking`.
@@ -167,7 +167,7 @@ print(f"  RANKING EN VIVO: {public_url}/ranking")
 print("=" * 68)
 ```
 
-Cada estudiante actualiza `SERVER_URL` en su `cliente_estudiante/.env` y ejecuta `python juego_pistas.py`.
+Cada estudiante actualiza `SERVER_URL` en su `participante/.env` y ejecuta `python juego_pistas.py`.
 
 ---
 
