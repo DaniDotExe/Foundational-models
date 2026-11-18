@@ -19,6 +19,8 @@ import json
 import math
 import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -858,6 +860,237 @@ class JuegoPygame:
             y += 22
             self.screen.blit(self.font_small.render(f"Accion: {accion_texto}", True, self.TEXTO), (x0 + 18, y))
 
+    def _pedir_nombre_participante(self, permitir_cancelar: bool = False) -> bool:
+        """Pide o edita el nombre del participante y actualiza student_id/student_name."""
+        pg = self.pygame
+        nombre = self.bridge.student_name if self.bridge.student_name != "Oscar_Prueba" else ""
+        caja = pg.Rect(260, 340, 700, 48)
+        btn_ok = pg.Rect(790, 415, 170, 42)
+        btn_cancel = pg.Rect(600, 415, 170, 42)
+
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return False
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE and permitir_cancelar:
+                        return True
+                    if event.key in (pg.K_RETURN, pg.K_KP_ENTER):
+                        limpio = nombre.strip()
+                        if limpio:
+                            self.bridge.student_name = limpio
+                            self.bridge.student_id = re.sub(r"[^a-zA-Z0-9_-]", "_", limpio).lower()
+                            return True
+                    elif event.key == pg.K_BACKSPACE:
+                        nombre = nombre[:-1]
+                    elif event.unicode and event.unicode.isprintable() and len(nombre) < 30:
+                        nombre += event.unicode
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if permitir_cancelar and btn_cancel.collidepoint(pos):
+                        return True
+                    if btn_ok.collidepoint(pos):
+                        limpio = nombre.strip()
+                        if limpio:
+                            self.bridge.student_name = limpio
+                            self.bridge.student_id = re.sub(r"[^a-zA-Z0-9_-]", "_", limpio).lower()
+                            return True
+
+            self.screen.fill(self.BG)
+            self.screen.blit(
+                self.font_title.render("UIS Grand Prix Foundationals Models", True, self.ACCENT),
+                (260, 220),
+            )
+            self.screen.blit(
+                self.font_h2.render("Ingresa tu nombre de participante:", True, self.TEXTO),
+                (260, 290),
+            )
+            pg.draw.rect(self.screen, self.PANEL_BG, caja, border_radius=10)
+            pg.draw.rect(self.screen, self.ACCENT, caja, 2, border_radius=10)
+            self.screen.blit(self.font_h2.render(nombre + "|", True, self.TEXTO), (caja.x + 14, caja.y + 12))
+
+            listo = bool(nombre.strip())
+            self._dibujar_boton(
+                btn_ok,
+                "Continuar",
+                (15, 52, 48) if listo else (30, 35, 45),
+                self.ACCENT if listo else self.BORDE,
+            )
+            if permitir_cancelar:
+                self._dibujar_boton(btn_cancel, "Cancelar", self.PANEL_BG, self.BORDE)
+            pg.display.flip()
+            self.clock.tick(30)
+
+    def _pantalla_configurar(self) -> None:
+        """Pantalla interactiva para configurar ICL, LoRA y Datos sin salir de la app."""
+        pg = self.pygame
+        btn_volver = pg.Rect(self.ANCHO - 270, 685, 180, 44)
+
+        prec_opts = [20, 50, 100]
+        temp_opts = [0.0, 0.2, 0.5, 0.8]
+        r_opts = [2, 4, 8, 16, 32]
+        alpha_opts = [4, 8, 16, 32, 64]
+        lr_opts = [1e-4, 3e-4, 5e-4, 1e-3]
+        mods_attn = ["q_proj", "v_proj"]
+        mods_full = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+        def next_opt(val: Any, opts: List[Any]) -> Any:
+            try:
+                return opts[(opts.index(val) + 1) % len(opts)]
+            except ValueError:
+                return opts[0]
+
+        while True:
+            # Controles columna izquierda (ICL + Datos)
+            btn_icl_k_m = pg.Rect(380, 180, 44, 34)
+            btn_icl_k_p = pg.Rect(500, 180, 44, 34)
+            btn_icl_sel = pg.Rect(380, 232, 164, 34)
+            btn_icl_temp = pg.Rect(380, 284, 164, 34)
+            btn_dat_hist_m = pg.Rect(380, 386, 44, 34)
+            btn_dat_hist_p = pg.Rect(500, 386, 44, 34)
+            btn_dat_prec = pg.Rect(380, 438, 164, 34)
+
+            # Controles columna derecha (LoRA)
+            btn_lora_ej_m = pg.Rect(930, 180, 48, 34)
+            btn_lora_ej_p = pg.Rect(1062, 180, 48, 34)
+            btn_lora_r = pg.Rect(930, 232, 180, 34)
+            btn_lora_alpha = pg.Rect(930, 284, 180, 34)
+            btn_lora_ep_m = pg.Rect(930, 336, 48, 34)
+            btn_lora_ep_p = pg.Rect(1062, 336, 48, 34)
+            btn_lora_lr = pg.Rect(930, 388, 180, 34)
+            btn_lora_mods = pg.Rect(930, 440, 180, 34)
+
+            # Selector rápido de estrategia arriba
+            btn_est_icl = pg.Rect(90, 96, 200, 36)
+            btn_est_lora = pg.Rect(305, 96, 200, 36)
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    return
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if btn_volver.collidepoint(pos):
+                        return
+                    if btn_est_icl.collidepoint(pos):
+                        cfg.ESTRATEGIA = "ICL"
+                    elif btn_est_lora.collidepoint(pos):
+                        cfg.ESTRATEGIA = "LORA"
+                    elif btn_icl_k_m.collidepoint(pos):
+                        cfg.CONFIG_ICL["k_shots"] = max(1, int(cfg.CONFIG_ICL["k_shots"]) - 1)
+                    elif btn_icl_k_p.collidepoint(pos):
+                        cfg.CONFIG_ICL["k_shots"] = min(30, int(cfg.CONFIG_ICL["k_shots"]) + 1)
+                    elif btn_icl_sel.collidepoint(pos):
+                        cfg.CONFIG_ICL["seleccion"] = "random" if cfg.CONFIG_ICL["seleccion"] == "knn" else "knn"
+                    elif btn_icl_temp.collidepoint(pos):
+                        cfg.CONFIG_ICL["temperature"] = next_opt(float(cfg.CONFIG_ICL["temperature"]), temp_opts)
+                    elif btn_dat_hist_m.collidepoint(pos):
+                        cfg.CONFIG_DATOS["ventana_historia"] = max(1, int(cfg.CONFIG_DATOS["ventana_historia"]) - 1)
+                    elif btn_dat_hist_p.collidepoint(pos):
+                        cfg.CONFIG_DATOS["ventana_historia"] = min(8, int(cfg.CONFIG_DATOS["ventana_historia"]) + 1)
+                    elif btn_dat_prec.collidepoint(pos):
+                        cfg.CONFIG_DATOS["precision_sensores"] = next_opt(int(cfg.CONFIG_DATOS["precision_sensores"]), prec_opts)
+                    elif btn_lora_ej_m.collidepoint(pos):
+                        cfg.CONFIG_LORA["num_ejemplos"] = max(20, int(cfg.CONFIG_LORA["num_ejemplos"]) - 20)
+                    elif btn_lora_ej_p.collidepoint(pos):
+                        cfg.CONFIG_LORA["num_ejemplos"] = min(1000, int(cfg.CONFIG_LORA["num_ejemplos"]) + 20)
+                    elif btn_lora_r.collidepoint(pos):
+                        cfg.CONFIG_LORA["lora_r"] = next_opt(int(cfg.CONFIG_LORA["lora_r"]), r_opts)
+                    elif btn_lora_alpha.collidepoint(pos):
+                        cfg.CONFIG_LORA["lora_alpha"] = next_opt(int(cfg.CONFIG_LORA["lora_alpha"]), alpha_opts)
+                    elif btn_lora_ep_m.collidepoint(pos):
+                        cfg.CONFIG_LORA["epochs"] = max(1, int(cfg.CONFIG_LORA["epochs"]) - 1)
+                    elif btn_lora_ep_p.collidepoint(pos):
+                        cfg.CONFIG_LORA["epochs"] = min(15, int(cfg.CONFIG_LORA["epochs"]) + 1)
+                    elif btn_lora_lr.collidepoint(pos):
+                        cfg.CONFIG_LORA["learning_rate"] = next_opt(float(cfg.CONFIG_LORA["learning_rate"]), lr_opts)
+                    elif btn_lora_mods.collidepoint(pos):
+                        es_full = len(cfg.CONFIG_LORA["target_modules"]) > 2
+                        cfg.CONFIG_LORA["target_modules"] = list(mods_attn if es_full else mods_full)
+
+            self.screen.fill(self.BG)
+            self.screen.blit(
+                self.font_title.render("Configurar Estrategias (ICL y LoRA)", True, self.ACCENT),
+                (90, 42),
+            )
+            self._dibujar_boton(
+                btn_est_icl,
+                "Estrategia: ICL",
+                (15, 52, 48) if cfg.ESTRATEGIA == "ICL" else self.PANEL_BG,
+                self.ACCENT if cfg.ESTRATEGIA == "ICL" else self.BORDE,
+            )
+            self._dibujar_boton(
+                btn_est_lora,
+                "Estrategia: LORA",
+                (35, 36, 78) if cfg.ESTRATEGIA == "LORA" else self.PANEL_BG,
+                (129, 140, 248) if cfg.ESTRATEGIA == "LORA" else self.BORDE,
+            )
+
+            # Tarjeta Izquierda: ICL y Datos
+            pg.draw.rect(self.screen, self.PANEL_BG, pg.Rect(90, 148, 490, 360), border_radius=12)
+            pg.draw.rect(self.screen, self.BORDE, pg.Rect(90, 148, 490, 360), 2, border_radius=12)
+            self.screen.blit(self.font_h2.render("ICL (Sin modificar pesos)", True, self.ACCENT), (115, 154))
+            self.screen.blit(self.font_body.render("k_shots (1..30):", True, self.TEXTO), (115, 187))
+            self._dibujar_boton(btn_icl_k_m, "-", self.BG, self.BORDE)
+            k_surf = self.font_body.render(str(cfg.CONFIG_ICL["k_shots"]), True, self.TEXTO)
+            self.screen.blit(k_surf, (462 - k_surf.get_width() // 2, 187))
+            self._dibujar_boton(btn_icl_k_p, "+", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("Seleccion:", True, self.TEXTO), (115, 239))
+            self._dibujar_boton(btn_icl_sel, str(cfg.CONFIG_ICL["seleccion"]).upper(), self.BG, self.ACCENT)
+
+            self.screen.blit(self.font_body.render("Temperature:", True, self.TEXTO), (115, 291))
+            self._dibujar_boton(btn_icl_temp, f"{cfg.CONFIG_ICL['temperature']:.1f}", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_h2.render("Datos (Compartido)", True, self.WARN), (115, 348))
+            self.screen.blit(self.font_body.render("Ventana historial:", True, self.TEXTO), (115, 393))
+            self._dibujar_boton(btn_dat_hist_m, "-", self.BG, self.BORDE)
+            h_surf = self.font_body.render(str(cfg.CONFIG_DATOS["ventana_historia"]), True, self.TEXTO)
+            self.screen.blit(h_surf, (462 - h_surf.get_width() // 2, 393))
+            self._dibujar_boton(btn_dat_hist_p, "+", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("Precision sensores:", True, self.TEXTO), (115, 445))
+            self._dibujar_boton(btn_dat_prec, f"{cfg.CONFIG_DATOS['precision_sensores']} bins", self.BG, self.BORDE)
+
+            # Tarjeta Derecha: LoRA
+            pg.draw.rect(self.screen, self.PANEL_BG, pg.Rect(630, 148, 500, 360), border_radius=12)
+            pg.draw.rect(self.screen, self.BORDE, pg.Rect(630, 148, 500, 360), 2, border_radius=12)
+            self.screen.blit(self.font_h2.render("LoRA (Adapta pesos PEFT)", True, (165, 180, 252)), (655, 154))
+
+            self.screen.blit(self.font_body.render("Num ejemplos:", True, self.TEXTO), (655, 187))
+            self._dibujar_boton(btn_lora_ej_m, "-20", self.BG, self.BORDE)
+            ej_surf = self.font_body.render(str(cfg.CONFIG_LORA["num_ejemplos"]), True, self.TEXTO)
+            self.screen.blit(ej_surf, (1020 - ej_surf.get_width() // 2, 187))
+            self._dibujar_boton(btn_lora_ej_p, "+20", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("lora_r (rango):", True, self.TEXTO), (655, 239))
+            self._dibujar_boton(btn_lora_r, f"r = {cfg.CONFIG_LORA['lora_r']}", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("lora_alpha:", True, self.TEXTO), (655, 291))
+            self._dibujar_boton(btn_lora_alpha, f"alpha = {cfg.CONFIG_LORA['lora_alpha']}", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("Epochs (1..15):", True, self.TEXTO), (655, 343))
+            self._dibujar_boton(btn_lora_ep_m, "-", self.BG, self.BORDE)
+            ep_surf = self.font_body.render(str(cfg.CONFIG_LORA["epochs"]), True, self.TEXTO)
+            self.screen.blit(ep_surf, (1020 - ep_surf.get_width() // 2, 343))
+            self._dibujar_boton(btn_lora_ep_p, "+", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("Learning rate:", True, self.TEXTO), (655, 395))
+            self._dibujar_boton(btn_lora_lr, f"{cfg.CONFIG_LORA['learning_rate']:.0e}", self.BG, self.BORDE)
+
+            self.screen.blit(self.font_body.render("Capas LoRA:", True, self.TEXTO), (655, 447))
+            lbl_mods = "Atencion + MLP" if len(cfg.CONFIG_LORA["target_modules"]) > 2 else "Solo Atencion (q,v)"
+            self._dibujar_boton(btn_lora_mods, lbl_mods, self.BG, (129, 140, 248))
+
+            self.screen.blit(
+                self.font_small.render("Nota: puedes usar ICL y LORA alternando la estrategia arriba y comparando ambos en el ranking.", True, self.MUTED),
+                (90, 540),
+            )
+            self._dibujar_boton(btn_volver, "Volver al Menu", (15, 52, 48), self.ACCENT)
+            pg.display.flip()
+            self.clock.tick(30)
+
     def _pantalla_menu(self) -> Optional[int]:
         pg = self.pygame
         botones = [
@@ -866,6 +1099,12 @@ class JuegoPygame:
             (3, "[3] Modo Autonomo - Prueba (Pistas P)", "Prueba en vivo tu piloto consultando al servidor"),
             (4, "[4] Evaluacion Oficial (Pistas B1, B2, B3)", "Corre las 3 pistas ocultas y registra tu puntaje al ranking"),
         ]
+        btn_editar_nombre = pg.Rect(self.ANCHO - 560, 82, 145, 32)
+        btn_icl = pg.Rect(self.ANCHO - 405, 82, 95, 32)
+        btn_lora = pg.Rect(self.ANCHO - 302, 82, 95, 32)
+        btn_config = pg.Rect(self.ANCHO - 197, 82, 107, 32)
+        btn_copiar_cmd = pg.Rect(self.ANCHO - 250, 142, 160, 28)
+        cmd_backend = f'cd /d "{BASE_DIR.parent / "backend_server"}" && python -m uvicorn server:app --host 0.0.0.0 --port 8000'
 
         while True:
             rects = []
@@ -887,6 +1126,36 @@ class JuegoPygame:
                         return None
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                     mx, my = event.pos
+                    if btn_editar_nombre.collidepoint((mx, my)):
+                        self._pedir_nombre_participante(permitir_cancelar=True)
+                    elif btn_icl.collidepoint((mx, my)):
+                        cfg.ESTRATEGIA = "ICL"
+                        self.estado_menu_msg = "Estrategia cambiada a ICL (sin modificar pesos)."
+                    elif btn_lora.collidepoint((mx, my)):
+                        cfg.ESTRATEGIA = "LORA"
+                        self.estado_menu_msg = "Estrategia cambiada a LORA (usa [2] para entrenar si aun no lo has hecho)."
+                    elif btn_config.collidepoint((mx, my)):
+                        self._pantalla_configurar()
+                    elif not self.salud_servidor and btn_copiar_cmd.collidepoint((mx, my)):
+                        copiado = False
+                        if os.name == "nt":
+                            try:
+                                subprocess.run(["clip"], input=cmd_backend, text=True, check=True)
+                                copiado = True
+                            except Exception:
+                                pass
+                        if not copiado:
+                            try:
+                                pg.scrap.init()
+                                pg.scrap.put(pg.SCRAP_TEXT, cmd_backend.encode("utf-8"))
+                                copiado = True
+                            except Exception:
+                                pass
+                        self.estado_menu_msg = (
+                            "Comando copiado al portapapeles. Pegalo en otra terminal."
+                            if copiado
+                            else f"Ejecuta: {cmd_backend}"
+                        )
                     for idx, (m_id, _, _) in enumerate(botones):
                         r = pg.Rect(90, 215 + idx * 105, self.ANCHO - 180, 86)
                         if r.collidepoint(mx, my):
@@ -896,21 +1165,49 @@ class JuegoPygame:
             t1 = self.font_title.render("UIS Grand Prix Foundationals Models", True, self.ACCENT)
             self.screen.blit(t1, (90, 42))
 
-            jugadas_n = len(cargar_jugadas())
-            srv_txt = (
-                f"Servidor OK ({self.salud_servidor.get('gpu_nombre', 'CPU')}, "
-                f"VRAM libre: {self.salud_servidor.get('vram_libre_mb', 0)} MB)"
-                if self.salud_servidor
-                else f"Servidor sin respuesta en {self.bridge.server_url} (Pulsa H para reintentar)"
+            self.screen.blit(
+                self.font_body.render(f"Participante: {self.bridge.student_name} | Estrategia: {cfg.ESTRATEGIA}", True, self.TEXTO),
+                (90, 86),
             )
-            info_lines = [
-                f"Alumno: {self.bridge.student_name} ({self.bridge.student_id}) | Estrategia: {cfg.ESTRATEGIA}",
-                f"Jugadas guardadas: {jugadas_n} | Precision sensores: {cfg.CONFIG_DATOS['precision_sensores']} | Ventana H: {cfg.CONFIG_DATOS['ventana_historia']}",
-                srv_txt,
-            ]
-            for i, line in enumerate(info_lines):
-                c = self.OK if (i == 2 and self.salud_servidor) else (self.BAD if i == 2 else self.MUTED)
-                self.screen.blit(self.font_body.render(line, True, c), (90, 86 + i * 26))
+            self._dibujar_boton(btn_editar_nombre, "Editar Nombre", self.PANEL_BG, self.BORDE)
+            self._dibujar_boton(
+                btn_icl,
+                "ICL",
+                (15, 52, 48) if cfg.ESTRATEGIA == "ICL" else self.PANEL_BG,
+                self.ACCENT if cfg.ESTRATEGIA == "ICL" else self.BORDE,
+            )
+            self._dibujar_boton(
+                btn_lora,
+                "LORA",
+                (35, 36, 78) if cfg.ESTRATEGIA == "LORA" else self.PANEL_BG,
+                (129, 140, 248) if cfg.ESTRATEGIA == "LORA" else self.BORDE,
+            )
+            self._dibujar_boton(btn_config, "Configurar", (24, 38, 62), self.ACCENT)
+
+            if self.salud_servidor:
+                srv_txt = (
+                    f"Servidor OK ({self.salud_servidor.get('gpu_nombre', 'CPU')}, "
+                    f"VRAM libre: {self.salud_servidor.get('vram_libre_mb', 0)} MB)"
+                )
+                self.screen.blit(self.font_body.render(srv_txt, True, self.OK), (90, 122))
+            else:
+                self.screen.blit(
+                    self.font_body.render(
+                        f"Servidor sin respuesta en {self.bridge.server_url} (Pulsa H para reintentar)",
+                        True,
+                        self.BAD,
+                    ),
+                    (90, 120),
+                )
+                self.screen.blit(
+                    self.font_small.render(
+                        "Comando para iniciar backend: cd backend_server && python -m uvicorn server:app --host 0.0.0.0 --port 8000",
+                        True,
+                        self.WARN,
+                    ),
+                    (90, 148),
+                )
+                self._dibujar_boton(btn_copiar_cmd, "Copiar comando", (52, 38, 16), self.WARN)
 
             for idx, (m_id, titulo, desc) in enumerate(botones):
                 r = pg.Rect(90, 215 + idx * 105, self.ANCHO - 180, 86)
@@ -1043,14 +1340,78 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _dibujar_miniatura_frame(
+        self,
+        rect: Any,
+        muestra: Dict[str, Any],
+        num_frame: int,
+        seleccionada: bool,
+    ) -> None:
+        """Dibuja una miniatura de la pista, carro y rayos para la vista en cuadrícula."""
+        pg = self.pygame
+        bg = (22, 34, 56) if seleccionada else self.PANEL_BG
+        border = self.ACCENT if seleccionada else self.BORDE
+        pg.draw.rect(self.screen, bg, rect, border_radius=10)
+        pg.draw.rect(self.screen, border, rect, 2 if seleccionada else 1, border_radius=10)
+
+        pista_k = str(muestra.get("pista", "P1"))
+        if pista_k not in PISTAS:
+            pista_k = "P1"
+        pista = PISTAS[pista_k]
+        escala = min((rect.w - 22) / 22.0, (rect.h - 42) / 15.0)
+        cx_box = rect.centerx
+        cy_box = rect.y + (rect.h - 22) // 2
+
+        def w2m(wx: float, wy: float) -> Tuple[int, int]:
+            return int(cx_box + wx * escala), int(cy_box + wy * escala)
+
+        pts = [w2m(px, py) for px, py in pista["puntos"]]
+        ancho_px = max(4, int(pista["ancho_medio"] * 2.0 * escala))
+        pg.draw.lines(self.screen, self.BORDE_PISTA, True, pts, ancho_px + 3)
+        pg.draw.lines(self.screen, self.ASFALTO, True, pts, ancho_px)
+        for sx, sy in pts:
+            pg.draw.circle(self.screen, self.ASFALTO, (sx, sy), max(2, ancho_px // 2))
+
+        est_info = muestra.get("estado")
+        sens = muestra.get("sensores", [0.0] * 5)
+        if isinstance(est_info, dict) and "x" in est_info and "y" in est_info:
+            est_vis = EstadoCarro(
+                x=float(est_info["x"]),
+                y=float(est_info["y"]),
+                angulo=float(est_info.get("angulo", 0.0)),
+                velocidad=float(est_info.get("velocidad", 0.0)),
+                tiempo=float(est_info.get("tiempo", 0.0)),
+                siguiente_checkpoint=int(est_info.get("siguiente_checkpoint", 1)) % len(pista["puntos"]),
+            )
+            _, impactos = calcular_sensores_rayos(est_vis, pista_k)
+            cp_pt = pista["puntos"][est_vis.siguiente_checkpoint]
+            car_s = w2m(est_vis.x, est_vis.y)
+            pg.draw.line(self.screen, (56, 189, 248), car_s, w2m(cp_pt[0], cp_pt[1]), 1)
+            for val, (hx, hy) in zip(sens, impactos):
+                c_r = self.OK if val > 0.5 else (self.WARN if val > 0.25 else self.BAD)
+                pg.draw.line(self.screen, c_r, car_s, w2m(hx, hy), 1)
+            pg.draw.circle(self.screen, self.CAR_COLOR, car_s, max(3, int(0.45 * escala)))
+
+        accion = int(muestra.get("accion", 0))
+        nom_corto = ["Recto", "Izq", "Der", "Frenar"][accion % 4]
+        lbl = self.font_small.render(f"#{num_frame} | {pista_k} | {accion}:{nom_corto}", True, self.TEXTO if seleccionada else self.MUTED)
+        self.screen.blit(lbl, (rect.x + 10, rect.bottom - 22))
+
     def _pantalla_inspector_frames(self, jugadas: List[Dict[str, Any]], pista_inicial: str = "TODAS") -> List[Dict[str, Any]]:
         pg = self.pygame
         filtro = pista_inicial if pista_inicial in PISTAS_TRAIN else "TODAS"
         idx = 0
+        vista_cuadricula = False
+        pila_deshacer: List[List[Dict[str, Any]]] = []
         x0 = self.AREA_PISTA_W + 18
         bw = self.ANCHO - self.AREA_PISTA_W - 36
         half_w = (bw - 10) // 2
         tab_w = (bw - 18) // 4
+
+        def guardar_estado_undo() -> None:
+            pila_deshacer.append(list(jugadas))
+            if len(pila_deshacer) > 50:
+                pila_deshacer.pop(0)
 
         while True:
             indices_vis = [
@@ -1064,14 +1425,25 @@ class JuegoPygame:
 
             # Pestañas de filtro agrupadas por pista
             tabs = ["TODAS", "P1", "P2", "P3"]
-            tab_rects = [pg.Rect(x0 + t_i * (tab_w + 6), 435, tab_w, 32) for t_i in range(4)]
+            tab_rects = [pg.Rect(x0 + t_i * (tab_w + 6), 430, tab_w, 30) for t_i in range(4)]
 
-            btn_prev = pg.Rect(x0, 480, half_w, 38)
-            btn_next = pg.Rect(x0 + half_w + 10, 480, half_w, 38)
-            btn_del_one = pg.Rect(x0, 528, half_w, 38)
-            btn_del_pista = pg.Rect(x0 + half_w + 10, 528, half_w, 38)
-            btn_clear_all = pg.Rect(x0, 576, bw, 38)
-            btn_back = pg.Rect(x0, 626, bw, 42)
+            btn_prev = pg.Rect(x0, 468, half_w, 36)
+            btn_next = pg.Rect(x0 + half_w + 10, 468, half_w, 36)
+            btn_grid = pg.Rect(x0, 512, bw, 36)
+            btn_del_one = pg.Rect(x0, 556, half_w, 36)
+            btn_del_pista = pg.Rect(x0 + half_w + 10, 556, half_w, 36)
+            btn_clear_all = pg.Rect(x0, 600, half_w, 36)
+            btn_undo = pg.Rect(x0 + half_w + 10, 600, half_w, 36)
+            btn_back = pg.Rect(x0, 646, bw, 40)
+
+            # Rectángulos 3x3 para miniaturas en modo cuadrícula
+            grid_rects: List[Any] = []
+            if vista_cuadricula:
+                gw = (self.AREA_PISTA_W - 48) // 3
+                gh = (self.ALTO - 48) // 3
+                for r_i in range(3):
+                    for c_i in range(3):
+                        grid_rects.append(pg.Rect(14 + c_i * (gw + 10), 14 + r_i * (gh + 10), gw, gh))
 
             pista_obj = filtro
             if indices_vis:
@@ -1083,9 +1455,12 @@ class JuegoPygame:
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         return jugadas
-                    if event.key in (pg.K_LEFT, pg.K_a) and indices_vis:
+                    if (event.mod & pg.KMOD_CTRL) and event.key == pg.K_z and pila_deshacer:
+                        jugadas = pila_deshacer.pop()
+                        guardar_jugadas(jugadas)
+                    elif event.key in (pg.K_LEFT, pg.K_a) and indices_vis:
                         idx = (idx - 1) % len(indices_vis)
-                    if event.key in (pg.K_RIGHT, pg.K_d) and indices_vis:
+                    elif event.key in (pg.K_RIGHT, pg.K_d) and indices_vis:
                         idx = (idx + 1) % len(indices_vis)
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
@@ -1095,11 +1470,26 @@ class JuegoPygame:
                         if t_rect.collidepoint(pos):
                             filtro = t_name
                             idx = 0
+                    if btn_grid.collidepoint(pos):
+                        vista_cuadricula = not vista_cuadricula
+                    if vista_cuadricula and indices_vis:
+                        page_start = (idx // 9) * 9
+                        for cell_i, g_rect in enumerate(grid_rects):
+                            cand = page_start + cell_i
+                            if cand < len(indices_vis) and g_rect.collidepoint(pos):
+                                if idx == cand:
+                                    vista_cuadricula = False
+                                else:
+                                    idx = cand
+                                break
                     if btn_prev.collidepoint(pos) and indices_vis:
-                        idx = (idx - 1) % len(indices_vis)
+                        paso = 9 if vista_cuadricula else 1
+                        idx = (idx - paso) % len(indices_vis)
                     if btn_next.collidepoint(pos) and indices_vis:
-                        idx = (idx + 1) % len(indices_vis)
+                        paso = 9 if vista_cuadricula else 1
+                        idx = (idx + paso) % len(indices_vis)
                     if btn_del_one.collidepoint(pos) and indices_vis:
+                        guardar_estado_undo()
                         jugadas.pop(indices_vis[idx])
                         guardar_jugadas(jugadas)
                     if btn_del_pista.collidepoint(pos) and indices_vis and pista_obj in PISTAS_TRAIN:
@@ -1110,6 +1500,7 @@ class JuegoPygame:
                             f"Se eliminaran los {n_pista} frames grabados de {pista_obj}.",
                             clave_conf,
                         ):
+                            guardar_estado_undo()
                             jugadas = [j for j in jugadas if j.get("pista") != pista_obj]
                             guardar_jugadas(jugadas)
                             idx = 0
@@ -1119,9 +1510,13 @@ class JuegoPygame:
                             f"Se eliminaran los {len(jugadas)} frames de todas las pistas (P1, P2 y P3).",
                             "borrar-todo",
                         ):
+                            guardar_estado_undo()
                             jugadas.clear()
                             guardar_jugadas(jugadas)
                             idx = 0
+                    if btn_undo.collidepoint(pos) and pila_deshacer:
+                        jugadas = pila_deshacer.pop()
+                        guardar_jugadas(jugadas)
 
             # Recalcular indices visibles tras posibles eliminaciones en este frame
             indices_vis = [
@@ -1164,7 +1559,20 @@ class JuegoPygame:
                 if vel_norm is None and isinstance(est_info, dict) and "velocidad" in est_info:
                     vel_norm = velocidad_normalizada(float(est_info["velocidad"]))
 
-                if isinstance(est_info, dict) and "x" in est_info and "y" in est_info:
+                if vista_cuadricula:
+                    pg.draw.rect(self.screen, self.BG, (0, 0, self.AREA_PISTA_W, self.ALTO))
+                    page_start = (idx // 9) * 9
+                    for cell_i, g_rect in enumerate(grid_rects):
+                        cand = page_start + cell_i
+                        if cand >= len(indices_vis):
+                            break
+                        self._dibujar_miniatura_frame(
+                            g_rect,
+                            jugadas[indices_vis[cand]],
+                            cand + 1,
+                            cand == idx,
+                        )
+                elif isinstance(est_info, dict) and "x" in est_info and "y" in est_info:
                     est_vis = EstadoCarro(
                         x=float(est_info["x"]),
                         y=float(est_info["y"]),
@@ -1210,10 +1618,19 @@ class JuegoPygame:
 
             self._dibujar_boton(btn_prev, "< Anterior", self.PANEL_BG, self.BORDE)
             self._dibujar_boton(btn_next, "Siguiente >", self.PANEL_BG, self.BORDE)
+            lbl_grid = "Vista Individual" if vista_cuadricula else "Visualizar Cuadricula"
+            self._dibujar_boton(btn_grid, lbl_grid, (24, 38, 62), self.ACCENT)
             self._dibujar_boton(btn_del_one, "Eliminar Frame", (55, 22, 32), self.BAD)
             lbl_pista = f"Borrar {pista_obj}" if pista_obj in PISTAS_TRAIN else "Borrar Pista"
             self._dibujar_boton(btn_del_pista, lbl_pista, (60, 28, 20), self.WARN)
             self._dibujar_boton(btn_clear_all, "Borrar Todo", (70, 18, 28), self.BAD)
+            lbl_undo = f"Ctrl+Z ({len(pila_deshacer)})" if pila_deshacer else "Ctrl+Z (0)"
+            self._dibujar_boton(
+                btn_undo,
+                lbl_undo,
+                (24, 38, 62) if pila_deshacer else (22, 26, 36),
+                self.ACCENT if pila_deshacer else self.BORDE,
+            )
             self._dibujar_boton(btn_back, "Volver a Grabacion", (15, 52, 48), self.ACCENT)
             pg.display.flip()
             self.clock.tick(30)
