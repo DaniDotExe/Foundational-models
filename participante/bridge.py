@@ -76,19 +76,54 @@ class ServerBridge:
             "precision_sensores": int(config_datos.get("precision_sensores", 50)),
             "ventana_historia": int(config_datos.get("ventana_historia", 3)),
         }
-        train_timeout = max(600.0, self.timeout_sec * 60.0)
+        # Intentar primero entrenamiento asíncrono (evita Error 524 de Cloudflare a los 100 s)
         resp = self.session.post(
-            f"{self.server_url}/entrenar_lora",
+            f"{self.server_url}/entrenar_lora_async",
             json=payload,
-            timeout=train_timeout,
+            timeout=max(20.0, self.timeout_sec),
         )
+        if resp.status_code == 404:
+            train_timeout = max(600.0, self.timeout_sec * 60.0)
+            resp = self.session.post(
+                f"{self.server_url}/entrenar_lora",
+                json=payload,
+                timeout=train_timeout,
+            )
+            if resp.status_code >= 400:
+                try:
+                    detail = resp.json().get("detail", resp.text)
+                except Exception:
+                    detail = resp.text
+                raise RuntimeError(f"Error del servidor ({resp.status_code}): {detail}")
+            return resp.json()
+
         if resp.status_code >= 400:
             try:
                 detail = resp.json().get("detail", resp.text)
             except Exception:
                 detail = resp.text
             raise RuntimeError(f"Error del servidor ({resp.status_code}): {detail}")
-        return resp.json()
+
+        deadline = time.monotonic() + max(600.0, self.timeout_sec * 60.0)
+        while time.monotonic() < deadline:
+            time.sleep(2.0)
+            st_resp = self.session.get(
+                f"{self.server_url}/entrenar_lora_estado/{self.student_id}",
+                timeout=max(15.0, self.timeout_sec),
+            )
+            if st_resp.status_code >= 400:
+                try:
+                    detail = st_resp.json().get("detail", st_resp.text)
+                except Exception:
+                    detail = st_resp.text
+                raise RuntimeError(f"Error consultando entrenamiento ({st_resp.status_code}): {detail}")
+            job = st_resp.json()
+            status = job.get("status")
+            if status == "done":
+                return dict(job.get("result") or {})
+            if status == "error":
+                raise RuntimeError(f"Error entrenando LoRA: {job.get('error')}")
+        raise RuntimeError("Tiempo de espera agotado esperando entrenamiento LoRA.")
 
     def decidir_accion(
         self,

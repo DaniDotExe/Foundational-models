@@ -14,6 +14,7 @@ adaptados a:
 from __future__ import annotations
 
 import argparse
+import copy
 from dataclasses import dataclass
 import json
 import math
@@ -22,6 +23,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import threading
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dotenv import load_dotenv
@@ -38,8 +40,8 @@ import config_estudiante as cfg
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 JUGADAS_PATH = DATA_DIR / "mis_jugadas.json"
-RECORD_EVERY_N_FRAMES = max(1, int(os.getenv("RECORD_EVERY_N_FRAMES", "6")))
-DECIDE_EVERY_N_FRAMES = max(1, int(os.getenv("DECIDE_EVERY_N_FRAMES", "1")))
+RECORD_EVERY_N_FRAMES = 1
+DECIDE_EVERY_N_FRAMES = 1
 
 # ---------------------------------------------------------------------------
 # Constantes físicas extraídas de RL_cars/src/carrera/simulador.py
@@ -696,6 +698,17 @@ class JuegoPygame:
         self.bridge = bridge
         self.estado_menu_msg = "Listo. Selecciona un modo (1-4)."
         self.salud_servidor: Optional[Dict[str, Any]] = None
+        self._bg_lock = threading.Lock()
+        self._bg_queue: List[str] = []
+        self._bg_active_track: Optional[str] = None
+        self._bg_active_pct: float = 0.0
+        self._bg_active_frames: int = 0
+        self._bg_active_pista_pct: float = 0.0
+        self._bg_active_rtt: float = 0.0
+        self._bg_active_estrategia: str = ""
+        self._bg_cancel_event = threading.Event()
+        self._bg_thread: Optional[threading.Thread] = None
+        self._bg_results: Dict[str, Dict[str, Any]] = {}
         self._chequear_salud_silenciosa()
 
     def _chequear_salud_silenciosa(self) -> None:
@@ -1144,6 +1157,8 @@ class JuegoPygame:
         btn_lora = pg.Rect(self.ANCHO - 302, 82, 95, 32)
         btn_config = pg.Rect(self.ANCHO - 197, 82, 107, 32)
         btn_copiar_cmd = pg.Rect(self.ANCHO - 250, 142, 160, 28)
+        btn_cola_abrir = pg.Rect(self.ANCHO - 375, 626, 140, 28)
+        btn_cola_cancel = pg.Rect(self.ANCHO - 225, 626, 135, 28)
         cmd_backend = f'cd /d "{BASE_DIR.parent / "backend_server"}" && python -m uvicorn server:app --host 0.0.0.0 --port 8000'
 
         while True:
@@ -1176,6 +1191,17 @@ class JuegoPygame:
                         self.estado_menu_msg = "Estrategia cambiada a LORA (usa [2] para entrenar si aun no lo has hecho)."
                     elif btn_config.collidepoint((mx, my)):
                         self._pantalla_configurar()
+                    elif btn_cola_abrir.collidepoint((mx, my)):
+                        with self._bg_lock:
+                            hay_cola = bool(self._bg_active_track or self._bg_queue or self._bg_results)
+                        if hay_cola:
+                            return 3
+                    elif btn_cola_cancel.collidepoint((mx, my)):
+                        with self._bg_lock:
+                            hay_activa = bool(self._bg_active_track or self._bg_queue)
+                        if hay_activa:
+                            self._cancelar_cola_autonoma()
+                            self.estado_menu_msg = "Simulacion autonoma en cola cancelada."
                     elif not self.salud_servidor and btn_copiar_cmd.collidepoint((mx, my)):
                         copiado = False
                         if os.name == "nt":
@@ -1260,8 +1286,26 @@ class JuegoPygame:
                 self.screen.blit(self.font_h2.render(titulo, True, self.TEXTO), (r.x + 22, r.y + 16))
                 self.screen.blit(self.font_body.render(desc, True, self.MUTED), (r.x + 22, r.y + 46))
 
+            with self._bg_lock:
+                bg_act = self._bg_active_track
+                bg_pct = self._bg_active_pct
+                bg_q = list(self._bg_queue)
+                bg_done = sorted(self._bg_results.keys())
+
+            if bg_act or bg_q:
+                cola_txt = f"Cola [3]: Simulando {bg_act} ({bg_pct:.0f}%)" + (f" | Siguientes: {','.join(bg_q)}" if bg_q else "")
+                self.screen.blit(self.font_small.render(cola_txt, True, self.WARN), (90, 632))
+                self._dibujar_boton(btn_cola_abrir, "Ver Cola [3]", (24, 38, 62), self.ACCENT)
+                self._dibujar_boton(btn_cola_cancel, "Cancelar Cola", (56, 20, 26), self.BAD)
+            elif bg_done:
+                self.screen.blit(
+                    self.font_small.render(f"Replays listos en [3]: {', '.join(bg_done)}", True, self.OK),
+                    (90, 632),
+                )
+                self._dibujar_boton(btn_cola_abrir, "Ver Replays [3]", (15, 52, 48), self.OK)
+
             msg_c = self.WARN if "Error" in self.estado_menu_msg or "Solo" in self.estado_menu_msg else self.TEXTO
-            self.screen.blit(self.font_body.render(f"Estado: {self.estado_menu_msg}", True, msg_c), (90, 660))
+            self.screen.blit(self.font_body.render(f"Estado: {self.estado_menu_msg}", True, msg_c), (90, 666))
             self.screen.blit(
                 self.font_small.render("Atajos: Teclas 1-4 para elegir modo | H = verificar servidor | ESC = salir", True, self.MUTED),
                 (90, 700),
@@ -1874,74 +1918,241 @@ class JuegoPygame:
         est = estado_inicial(clave_pista)
         ventana = max(1, min(8, int(cfg.CONFIG_DATOS.get("ventana_historia", 5))))
         hist: List[int] = [0] * ventana
-        accion_actual = 0
-        frame = 0
         latencias_rtt_ms: List[float] = []
-        ultimo_gpu_ms = 0.0
-        ultimo_rtt_ms = 0.0
-        ultimo_err = ""
+        frames_grabados: List[Dict[str, Any]] = []
 
-        while est.tiempo_carrera < TIEMPO_LIMITE_PRUEBA and est.vueltas < VUELTAS_OBJETIVO:
+        cancel_event = threading.Event()
+        lock = threading.Lock()
+        estado_carga: Dict[str, Any] = {
+            "pct": 0.0,
+            "frames": 0,
+            "tiempo": 0.0,
+            "progreso_pista": 0.0,
+            "rtt_ms": 0.0,
+            "gpu_ms": 0.0,
+            "error": "",
+            "done": False,
+            "exc": None,
+        }
+
+        def _simular_en_segundo_plano() -> None:
+            accion_actual = 0
+            frame = 0
+            ultimo_gpu_ms = 0.0
+            ultimo_rtt_ms = 0.0
+            ultimo_err = ""
+            try:
+                while (
+                    not cancel_event.is_set()
+                    and est.tiempo_carrera < TIEMPO_LIMITE_PRUEBA
+                    and est.vueltas < VUELTAS_OBJETIVO
+                ):
+                    sensores, impactos = calcular_sensores_rayos(est, clave_pista)
+                    cp_dist_ang = info_checkpoint(est, clave_pista)
+
+                    if frame % DECIDE_EVERY_N_FRAMES == 0:
+                        resp = self.bridge.decidir_accion(
+                            estrategia=cfg.ESTRATEGIA,
+                            estado_actual=sensores,
+                            historial=hist[-ventana:],
+                            jugadas_referencia=jugadas_ref,
+                            config_icl=cfg.CONFIG_ICL,
+                            config_datos=cfg.CONFIG_DATOS,
+                            velocidad=velocidad_normalizada(est.velocidad),
+                            cp_dist=cp_dist_ang[0],
+                            cp_ang=cp_dist_ang[1],
+                        )
+                        accion_actual = int(resp["accion"])
+                        ultimo_rtt_ms = float(resp["rtt_ms"])
+                        ultimo_gpu_ms = float(resp["latencia_gpu_ms"])
+                        ultimo_err = str(resp.get("error") or "")
+                        latencias_rtt_ms.append(ultimo_rtt_ms)
+
+                    lat_acum_s = sum(latencias_rtt_ms) / 1000.0
+                    frames_grabados.append({
+                        "est": copy.deepcopy(est),
+                        "sensores": list(sensores),
+                        "impactos": list(impactos),
+                        "accion": accion_actual,
+                        "hist": list(hist[-ventana:]),
+                        "cp_dist_ang": cp_dist_ang,
+                        "lat_acum_s": lat_acum_s,
+                        "rtt_ms": ultimo_rtt_ms,
+                        "gpu_ms": ultimo_gpu_ms,
+                        "err": ultimo_err,
+                        "progreso_pct": calcular_progreso_pct(est, clave_pista),
+                    })
+
+                    paso_simulacion(est, accion_actual, clave_pista)
+                    hist.append(accion_actual)
+                    frame += 1
+
+                    prog_pista = calcular_progreso_pct(est, clave_pista)
+                    pct_tiempo = (est.tiempo_carrera / TIEMPO_LIMITE_PRUEBA) * 100.0
+                    pct_total = min(99.0, max(prog_pista if est.vueltas >= VUELTAS_OBJETIVO else 0.0, pct_tiempo))
+                    if est.vueltas >= VUELTAS_OBJETIVO:
+                        pct_total = 100.0
+                    with lock:
+                        estado_carga["pct"] = pct_total
+                        estado_carga["frames"] = frame
+                        estado_carga["tiempo"] = est.tiempo_carrera
+                        estado_carga["progreso_pista"] = prog_pista
+                        estado_carga["rtt_ms"] = ultimo_rtt_ms
+                        estado_carga["gpu_ms"] = ultimo_gpu_ms
+                        estado_carga["error"] = ultimo_err
+
+                with lock:
+                    estado_carga["pct"] = 100.0
+                    estado_carga["done"] = True
+            except Exception as exc:
+                with lock:
+                    estado_carga["exc"] = str(exc)
+                    estado_carga["done"] = True
+
+        hilo = threading.Thread(target=_simular_en_segundo_plano, daemon=True)
+        hilo.start()
+
+        # Fase 1: Pantalla de carga mientras la GPU procesa toda la pista en segundo plano
+        barra_bg = pg.Rect(140, 350, self.ANCHO - 280, 34)
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    cancel_event.set()
+                    return None
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    cancel_event.set()
+                    return None
+
+            with lock:
+                done = bool(estado_carga["done"])
+                pct = float(estado_carga["pct"])
+                n_frames = int(estado_carga["frames"])
+                t_fis = float(estado_carga["tiempo"])
+                p_pista = float(estado_carga["progreso_pista"])
+                rtt = float(estado_carga["rtt_ms"])
+                gpu = float(estado_carga["gpu_ms"])
+                err = str(estado_carga["error"])
+                exc_msg = estado_carga["exc"]
+
+            if exc_msg:
+                self.estado_menu_msg = f"Error en simulacion: {exc_msg}"
+                return None
+            if done:
+                break
+
+            self.screen.fill(self.BG)
+            self.screen.blit(self.font_title.render(titulo_modo, True, self.ACCENT), (140, 140))
+            self.screen.blit(
+                self.font_h2.render(
+                    f"Calculando simulacion en servidor ({PISTAS[clave_pista]['nombre']} | {cfg.ESTRATEGIA})...",
+                    True,
+                    self.TEXTO,
+                ),
+                (140, 210),
+            )
+            self.screen.blit(
+                self.font_body.render(
+                    "Cuando llegue al 100%, veras la carrera completa a velocidad normal (30 FPS).",
+                    True,
+                    self.MUTED,
+                ),
+                (140, 255),
+            )
+
+            pg.draw.rect(self.screen, self.PANEL_BG, barra_bg, border_radius=8)
+            pg.draw.rect(self.screen, self.BORDE, barra_bg, 2, border_radius=8)
+            fill_w = max(0, int((barra_bg.w - 4) * (pct / 100.0)))
+            if fill_w > 0:
+                pg.draw.rect(
+                    self.screen,
+                    self.ACCENT,
+                    pg.Rect(barra_bg.x + 2, barra_bg.y + 2, fill_w, barra_bg.h - 4),
+                    border_radius=6,
+                )
+            pct_txt = self.font_h2.render(f"{pct:.0f}%", True, self.TEXTO)
+            self.screen.blit(pct_txt, (barra_bg.centerx - pct_txt.get_width() // 2, barra_bg.y + 4))
+
+            self.screen.blit(
+                self.font_body.render(
+                    f"Frames: {n_frames} | Progreso pista: {p_pista:.1f}% | Tiempo fisico: {t_fis:.1f} / {TIEMPO_LIMITE_PRUEBA:.0f}s",
+                    True,
+                    self.TEXTO,
+                ),
+                (140, 415),
+            )
+            self.screen.blit(
+                self.font_body.render(
+                    f"Ultimo RTT: {rtt:.0f} ms (GPU: {gpu:.0f} ms)" + (f" | Aviso: {err[:38]}" if err else ""),
+                    True,
+                    self.BAD if err else self.MUTED,
+                ),
+                (140, 450),
+            )
+            self.screen.blit(
+                self.font_small.render("ESC: Cancelar y volver al menu", True, self.MUTED),
+                (140, 520),
+            )
+            pg.display.flip()
+            self.clock.tick(30)
+
+        # Fase 2: Reproducción fluida a 30 FPS con todos los datos reales
+        idx = 0
+        pausado = False
+        total_f = len(frames_grabados)
+        while total_f > 0:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     return None
-                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
-                    return None
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        return None
+                    if event.key == pg.K_SPACE:
+                        pausado = not pausado
+                    elif event.key == pg.K_r:
+                        idx = 0
+                        pausado = False
+                    elif event.key in (pg.K_RETURN, pg.K_KP_ENTER):
+                        idx = total_f
+                        break
 
-            sensores, impactos = calcular_sensores_rayos(est, clave_pista)
+            if idx >= total_f:
+                break
 
-            # Sincronización física: espera la respuesta HTTP en cada paso de consulta
-            if frame % DECIDE_EVERY_N_FRAMES == 0:
-                cp_dist, cp_ang = info_checkpoint(est, clave_pista)
-                resp = self.bridge.decidir_accion(
-                    estrategia=cfg.ESTRATEGIA,
-                    estado_actual=sensores,
-                    historial=hist[-ventana:],
-                    jugadas_referencia=jugadas_ref,
-                    config_icl=cfg.CONFIG_ICL,
-                    config_datos=cfg.CONFIG_DATOS,
-                    velocidad=velocidad_normalizada(est.velocidad),
-                    cp_dist=cp_dist,
-                    cp_ang=cp_ang,
-                )
-                accion_actual = int(resp["accion"])
-                ultimo_rtt_ms = float(resp["rtt_ms"])
-                ultimo_gpu_ms = float(resp["latencia_gpu_ms"])
-                ultimo_err = str(resp.get("error") or "")
-                latencias_rtt_ms.append(ultimo_rtt_ms)
+            snap = frames_grabados[idx]
+            e_snap = snap["est"]
+            sensores = snap["sensores"]
+            impactos = snap["impactos"]
+            acc = snap["accion"]
 
-            paso_simulacion(est, accion_actual, clave_pista)
-            hist.append(accion_actual)
-            frame += 1
-
-            lat_acum_s = sum(latencias_rtt_ms) / 1000.0
-            self._dibujar_pista_y_carro(clave_pista, est, sensores, impactos)
+            self._dibujar_pista_y_carro(clave_pista, e_snap, sensores, impactos)
             lineas = [
                 (titulo_modo, self.ACCENT),
                 (f"Pista: {PISTAS[clave_pista]['nombre']}", self.TEXTO),
-                (f"Estrategia: {cfg.ESTRATEGIA}", self.WARN),
-                (f"Progreso: {calcular_progreso_pct(est, clave_pista):.1f}%", self.OK),
-                (f"Tiempo fisico: {est.tiempo_carrera:.2f} / {TIEMPO_LIMITE_PRUEBA:.0f}s", self.TEXTO),
-                (f"Latencia acum: +{lat_acum_s:.2f}s", self.WARN),
-                (f"Reloj + latencia: {est.tiempo_carrera + lat_acum_s:.2f}s", self.TEXTO),
-                (f"RTT ultimo: {ultimo_rtt_ms:.1f} ms (GPU {ultimo_gpu_ms:.1f} ms)", self.MUTED),
-                (f"Velocidad: {est.velocidad:.2f} m/s", self.TEXTO),
-                (f"Choques: {est.colisiones_obstaculos} | Fuera: {est.tiempo_fuera:.1f}s", self.BAD if est.colisiones_obstaculos else self.MUTED),
-                (f"Accion: {ACCIONES_DISCRETAS[accion_actual][0]}", self.ACCENT),
-                (f"Aviso: {ultimo_err[:28]}" if ultimo_err else "Conexion OK", self.BAD if ultimo_err else self.OK),
-                ("", self.TEXTO),
+                (f"Estrategia: {cfg.ESTRATEGIA} (Replay 100%)", self.WARN),
+                (f"Progreso: {snap['progreso_pct']:.1f}%", self.OK),
+                (f"Tiempo fisico: {e_snap.tiempo_carrera:.2f} / {TIEMPO_LIMITE_PRUEBA:.0f}s", self.TEXTO),
+                (f"Latencia acum: +{snap['lat_acum_s']:.2f}s", self.WARN),
+                (f"Reloj + latencia: {e_snap.tiempo_carrera + snap['lat_acum_s']:.2f}s", self.TEXTO),
+                (f"RTT: {snap['rtt_ms']:.1f} ms (GPU {snap['gpu_ms']:.1f} ms)", self.MUTED),
+                (f"Velocidad: {e_snap.velocidad:.2f} m/s", self.TEXTO),
+                (f"Choques: {e_snap.colisiones_obstaculos} | Fuera: {e_snap.tiempo_fuera:.1f}s", self.BAD if e_snap.colisiones_obstaculos else self.MUTED),
+                (f"Accion: {ACCIONES_DISCRETAS[acc][0]}", self.ACCENT),
+                (f"Frame: {idx + 1}/{total_f}" + (" [PAUSA]" if pausado else ""), self.MUTED),
+                ("SPACE: Pausa | R: Repetir | ENTER: Saltar", self.MUTED),
                 ("ESC: Abortar y volver al menu", self.MUTED),
             ]
             self._dibujar_panel_lateral(
                 lineas,
                 sensores,
-                velocidad_norm=velocidad_normalizada(est.velocidad),
-                historial=hist[-ventana:],
-                accion_texto=ACCIONES_DISCRETAS[accion_actual][0],
-                cp_dist=info_checkpoint(est, clave_pista),
+                velocidad_norm=velocidad_normalizada(e_snap.velocidad),
+                historial=snap["hist"],
+                accion_texto=ACCIONES_DISCRETAS[acc][0],
+                cp_dist=snap["cp_dist_ang"],
             )
             pg.display.flip()
             self.clock.tick(30)
+            if not pausado:
+                idx += 1
 
         lat_acum_s = round(sum(latencias_rtt_ms) / 1000.0, 4)
         lat_prom_ms = round(sum(latencias_rtt_ms) / max(1, len(latencias_rtt_ms)), 2)
@@ -1956,19 +2167,350 @@ class JuegoPygame:
             "tiempo_fuera_s": round(est.tiempo_fuera, 3),
         }
 
+    def _reproducir_frames_autonomo(
+        self,
+        clave_pista: str,
+        frames_grabados: List[Dict[str, Any]],
+        titulo_modo: str,
+        estrategia_lbl: str,
+    ) -> None:
+        pg = self.pygame
+        idx = 0
+        pausado = False
+        total_f = len(frames_grabados)
+        while total_f > 0:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        return
+                    if event.key == pg.K_SPACE:
+                        pausado = not pausado
+                    elif event.key == pg.K_r:
+                        idx = 0
+                        pausado = False
+                    elif event.key in (pg.K_RETURN, pg.K_KP_ENTER):
+                        return
+
+            if idx >= total_f:
+                return
+
+            snap = frames_grabados[idx]
+            e_snap = snap["est"]
+            sensores = snap["sensores"]
+            impactos = snap["impactos"]
+            acc = snap["accion"]
+
+            self._dibujar_pista_y_carro(clave_pista, e_snap, sensores, impactos)
+            lineas = [
+                (titulo_modo, self.ACCENT),
+                (f"Pista: {PISTAS[clave_pista]['nombre']}", self.TEXTO),
+                (f"Estrategia: {estrategia_lbl} (Replay 100%)", self.WARN),
+                (f"Progreso: {snap['progreso_pct']:.1f}%", self.OK),
+                (f"Tiempo fisico: {e_snap.tiempo_carrera:.2f} / {TIEMPO_LIMITE_PRUEBA:.0f}s", self.TEXTO),
+                (f"Latencia acum: +{snap['lat_acum_s']:.2f}s", self.WARN),
+                (f"Reloj + latencia: {e_snap.tiempo_carrera + snap['lat_acum_s']:.2f}s", self.TEXTO),
+                (f"RTT: {snap['rtt_ms']:.1f} ms (GPU {snap['gpu_ms']:.1f} ms)", self.MUTED),
+                (f"Velocidad: {e_snap.velocidad:.2f} m/s", self.TEXTO),
+                (f"Choques: {e_snap.colisiones_obstaculos} | Fuera: {e_snap.tiempo_fuera:.1f}s", self.BAD if e_snap.colisiones_obstaculos else self.MUTED),
+                (f"Accion: {ACCIONES_DISCRETAS[acc][0]}", self.ACCENT),
+                (f"Frame: {idx + 1}/{total_f}" + (" [PAUSA]" if pausado else ""), self.MUTED),
+                ("SPACE: Pausa | R: Repetir | ENTER/ESC: Volver", self.MUTED),
+            ]
+            self._dibujar_panel_lateral(
+                lineas,
+                sensores,
+                velocidad_norm=velocidad_normalizada(e_snap.velocidad),
+                historial=snap["hist"],
+                accion_texto=ACCIONES_DISCRETAS[acc][0],
+                cp_dist=snap["cp_dist_ang"],
+            )
+            pg.display.flip()
+            self.clock.tick(30)
+            if not pausado:
+                idx += 1
+
+    def _cancelar_cola_autonoma(self) -> None:
+        self._bg_cancel_event.set()
+        with self._bg_lock:
+            self._bg_queue.clear()
+
+    def _encolar_pistas_autonomas(self, pistas: List[str], jugadas_ref: List[Dict[str, Any]]) -> None:
+        with self._bg_lock:
+            for p in pistas:
+                if p != self._bg_active_track and p not in self._bg_queue:
+                    self._bg_results.pop(p, None)
+                    self._bg_queue.append(p)
+            ya_corriendo = self._bg_thread is not None and self._bg_thread.is_alive()
+
+        if not ya_corriendo:
+            self._bg_cancel_event.clear()
+            estrategia_snap = str(cfg.ESTRATEGIA)
+            icl_snap = copy.deepcopy(cfg.CONFIG_ICL)
+            datos_snap = copy.deepcopy(cfg.CONFIG_DATOS)
+            ventana = max(1, min(8, int(datos_snap.get("ventana_historia", 5))))
+
+            def _worker_cola() -> None:
+                while not self._bg_cancel_event.is_set():
+                    with self._bg_lock:
+                        if not self._bg_queue:
+                            self._bg_active_track = None
+                            return
+                        clave_pista = self._bg_queue.pop(0)
+                        self._bg_active_track = clave_pista
+                        self._bg_active_pct = 0.0
+                        self._bg_active_frames = 0
+                        self._bg_active_pista_pct = 0.0
+                        self._bg_active_rtt = 0.0
+                        self._bg_active_estrategia = estrategia_snap
+
+                    est = estado_inicial(clave_pista)
+                    hist: List[int] = [0] * ventana
+                    latencias_rtt_ms: List[float] = []
+                    frames_grabados: List[Dict[str, Any]] = []
+                    accion_actual = 0
+                    frame = 0
+                    ultimo_gpu_ms = 0.0
+                    ultimo_rtt_ms = 0.0
+                    ultimo_err = ""
+
+                    while (
+                        not self._bg_cancel_event.is_set()
+                        and est.tiempo_carrera < TIEMPO_LIMITE_PRUEBA
+                        and est.vueltas < VUELTAS_OBJETIVO
+                    ):
+                        sensores, impactos = calcular_sensores_rayos(est, clave_pista)
+                        cp_dist_ang = info_checkpoint(est, clave_pista)
+                        if frame % DECIDE_EVERY_N_FRAMES == 0:
+                            resp = self.bridge.decidir_accion(
+                                estrategia=estrategia_snap,
+                                estado_actual=sensores,
+                                historial=hist[-ventana:],
+                                jugadas_referencia=jugadas_ref,
+                                config_icl=icl_snap,
+                                config_datos=datos_snap,
+                                velocidad=velocidad_normalizada(est.velocidad),
+                                cp_dist=cp_dist_ang[0],
+                                cp_ang=cp_dist_ang[1],
+                            )
+                            accion_actual = int(resp["accion"])
+                            ultimo_rtt_ms = float(resp["rtt_ms"])
+                            ultimo_gpu_ms = float(resp["latencia_gpu_ms"])
+                            ultimo_err = str(resp.get("error") or "")
+                            latencias_rtt_ms.append(ultimo_rtt_ms)
+
+                        lat_acum_s = sum(latencias_rtt_ms) / 1000.0
+                        frames_grabados.append({
+                            "est": copy.deepcopy(est),
+                            "sensores": list(sensores),
+                            "impactos": list(impactos),
+                            "accion": accion_actual,
+                            "hist": list(hist[-ventana:]),
+                            "cp_dist_ang": cp_dist_ang,
+                            "lat_acum_s": lat_acum_s,
+                            "rtt_ms": ultimo_rtt_ms,
+                            "gpu_ms": ultimo_gpu_ms,
+                            "err": ultimo_err,
+                            "progreso_pct": calcular_progreso_pct(est, clave_pista),
+                        })
+                        paso_simulacion(est, accion_actual, clave_pista)
+                        hist.append(accion_actual)
+                        frame += 1
+
+                        prog_pista = calcular_progreso_pct(est, clave_pista)
+                        pct_tiempo = (est.tiempo_carrera / TIEMPO_LIMITE_PRUEBA) * 100.0
+                        pct_total = 100.0 if est.vueltas >= VUELTAS_OBJETIVO else min(99.0, pct_tiempo)
+                        with self._bg_lock:
+                            self._bg_active_pct = pct_total
+                            self._bg_active_frames = frame
+                            self._bg_active_pista_pct = prog_pista
+                            self._bg_active_rtt = ultimo_rtt_ms
+
+                    if not self._bg_cancel_event.is_set():
+                        resumen = {
+                            "pista": clave_pista,
+                            "progreso_pct": calcular_progreso_pct(est, clave_pista),
+                            "tiempo_fisico_s": round(est.tiempo_carrera, 3),
+                            "latencia_acumulada_s": round(sum(latencias_rtt_ms) / 1000.0, 4),
+                            "latencia_promedio_ms": round(sum(latencias_rtt_ms) / max(1, len(latencias_rtt_ms)), 2),
+                            "completada": est.vueltas >= VUELTAS_OBJETIVO,
+                            "choques": est.colisiones_obstaculos,
+                            "tiempo_fuera_s": round(est.tiempo_fuera, 3),
+                        }
+                        with self._bg_lock:
+                            self._bg_results[clave_pista] = {
+                                "frames": frames_grabados,
+                                "resumen": resumen,
+                                "estrategia": estrategia_snap,
+                            }
+
+                with self._bg_lock:
+                    self._bg_active_track = None
+
+            self._bg_thread = threading.Thread(target=_worker_cola, daemon=True)
+            self._bg_thread.start()
+
     def _modo_prueba_a(self) -> None:
+        pg = self.pygame
         jugadas_ref = cargar_jugadas()
         if cfg.ESTRATEGIA.upper().strip() == "ICL" and not jugadas_ref:
             self.estado_menu_msg = "Error: graba jugadas en [1] antes de correr ICL."
             return
-        resumen = []
-        for clave in PISTAS_TRAIN:
-            r = self._correr_pista_autonoma_visual(clave, jugadas_ref, "MODO [3]: PRUEBA AUTONOMA")
-            if r is None:
-                self.estado_menu_msg = "Prueba en Pistas A cancelada."
-                return
-            resumen.append(f"{clave}:{r['progreso_pct']:.0f}%")
-        self.estado_menu_msg = f"Prueba Pistas A completada -> {' | '.join(resumen)}"
+
+        btn_p1 = pg.Rect(90, 145, 140, 40)
+        btn_p2 = pg.Rect(245, 145, 140, 40)
+        btn_p3 = pg.Rect(400, 145, 140, 40)
+        btn_todas = pg.Rect(560, 145, 180, 40)
+        btn_cancelar_todo = pg.Rect(self.ANCHO - 260, 145, 170, 40)
+        btn_volver = pg.Rect(self.ANCHO - 270, 675, 180, 44)
+
+        while True:
+            with self._bg_lock:
+                act = self._bg_active_track
+                act_pct = self._bg_active_pct
+                act_frames = self._bg_active_frames
+                act_pista_pct = self._bg_active_pista_pct
+                act_rtt = self._bg_active_rtt
+                act_est = self._bg_active_estrategia
+                cola = list(self._bg_queue)
+                resultados = dict(self._bg_results)
+
+            btns_accion_fila: Dict[str, Tuple[str, Any]] = {}
+            for idx_p, clave in enumerate(PISTAS_TRAIN):
+                y_card = 225 + idx_p * 135
+                btn_row = pg.Rect(self.ANCHO - 290, y_card + 36, 175, 40)
+                if act == clave:
+                    btns_accion_fila[clave] = ("cancelar", btn_row)
+                elif clave in cola:
+                    btns_accion_fila[clave] = ("quitar", btn_row)
+                elif clave in resultados:
+                    btns_accion_fila[clave] = ("replay", btn_row)
+                else:
+                    btns_accion_fila[clave] = ("encolar", btn_row)
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    return
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    mx, my = event.pos
+                    if btn_volver.collidepoint(mx, my):
+                        return
+                    if btn_p1.collidepoint(mx, my):
+                        self._encolar_pistas_autonomas(["P1"], jugadas_ref)
+                    elif btn_p2.collidepoint(mx, my):
+                        self._encolar_pistas_autonomas(["P2"], jugadas_ref)
+                    elif btn_p3.collidepoint(mx, my):
+                        self._encolar_pistas_autonomas(["P3"], jugadas_ref)
+                    elif btn_todas.collidepoint(mx, my):
+                        self._encolar_pistas_autonomas(list(PISTAS_TRAIN), jugadas_ref)
+                    elif (act or cola) and btn_cancelar_todo.collidepoint(mx, my):
+                        self._cancelar_cola_autonoma()
+                    else:
+                        for clave, (accion_btn, rect_btn) in btns_accion_fila.items():
+                            if rect_btn.collidepoint(mx, my):
+                                if accion_btn == "cancelar":
+                                    self._cancelar_cola_autonoma()
+                                elif accion_btn == "quitar":
+                                    with self._bg_lock:
+                                        if clave in self._bg_queue:
+                                            self._bg_queue.remove(clave)
+                                elif accion_btn == "replay":
+                                    res_info = resultados[clave]
+                                    self._reproducir_frames_autonomo(
+                                        clave,
+                                        res_info["frames"],
+                                        "MODO [3]: PRUEBA AUTONOMA",
+                                        res_info["estrategia"],
+                                    )
+                                elif accion_btn == "encolar":
+                                    self._encolar_pistas_autonomas([clave], jugadas_ref)
+                                break
+
+            self.screen.fill(self.BG)
+            self.screen.blit(self.font_title.render("Modo [3]: Simulacion Autonoma en Cola", True, self.ACCENT), (90, 42))
+            self.screen.blit(
+                self.font_body.render(
+                    f"Estrategia actual: {cfg.ESTRATEGIA} | Elige pista para simular en segundo plano y puedes volver al menu.",
+                    True,
+                    self.MUTED,
+                ),
+                (90, 86),
+            )
+
+            self._dibujar_boton(btn_p1, "+ Simular P1", (24, 38, 62), self.ACCENT)
+            self._dibujar_boton(btn_p2, "+ Simular P2", (24, 38, 62), self.ACCENT)
+            self._dibujar_boton(btn_p3, "+ Simular P3", (24, 38, 62), self.ACCENT)
+            self._dibujar_boton(btn_todas, "+ Simular Todas", (15, 52, 48), self.OK)
+            if act or cola:
+                self._dibujar_boton(btn_cancelar_todo, "Cancelar Todo", (56, 20, 26), self.BAD)
+
+            for idx_p, clave in enumerate(PISTAS_TRAIN):
+                y_card = 225 + idx_p * 135
+                card = pg.Rect(90, y_card, self.ANCHO - 180, 114)
+                pg.draw.rect(self.screen, self.PANEL_BG, card, border_radius=12)
+                pg.draw.rect(self.screen, self.ACCENT if act == clave else self.BORDE, card, 2, border_radius=12)
+
+                nombre_p = PISTAS[clave]["nombre"]
+                self.screen.blit(self.font_h2.render(nombre_p, True, self.TEXTO), (card.x + 22, card.y + 14))
+
+                accion_btn, rect_btn = btns_accion_fila[clave]
+                if act == clave:
+                    self.screen.blit(
+                        self.font_body.render(
+                            f"Simulando ({act_est})... {act_pct:.0f}% | Frames: {act_frames} | Pista: {act_pista_pct:.1f}% | RTT: {act_rtt:.0f} ms",
+                            True,
+                            self.WARN,
+                        ),
+                        (card.x + 22, card.y + 46),
+                    )
+                    barra = pg.Rect(card.x + 22, card.y + 76, card.w - 250, 18)
+                    pg.draw.rect(self.screen, self.BG, barra, border_radius=5)
+                    fw = max(0, int((barra.w - 4) * (act_pct / 100.0)))
+                    if fw > 0:
+                        pg.draw.rect(self.screen, self.ACCENT, pg.Rect(barra.x + 2, barra.y + 2, fw, barra.h - 4), border_radius=4)
+                    self._dibujar_boton(rect_btn, "Cancelar", (56, 20, 26), self.BAD)
+                elif clave in cola:
+                    pos_q = cola.index(clave) + 1
+                    self.screen.blit(
+                        self.font_body.render(f"En cola (turno #{pos_q}) esperando servidor...", True, self.MUTED),
+                        (card.x + 22, card.y + 52),
+                    )
+                    self._dibujar_boton(rect_btn, "Quitar de cola", (56, 38, 16), self.WARN)
+                elif clave in resultados:
+                    res = resultados[clave]["resumen"]
+                    est_r = resultados[clave]["estrategia"]
+                    col_r = self.OK if res["completada"] else self.WARN
+                    self.screen.blit(
+                        self.font_body.render(
+                            f"Listo ({est_r}): Progreso {res['progreso_pct']:.1f}% | t={res['tiempo_fisico_s']:.1f}s | "
+                            f"Choques={res['choques']} | Lat={res['latencia_acumulada_s']:.1f}s",
+                            True,
+                            col_r,
+                        ),
+                        (card.x + 22, card.y + 52),
+                    )
+                    self._dibujar_boton(rect_btn, "Ver Replay (30 FPS)", (15, 52, 48), self.OK)
+                else:
+                    self.screen.blit(
+                        self.font_body.render("Sin simular aun. Pulsa '+ Simular' para enviar a la cola.", True, self.MUTED),
+                        (card.x + 22, card.y + 52),
+                    )
+                    self._dibujar_boton(rect_btn, f"Simular {clave}", (24, 38, 62), self.ACCENT)
+
+            self._dibujar_boton(btn_volver, "Volver al Menu", self.PANEL_BG, self.BORDE)
+            self.screen.blit(
+                self.font_small.render(
+                    "Puedes volver al menu mientras carga para editar Configuracion o Grabar Jugadas.",
+                    True,
+                    self.MUTED,
+                ),
+                (90, 688),
+            )
+            pg.display.flip()
+            self.clock.tick(30)
 
     def _modo_evaluacion_b(self) -> None:
         jugadas_ref = cargar_jugadas()

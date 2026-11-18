@@ -44,6 +44,8 @@ load_dotenv(BASE_DIR / ".env")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 RANKING_PATH = BASE_DIR / "ranking.json"
+_train_jobs_lock = threading.Lock()
+_train_jobs: Dict[str, Dict[str, Any]] = {}
 ranking_lock = threading.Lock()
 
 app = FastAPI(
@@ -202,6 +204,72 @@ def entrenar_lora(req: EntrenarLoraRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error entrenando LoRA: {exc}") from exc
+
+
+def _ejecutar_job_lora(sid: str, req: EntrenarLoraRequest) -> None:
+    try:
+        jugadas_dict = [j.model_dump() for j in req.jugadas]
+        resultado = motor_global.entrenar_lora(
+            student_id=req.student_id,
+            jugadas=jugadas_dict,
+            lora_r=req.lora_r,
+            lora_alpha=req.lora_alpha,
+            target_modules=req.target_modules,
+            epochs=req.epochs,
+            learning_rate=req.learning_rate,
+            num_ejemplos=req.num_ejemplos,
+            precision_sensores=req.precision_sensores,
+            ventana_historia=req.ventana_historia,
+        )
+        with _train_jobs_lock:
+            _train_jobs[sid] = {"status": "done", "result": resultado, "error": None}
+    except Exception as exc:
+        with _train_jobs_lock:
+            _train_jobs[sid] = {"status": "error", "result": None, "error": str(exc)}
+
+
+@app.post("/entrenar_lora_async")
+def entrenar_lora_async(req: EntrenarLoraRequest) -> Dict[str, Any]:
+    """Inicia el entrenamiento LoRA en segundo plano para evitar timeouts HTTP (Error 524 de Cloudflare)."""
+    if req.lora_r > MAX_LORA_R:
+        raise HTTPException(
+            status_code=400,
+            detail=f"lora_r={req.lora_r} supera el máximo permitido MAX_LORA_R={MAX_LORA_R}.",
+        )
+    if req.epochs > MAX_LORA_EPOCHS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"epochs={req.epochs} supera el máximo permitido MAX_LORA_EPOCHS={MAX_LORA_EPOCHS}.",
+        )
+    try:
+        sid = sanitizar_student_id(req.student_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with _train_jobs_lock:
+        actual = _train_jobs.get(sid)
+        if actual and actual.get("status") == "running":
+            return {"status": "running", "student_id": sid}
+        _train_jobs[sid] = {"status": "running", "result": None, "error": None}
+
+    t = threading.Thread(target=_ejecutar_job_lora, args=(sid, req), daemon=True)
+    t.start()
+    return {"status": "running", "student_id": sid}
+
+
+@app.get("/entrenar_lora_estado/{student_id}")
+def entrenar_lora_estado(student_id: str) -> Dict[str, Any]:
+    """Consulta el estado del entrenamiento LoRA asíncrono."""
+    try:
+        sid = sanitizar_student_id(student_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    with _train_jobs_lock:
+        job = _train_jobs.get(sid)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"No hay entrenamiento activo para '{sid}'.")
+    return job
 
 
 @app.post("/decidir_accion")
