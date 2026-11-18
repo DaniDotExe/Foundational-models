@@ -9,7 +9,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import requests
 from dotenv import load_dotenv
@@ -80,12 +80,24 @@ class ServerBridge:
         resp.raise_for_status()
         return bool(resp.json().get("eliminado", False))
 
+    def cancelar_entrenamiento_lora(self) -> None:
+        """Solicita cancelar el entrenamiento LoRA activo en el servidor."""
+        try:
+            self.session.post(
+                f"{self.server_url}/entrenar_lora_cancelar/{self.student_id}",
+                timeout=max(10.0, self.timeout_sec),
+            )
+        except requests.RequestException:
+            pass
+
     def entrenar_lora(
         self,
         jugadas: List[Dict[str, Any]],
         config_lora: Dict[str, Any],
         config_datos: Dict[str, Any],
         adapter_name: Optional[str] = None,
+        on_progress: Optional[Callable[[Dict[str, Any]], None]] = None,
+        cancel_event: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Envía las jugadas grabadas a POST /entrenar_lora."""
         payload: Dict[str, Any] = {
@@ -134,7 +146,13 @@ class ServerBridge:
 
         deadline = time.monotonic() + max(600.0, self.timeout_sec * 60.0)
         while time.monotonic() < deadline:
-            time.sleep(2.0)
+            if cancel_event is not None and cancel_event.is_set():
+                self.cancelar_entrenamiento_lora()
+                raise InterruptedError("Entrenamiento cancelado por el estudiante.")
+            time.sleep(1.5)
+            if cancel_event is not None and cancel_event.is_set():
+                self.cancelar_entrenamiento_lora()
+                raise InterruptedError("Entrenamiento cancelado por el estudiante.")
             try:
                 st_resp = self.session.get(
                     f"{self.server_url}/entrenar_lora_estado/{self.student_id}",
@@ -149,9 +167,13 @@ class ServerBridge:
                     detail = st_resp.text
                 raise RuntimeError(f"Error consultando entrenamiento ({st_resp.status_code}): {detail}")
             job = st_resp.json()
+            if on_progress is not None:
+                on_progress(job)
             status = job.get("status")
             if status == "done":
                 return dict(job.get("result") or {})
+            if status == "cancelled":
+                raise InterruptedError(str(job.get("error") or "Entrenamiento cancelado."))
             if status == "error":
                 raise RuntimeError(f"Error entrenando LoRA: {job.get('error')}")
         raise RuntimeError("Tiempo de espera agotado esperando entrenamiento LoRA.")

@@ -13,7 +13,7 @@ import re
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import numpy as np
 from dotenv import load_dotenv
@@ -435,6 +435,8 @@ class MotorQwen:
         precision_sensores: int = 50,
         ventana_historia: int = 3,
         adapter_name: Optional[str] = None,
+        progress_cb: Optional[Callable[[int, int, float], None]] = None,
+        cancel_check: Optional[Callable[[], bool]] = None,
     ) -> Dict[str, Any]:
         """Entrena un adaptador LoRA aislado para `student_id` y lo guarda en disco."""
         self.inicializar()
@@ -570,6 +572,8 @@ class MotorQwen:
                 random.shuffle(encoded_samples)
                 epoch_losses: List[float] = []
                 for start in range(0, len(encoded_samples), batch_size):
+                    if cancel_check is not None and cancel_check():
+                        raise InterruptedError("Entrenamiento cancelado por el estudiante.")
                     batch = encoded_samples[start:start + batch_size]
                     max_len = max(len(x[0]) for x in batch)
                     input_ids_b = []
@@ -606,7 +610,10 @@ class MotorQwen:
                         epoch_losses.append(float(loss.detach().cpu().item()))
                     time.sleep(0.005)
 
-                historial_loss.append(round(float(np.mean(epoch_losses)), 4))
+                ep_loss = round(float(np.mean(epoch_losses)), 4)
+                historial_loss.append(ep_loss)
+                if progress_cb is not None:
+                    progress_cb(_epoch + 1, int(epochs), ep_loss)
 
             with gpu_lock:
                 del optimizer
@@ -758,6 +765,9 @@ class MotorQwen:
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
             prompt_tokens = int(inputs["input_ids"].shape[1])
 
+            if modo in {"LORA", "LORA_ICL"}:
+                self._asegurar_adaptador_cargado(akey)
+
             with torch.inference_mode():
                 if modo == "ICL":
                     if self.peft_model is not None:
@@ -766,7 +776,6 @@ class MotorQwen:
                     else:
                         outputs = self.base_model(**inputs, use_cache=False, logits_to_keep=1)
                 else:
-                    self._asegurar_adaptador_cargado(akey)
                     outputs = self.peft_model(**inputs, use_cache=False, logits_to_keep=1)
 
                 logits_last = outputs.logits[0, -1, :]

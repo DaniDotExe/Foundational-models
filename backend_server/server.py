@@ -350,6 +350,20 @@ def entrenar_lora(req: EntrenarLoraRequest) -> Dict[str, Any]:
 
 
 def _ejecutar_job_lora(sid: str, req: EntrenarLoraRequest) -> None:
+    def _on_prog(ep: int, tot: int, loss_ep: float) -> None:
+        with _train_jobs_lock:
+            job = _train_jobs.get(sid)
+            if job:
+                job["epoch"] = ep
+                job["total_epochs"] = tot
+                job["pct"] = round(min(99.0, (ep / max(1, tot)) * 100.0), 1)
+                job["loss"] = loss_ep
+
+    def _is_cancelled() -> bool:
+        with _train_jobs_lock:
+            job = _train_jobs.get(sid)
+            return bool(job and job.get("cancel"))
+
     try:
         logger.info(
             "[ENTRENANDO] %s | ejemplos=%d | epochs=%d | r=%d",
@@ -368,6 +382,8 @@ def _ejecutar_job_lora(sid: str, req: EntrenarLoraRequest) -> None:
             precision_sensores=req.precision_sensores,
             ventana_historia=req.ventana_historia,
             adapter_name=req.adapter_name,
+            progress_cb=_on_prog,
+            cancel_check=_is_cancelled,
         )
         with _student_examples_lock:
             _student_trained_examples[sid] = int(resultado.get("ejemplos_entrenados", len(jugadas_dict)))
@@ -376,7 +392,19 @@ def _ejecutar_job_lora(sid: str, req: EntrenarLoraRequest) -> None:
             sid, resultado.get("loss_final", 0.0), resultado.get("tiempo_entrenamiento_s", 0.0),
         )
         with _train_jobs_lock:
-            _train_jobs[sid] = {"status": "done", "result": resultado, "error": None}
+            _train_jobs[sid] = {
+                "status": "done",
+                "pct": 100.0,
+                "epoch": req.epochs,
+                "total_epochs": req.epochs,
+                "loss": resultado.get("loss_final"),
+                "result": resultado,
+                "error": None,
+            }
+    except InterruptedError as exc:
+        logger.info("[LORA CANCELADO] %s", sid)
+        with _train_jobs_lock:
+            _train_jobs[sid] = {"status": "cancelled", "result": None, "error": str(exc)}
     except Exception as exc:
         logger.error("[LORA ERROR] %s | %s", sid, exc)
         with _train_jobs_lock:
@@ -405,11 +433,35 @@ def entrenar_lora_async(req: EntrenarLoraRequest) -> Dict[str, Any]:
         actual = _train_jobs.get(sid)
         if actual and actual.get("status") == "running":
             return {"status": "running", "student_id": sid}
-        _train_jobs[sid] = {"status": "running", "result": None, "error": None}
+        _train_jobs[sid] = {
+            "status": "running",
+            "pct": 0.0,
+            "epoch": 0,
+            "total_epochs": req.epochs,
+            "loss": None,
+            "cancel": False,
+            "result": None,
+            "error": None,
+        }
 
     t = threading.Thread(target=_ejecutar_job_lora, args=(sid, req), daemon=True)
     t.start()
     return {"status": "running", "student_id": sid}
+
+
+@app.post("/entrenar_lora_cancelar/{student_id}")
+def entrenar_lora_cancelar(student_id: str) -> Dict[str, Any]:
+    """Solicita cancelar el entrenamiento LoRA en curso de `student_id`."""
+    try:
+        sid = sanitizar_student_id(student_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    with _train_jobs_lock:
+        job = _train_jobs.get(sid)
+        if job and job.get("status") == "running":
+            job["cancel"] = True
+            return {"status": "cancelling", "student_id": sid}
+    return {"status": "idle", "student_id": sid}
 
 
 @app.get("/entrenar_lora_estado/{student_id}")
@@ -825,6 +877,41 @@ def ranking_html() -> str:
     .time-sub {{ font-size: 0.74rem; color: var(--muted); font-weight: 400; }}
     .lat {{ font-family: monospace; color: #cbd5e1; font-size: 0.85rem; }}
     .score {{ font-weight: 800; font-size: 1.08rem; color: var(--amber); font-family: monospace; }}
+    .tab-bar {{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 14px 0 16px 0;
+    }}
+    .tab-btn {{
+      background: var(--card);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }}
+    .tab-btn:hover {{ color: var(--text); border-color: var(--accent); }}
+    .tab-btn.active {{
+      background: rgba(20, 184, 166, 0.16);
+      color: #5eead4;
+      border-color: var(--accent);
+    }}
+    .tab-panel {{ display: none; }}
+    .tab-panel.active {{ display: block; }}
+    .panel-desc {{
+      background: rgba(16, 23, 38, 0.85);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+    }}
     .empty {{ text-align: center; padding: 36px 20px; color: var(--muted); }}
     footer {{ margin-top: 16px; font-size: 0.82rem; color: var(--muted); text-align: right; }}
   </style>
@@ -843,76 +930,101 @@ def ranking_html() -> str:
       </div>
     </header>
 
-    <div class="explain-grid">
-      <div class="explain-card">
-        <h3>🏁 1. Carrera (Peso 55%)</h3>
-        <p>Premia quién completa más pistas B (B1, B2, B3). En empate, ordena por mayor % de progreso y menor tiempo físico total.</p>
-      </div>
-      <div class="explain-card">
-        <h3>⚡ 2. Velocidad Inferencia (Peso 20%)</h3>
-        <p>Premia menor latencia promedio (ms/frame) en GPU. Aquí brilla LoRA (zero-shot) frente a prompts largos de ICL.</p>
-      </div>
-      <div class="explain-card">
-        <h3>🧬 3. Eficiencia Few-Shot (Peso 15%)</h3>
-        <p>Premia lograr mayor % de progreso usando menos datos (% / #ejemplos). Requiere al menos 20% de progreso promedio.</p>
-      </div>
-      <div class="explain-card">
-        <h3>🛡️ 4. Conducción Limpia (Peso 10%)</h3>
-        <p>Premia la menor cantidad de choques contra obstáculos fijos y móviles en B1–B3 (desempata por mayor progreso %).</p>
-      </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="general" onclick="setTab('general')">🏆 Campeonato General F1</button>
+      <button class="tab-btn" data-tab="carrera" onclick="setTab('carrera')">🏁 Carrera (55%)</button>
+      <button class="tab-btn" data-tab="velocidad" onclick="setTab('velocidad')">⚡ Velocidad (20%)</button>
+      <button class="tab-btn" data-tab="datos" onclick="setTab('datos')">🧬 Few-Shot (15%)</button>
+      <button class="tab-btn" data-tab="limpieza" onclick="setTab('limpieza')">🛡️ Limpieza (10%)</button>
     </div>
 
-    <h2>🏆 Tabla General del Campeonato (0.55·Carrera + 0.20·Velocidad + 0.15·Eficiencia + 0.10·Limpieza)</h2>
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Pos</th>
-            <th>Estudiante</th>
-            <th>Estrategia</th>
-            <th>Pistas B</th>
-            <th>🏁 Carrera (55%)</th>
-            <th>⚡ Velocidad (20%)</th>
-            <th>🧬 Few-Shot (15%)</th>
-            <th>🛡️ Limpieza (10%)</th>
-            <th>Pts F1</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cuerpo_tabla}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="sub-grid">
+    <div id="tab-general" class="tab-panel active">
+      <div class="panel-desc">
+        <strong>🏆 Campeonato General (Final):</strong> Promedio ponderado <code>0.55·Carrera + 0.20·Velocidad + 0.15·Few-Shot + 0.10·Limpieza</code>. Cada categoría reparte puntos F1 (25, 18, 15, 12, 10, 8, 6, 4, 2, 1).
+      </div>
       <div class="table-card">
         <table>
-          <thead><tr><th colspan="4">🏁 Top Carrera (55%) — Completadas · % · Tiempo</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Estudiante</th>
+              <th>Estrategia</th>
+              <th>Pistas B</th>
+              <th>🏁 Carrera (55%)</th>
+              <th>⚡ Velocidad (20%)</th>
+              <th>🧬 Few-Shot (15%)</th>
+              <th>🛡️ Limpieza (10%)</th>
+              <th>Pts F1</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cuerpo_tabla}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-carrera" class="tab-panel">
+      <div class="panel-desc">
+        <strong>🏁 Ranking de Carrera (Peso 55%):</strong> Ordena por pistas B completadas (B1, B2, B3), luego mayor % de progreso promedio y menor tiempo físico total.
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Pos</th><th>Estudiante</th><th>Completadas · % · Tiempo</th><th>Puntos F1</th></tr></thead>
           <tbody>{sub_carrera}</tbody>
         </table>
       </div>
+    </div>
+
+    <div id="tab-velocidad" class="tab-panel">
+      <div class="panel-desc">
+        <strong>⚡ Ranking de Velocidad de Inferencia (Peso 20%):</strong> Ordena por menor latencia promedio (ms/frame) en GPU. Premia modelos compactos y prompts cortos (LoRA zero-shot).
+      </div>
       <div class="table-card">
         <table>
-          <thead><tr><th colspan="4">⚡ Top Velocidad de Inferencia (20%) — ms/frame</th></tr></thead>
+          <thead><tr><th>Pos</th><th>Estudiante</th><th>Latencia Promedio</th><th>Puntos F1</th></tr></thead>
           <tbody>{sub_velocidad}</tbody>
         </table>
       </div>
-      <div class="table-card">
-        <table>
-          <thead><tr><th colspan="4">🧬 Top Eficiencia Few-Shot (15%) — % progreso / dato</th></tr></thead>
-          <tbody>{sub_datos}</tbody>
-        </table>
+    </div>
+
+    <div id="tab-datos" class="tab-panel">
+      <div class="panel-desc">
+        <strong>🧬 Ranking Eficiencia Few-Shot (Peso 15%):</strong> Ordena por mayor <code>% progreso / #ejemplos</code>. Requiere al menos 20% de progreso promedio para puntuar.
       </div>
       <div class="table-card">
         <table>
-          <thead><tr><th colspan="4">🛡️ Top Conducción Limpia (10%) — Menos choques</th></tr></thead>
+          <thead><tr><th>Pos</th><th>Estudiante</th><th>Eficiencia (% / ejemplo)</th><th>Puntos F1</th></tr></thead>
+          <tbody>{sub_datos}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-limpieza" class="tab-panel">
+      <div class="panel-desc">
+        <strong>🛡️ Ranking de Conducción Limpia (Peso 10%):</strong> Ordena por menor número total de choques contra obstáculos en B1–B3 (desempata por mayor progreso %).
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>Pos</th><th>Estudiante</th><th>Choques · Progreso</th><th>Puntos F1</th></tr></thead>
           <tbody>{sub_limpieza}</tbody>
         </table>
       </div>
     </div>
 
-    <footer>Cada participante puede registrar una entrada por estrategia (ICL, LORA, LORA_ICL) para compararlas directamente.</footer>
+    <footer>Para proyectar la carrera conjunta (Fantasma / Legendario), usa el botón <strong>[C] Ver Carrera Final (B1-B3)</strong> en el simulador.</footer>
   </div>
+  <script>
+    function setTab(name) {{
+      localStorage.setItem('uis_gp_tab', name);
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+    }}
+    const saved = localStorage.getItem('uis_gp_tab');
+    if (saved && document.getElementById('tab-' + saved)) {{
+      setTab(saved);
+    }}
+  </script>
 </body>
 </html>"""
 

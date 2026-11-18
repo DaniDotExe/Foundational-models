@@ -721,6 +721,17 @@ class JuegoPygame:
         self._bg_results: Dict[str, Dict[str, Any]] = {}
         self.loras_disponibles: List[str] = self.bridge.listar_adaptadores()
         self.lora_activo: Optional[str] = self.loras_disponibles[-1] if self.loras_disponibles else None
+        self._train_lock = threading.Lock()
+        self._train_cancel_ev = threading.Event()
+        self._train_state: Dict[str, Any] = {
+            "running": False,
+            "name": "",
+            "pct": 0.0,
+            "epoch": 0,
+            "total_epochs": 0,
+            "loss": None,
+            "t_start": 0.0,
+        }
         self._chequear_salud_silenciosa()
 
     def _chequear_salud_silenciosa(self) -> None:
@@ -1161,70 +1172,554 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _pantalla_estrategia(self, estrategia_sel: str) -> None:
+        """Pantalla dedicada para configurar, entrenar/elegir LoRA y lanzar simulaciones de la estrategia."""
+        pg = self.pygame
+        cfg.ESTRATEGIA = estrategia_sel
+        usa_icl = estrategia_sel in {"ICL", "LORA_ICL"}
+        usa_lora = estrategia_sel in {"LORA", "LORA_ICL"}
+        if usa_lora:
+            self.loras_disponibles = self.bridge.listar_adaptadores()
+            if self.loras_disponibles and self.lora_activo not in self.loras_disponibles:
+                self.lora_activo = self.loras_disponibles[-1]
+
+        prec_opts = [20, 50, 100]
+        temp_opts = [0.0, 0.2, 0.5, 0.8]
+        mods_attn = ["q_proj", "v_proj"]
+        mods_full = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+        all_meta: Dict[str, Tuple[str, str, str]] = {
+            "k_shots": (
+                "k_shots (Ejemplos en prompt)",
+                "Cantidad de jugadas similares de mis_jugadas.json que se incluyen en el prompt como contexto para decidir la accion.",
+                "Restriccion: Entero entre 1 y 30. Mas ejemplos dan mas contexto, pero aumentan la latencia.",
+            ),
+            "seleccion": (
+                "Seleccion de ejemplos",
+                "KNN busca los k_shots estados mas parecidos (por sensores y angulo al checkpoint). RANDOM toma ejemplos al azar.",
+                "Restriccion: Solo valores 'KNN' o 'RANDOM'.",
+            ),
+            "temperature": (
+                "Temperature",
+                "Controla la aleatoriedad al elegir la accion. En 0.0 siempre elige la opcion mas probable (determinista).",
+                "Restriccion: Decimal en {0.0, 0.2, 0.5, 0.8} (rango 0.0 a 2.0).",
+            ),
+            "ventana_historia": (
+                "Ventana historial",
+                "Numero de acciones previas (H) que ve el modelo para dar continuidad al giro sin zigzaguear.",
+                "Restriccion: Entero entre 1 y 8 frames.",
+            ),
+            "precision_sensores": (
+                "Precision sensores",
+                "Numero de intervalos (bins) usados para discretizar las distancias [0..1] a enteros en el prompt.",
+                "Restriccion: Entero discreto entre {20, 50, 100} bins (servidor admite 5 a 500).",
+            ),
+            "num_ejemplos": (
+                "Num ejemplos",
+                "Cantidad maxima de jugadas tomadas de mis_jugadas.json para entrenar el adaptador LoRA.",
+                "Restriccion: Entero entre 1 y 300 muestras (tope del servidor para mantener velocidad).",
+            ),
+            "lora_r": (
+                "lora_r (Rango)",
+                "Rango de las matrices de adaptacion LoRA. Valores altos aprenden patrones mas complejos; bajos evitan sobreajuste.",
+                "Restriccion: Entero entre 1 y 32. Recomendado potencia de 2 (2, 4, 8, 16, 32).",
+            ),
+            "lora_alpha": (
+                "lora_alpha (Escala)",
+                "Factor de escala de los pesos LoRA respecto al modelo base Qwen2.5.",
+                "Restriccion: Entero entre 1 y 128. Regla tipica: multiplo de lora_r (ej. 2 x lora_r).",
+            ),
+            "epochs": (
+                "Epocas",
+                "Numero de pasadas completas sobre el dataset durante el entrenamiento.",
+                "Restriccion: Entero entre 1 y 15 epocas (tope del servidor).",
+            ),
+            "learning_rate": (
+                "Learning rate",
+                "Tasa de aprendizaje del optimizador AdamW (ej. 3e-4 = 0.0003). Muy alto inestabiliza; muy bajo no aprende.",
+                "Restriccion: Decimal entre 1e-5 (0.00001) y 0.05.",
+            ),
+            "target_modules": (
+                "Capas LoRA",
+                "Define que matrices del Transformer se adaptan: Solo Atencion (q_proj, v_proj) o Atencion + MLP (7 capas).",
+                "Restriccion: Elegir entre 'Solo Atencion' (2 modulos) o 'Atencion + MLP' (7 modulos).",
+            ),
+        }
+
+        lora_limits: Dict[str, Tuple[float, float, bool]] = {
+            "num_ejemplos": (1, 300, True),
+            "lora_r": (1, 32, True),
+            "lora_alpha": (1, 128, True),
+            "epochs": (1, 15, True),
+            "learning_rate": (1e-5, 0.05, False),
+        }
+
+        campo_activo: Optional[str] = None
+        texto_edit: str = ""
+        info_abierta: Optional[str] = None
+
+        def _commit_campo() -> None:
+            nonlocal campo_activo, texto_edit
+            if not campo_activo or campo_activo not in lora_limits:
+                campo_activo = None
+                texto_edit = ""
+                return
+            vmin, vmax, es_int = lora_limits[campo_activo]
+            try:
+                val = float(texto_edit.strip().replace(",", "."))
+                val = max(vmin, min(vmax, val))
+                cfg.CONFIG_LORA[campo_activo] = int(round(val)) if es_int else float(val)
+            except ValueError:
+                pass
+            campo_activo = None
+            texto_edit = ""
+
+        def next_opt(val: Any, opts: List[Any]) -> Any:
+            try:
+                return opts[(opts.index(val) + 1) % len(opts)]
+            except ValueError:
+                return opts[0]
+
+        def _iniciar_entrenamiento_bg() -> None:
+            with self._train_lock:
+                if self._train_state["running"]:
+                    self.estado_menu_msg = "Ya hay un entrenamiento LoRA en curso."
+                    return
+            jugadas = cargar_jugadas()
+            if not jugadas:
+                self.estado_menu_msg = "Error: no hay jugadas en data/mis_jugadas.json. Graba primero en [G]."
+                return
+            existentes = self.bridge.listar_adaptadores()
+            if len(existentes) >= 3:
+                a_borrar = self._elegir_lora_a_sobrescribir(existentes[:3])
+                if not a_borrar:
+                    self.estado_menu_msg = "Entrenamiento LoRA cancelado."
+                    return
+                self.bridge.eliminar_adaptador(a_borrar)
+                existentes = self.bridge.listar_adaptadores()
+
+            nuevo_nombre = f"v{len(existentes) + 1}_{time.strftime('%H%M%S')}"
+            self._train_cancel_ev.clear()
+            with self._train_lock:
+                self._train_state = {
+                    "running": True,
+                    "name": nuevo_nombre,
+                    "pct": 0.0,
+                    "epoch": 0,
+                    "total_epochs": int(cfg.CONFIG_LORA.get("epochs", 8)),
+                    "loss": None,
+                    "t_start": time.monotonic(),
+                }
+            self.estado_menu_msg = f"Entrenando '{nuevo_nombre}' en segundo plano..."
+
+            lora_snap = copy.deepcopy(cfg.CONFIG_LORA)
+            datos_snap = copy.deepcopy(cfg.CONFIG_DATOS)
+
+            def _on_prog(job: Dict[str, Any]) -> None:
+                with self._train_lock:
+                    self._train_state["pct"] = float(job.get("pct", self._train_state["pct"]))
+                    self._train_state["epoch"] = int(job.get("epoch", self._train_state["epoch"]))
+                    self._train_state["total_epochs"] = int(job.get("total_epochs", self._train_state["total_epochs"]))
+                    self._train_state["loss"] = job.get("loss")
+
+            def _worker() -> None:
+                try:
+                    res = self.bridge.entrenar_lora(
+                        jugadas,
+                        lora_snap,
+                        datos_snap,
+                        adapter_name=nuevo_nombre,
+                        on_progress=_on_prog,
+                        cancel_event=self._train_cancel_ev,
+                    )
+                    self.loras_disponibles = self.bridge.listar_adaptadores()
+                    self.lora_activo = nuevo_nombre
+                    self.estado_menu_msg = (
+                        f"LoRA '{nuevo_nombre}' OK ({res['ejemplos_entrenados']} ej, "
+                        f"loss={res['loss_final']}, t={res['tiempo_entrenamiento_s']}s)."
+                    )
+                except InterruptedError:
+                    self.estado_menu_msg = f"Entrenamiento '{nuevo_nombre}' cancelado."
+                except Exception as exc:
+                    self.estado_menu_msg = f"Error LoRA: {exc}"
+                finally:
+                    with self._train_lock:
+                        self._train_state["running"] = False
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        while True:
+            # Controles ICL + Datos (Izquierda) con botones [i]
+            info_icl_k = pg.Rect(344, 170, 28, 28)
+            btn_icl_k_m = pg.Rect(382, 168, 44, 32)
+            btn_icl_k_p = pg.Rect(502, 168, 44, 32)
+            info_icl_sel = pg.Rect(344, 216, 28, 28)
+            btn_icl_sel = pg.Rect(382, 214, 164, 32)
+            info_icl_temp = pg.Rect(344, 262, 28, 28)
+            btn_icl_temp = pg.Rect(382, 260, 164, 32)
+
+            info_dat_hist = pg.Rect(344, 346, 28, 28)
+            btn_dat_hist_m = pg.Rect(382, 344, 44, 32)
+            btn_dat_hist_p = pg.Rect(502, 344, 44, 32)
+            info_dat_prec = pg.Rect(344, 392, 28, 28)
+            btn_dat_prec = pg.Rect(382, 390, 164, 32)
+
+            # Controles LoRA (Derecha): input directo + boton [i] de info
+            lora_rows = [
+                ("num_ejemplos", 172),
+                ("lora_r", 214),
+                ("lora_alpha", 256),
+                ("epochs", 298),
+                ("learning_rate", 340),
+                ("target_modules", 382),
+            ]
+            rects_info = {k: pg.Rect(885, y + 2, 28, 28) for k, y in lora_rows}
+            rects_input = {k: pg.Rect(925, y, 185, 32) for k, y in lora_rows}
+            rects_info["k_shots"] = info_icl_k
+            rects_info["seleccion"] = info_icl_sel
+            rects_info["temperature"] = info_icl_temp
+            rects_info["ventana_historia"] = info_dat_hist
+            rects_info["precision_sensores"] = info_dat_prec
+
+            # Selector de adaptador LoRA entrenado (hasta 3)
+            btns_lora_ver = [
+                pg.Rect(90 + i * 210, 488, 195, 36)
+                for i in range(len(self.loras_disponibles[:3]))
+            ]
+
+            # Botones de acción abajo
+            btn_entrenar = pg.Rect(90, 555, 250, 46)
+            btn_simular = pg.Rect(360 if usa_lora else 90, 555, 280, 46)
+            btn_evaluar = pg.Rect(660 if usa_lora else 390, 555, 290, 46)
+            btn_volver = pg.Rect(self.ANCHO - 260, 555, 170, 46)
+            btn_cancel_train = pg.Rect(self.ANCHO - 260, 624, 170, 34)
+            btn_cerrar_info = pg.Rect(self.ANCHO // 2 - 90, 445, 180, 38)
+
+            with self._train_lock:
+                tr_snap = dict(self._train_state)
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    _commit_campo()
+                    return
+                if event.type == pg.KEYDOWN:
+                    if info_abierta is not None:
+                        if event.key in (pg.K_ESCAPE, pg.K_RETURN, pg.K_KP_ENTER):
+                            info_abierta = None
+                        continue
+                    if campo_activo is not None:
+                        if event.key in (pg.K_RETURN, pg.K_KP_ENTER, pg.K_TAB):
+                            _commit_campo()
+                        elif event.key == pg.K_ESCAPE:
+                            campo_activo = None
+                            texto_edit = ""
+                        elif event.key == pg.K_BACKSPACE:
+                            texto_edit = texto_edit[:-1]
+                        elif event.unicode and event.unicode in "0123456789.eE-+":
+                            if len(texto_edit) < 14:
+                                texto_edit += event.unicode
+                        continue
+                    if event.key == pg.K_ESCAPE:
+                        return
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if info_abierta is not None:
+                        if btn_cerrar_info.collidepoint(pos) or not pg.Rect(220, 200, self.ANCHO - 440, 300).collidepoint(pos):
+                            info_abierta = None
+                        continue
+
+                    if usa_lora:
+                        clic_en_input = False
+                        for k_inp, r_inp in rects_input.items():
+                            if k_inp != "target_modules" and r_inp.collidepoint(pos):
+                                if campo_activo != k_inp:
+                                    _commit_campo()
+                                    campo_activo = k_inp
+                                    v_cur = cfg.CONFIG_LORA[k_inp]
+                                    texto_edit = f"{v_cur:.0e}" if k_inp == "learning_rate" else str(v_cur)
+                                clic_en_input = True
+                                break
+                        if clic_en_input:
+                            continue
+
+                    # Botones [i] para TODOS los parámetros visibles
+                    clic_en_info = False
+                    for k_inf, r_inf in rects_info.items():
+                        if k_inf in {"k_shots", "seleccion", "temperature"} and not usa_icl:
+                            continue
+                        if k_inf in lora_limits and not usa_lora:
+                            continue
+                        if k_inf == "target_modules" and not usa_lora:
+                            continue
+                        if r_inf.collidepoint(pos):
+                            _commit_campo()
+                            info_abierta = k_inf
+                            clic_en_info = True
+                            break
+                    if clic_en_info:
+                        continue
+
+                    _commit_campo()
+                    if btn_volver.collidepoint(pos):
+                        return
+                    if tr_snap["running"] and btn_cancel_train.collidepoint(pos):
+                        self._train_cancel_ev.set()
+                        self.estado_menu_msg = "Cancelando entrenamiento..."
+                        continue
+                    if btn_dat_hist_m.collidepoint(pos):
+                        cfg.CONFIG_DATOS["ventana_historia"] = max(1, int(cfg.CONFIG_DATOS["ventana_historia"]) - 1)
+                    elif btn_dat_hist_p.collidepoint(pos):
+                        cfg.CONFIG_DATOS["ventana_historia"] = min(8, int(cfg.CONFIG_DATOS["ventana_historia"]) + 1)
+                    elif btn_dat_prec.collidepoint(pos):
+                        cfg.CONFIG_DATOS["precision_sensores"] = next_opt(cfg.CONFIG_DATOS["precision_sensores"], prec_opts)
+                    elif usa_icl and btn_icl_k_m.collidepoint(pos):
+                        cfg.CONFIG_ICL["k_shots"] = max(1, int(cfg.CONFIG_ICL["k_shots"]) - 1)
+                    elif usa_icl and btn_icl_k_p.collidepoint(pos):
+                        cfg.CONFIG_ICL["k_shots"] = min(30, int(cfg.CONFIG_ICL["k_shots"]) + 1)
+                    elif usa_icl and btn_icl_sel.collidepoint(pos):
+                        cfg.CONFIG_ICL["seleccion"] = "random" if cfg.CONFIG_ICL["seleccion"] == "knn" else "knn"
+                    elif usa_icl and btn_icl_temp.collidepoint(pos):
+                        cfg.CONFIG_ICL["temperature"] = next_opt(cfg.CONFIG_ICL["temperature"], temp_opts)
+                    elif usa_lora and rects_input["target_modules"].collidepoint(pos):
+                        cur = cfg.CONFIG_LORA["target_modules"]
+                        cfg.CONFIG_LORA["target_modules"] = mods_attn if len(cur) > 2 else mods_full
+                    elif usa_lora and btn_entrenar.collidepoint(pos):
+                        _iniciar_entrenamiento_bg()
+                    elif btn_simular.collidepoint(pos):
+                        if usa_lora and not self.loras_disponibles:
+                            self.estado_menu_msg = "Primero entrena al menos 1 modelo LoRA antes de simular."
+                        else:
+                            self._modo_prueba_a()
+                    elif btn_evaluar.collidepoint(pos):
+                        if usa_lora and not self.loras_disponibles:
+                            self.estado_menu_msg = "Primero entrena al menos 1 modelo LoRA antes de evaluar."
+                        else:
+                            self._modo_evaluacion_b()
+                    elif usa_lora:
+                        for idx_v, b_v in enumerate(btns_lora_ver):
+                            if b_v.collidepoint(pos):
+                                self.lora_activo = self.loras_disponibles[idx_v]
+                                self.estado_menu_msg = f"Configuracion seleccionada para simular: {self.lora_activo}"
+                                break
+
+            self.screen.fill(self.BG)
+            tit_map = {
+                "LORA": "Estrategia: LORA (Fine-Tuning PEFT)",
+                "ICL": "Estrategia: ICL (In-Context Learning)",
+                "LORA_ICL": "Estrategia: LORA + ICL (Hibrido)",
+            }
+            self.screen.blit(self.font_title.render(tit_map.get(estrategia_sel, estrategia_sel), True, self.ACCENT), (90, 40))
+            self.screen.blit(
+                self.font_body.render(f"Participante: {self.bridge.student_name} | Ajusta parametros, entrena/elige modelo y simula.", True, self.MUTED),
+                (90, 82),
+            )
+
+            # Tarjeta Izquierda: ICL (si aplica) + Datos
+            pg.draw.rect(self.screen, self.PANEL_BG, pg.Rect(90, 128, 490, 310), border_radius=12)
+            pg.draw.rect(self.screen, self.ACCENT if usa_icl else self.BORDE, pg.Rect(90, 128, 490, 310), 2, border_radius=12)
+            if usa_icl:
+                self.screen.blit(self.font_h2.render("Parametros ICL (Prompt)", True, self.ACCENT), (115, 136))
+                self.screen.blit(self.font_body.render("k_shots (1..30):", True, self.TEXTO), (115, 174))
+                self._dibujar_boton(info_icl_k, "i", (24, 38, 62), self.ACCENT)
+                self._dibujar_boton(btn_icl_k_m, "-", self.BG, self.BORDE)
+                ks = self.font_body.render(str(cfg.CONFIG_ICL["k_shots"]), True, self.TEXTO)
+                self.screen.blit(ks, (464 - ks.get_width() // 2, 174))
+                self._dibujar_boton(btn_icl_k_p, "+", self.BG, self.BORDE)
+
+                self.screen.blit(self.font_body.render("Seleccion:", True, self.TEXTO), (115, 220))
+                self._dibujar_boton(info_icl_sel, "i", (24, 38, 62), self.ACCENT)
+                self._dibujar_boton(btn_icl_sel, str(cfg.CONFIG_ICL["seleccion"]).upper(), self.BG, self.ACCENT)
+
+                self.screen.blit(self.font_body.render("Temperature:", True, self.TEXTO), (115, 266))
+                self._dibujar_boton(info_icl_temp, "i", (24, 38, 62), self.ACCENT)
+                self._dibujar_boton(btn_icl_temp, f"{cfg.CONFIG_ICL['temperature']:.1f}", self.BG, self.BORDE)
+            else:
+                self.screen.blit(self.font_h2.render("ICL desactivado en modo LORA puro", True, self.MUTED), (115, 150))
+                self.screen.blit(self.font_small.render("En LORA puro el modelo responde zero-shot (0 ejemplos).", True, self.MUTED), (115, 185))
+
+            self.screen.blit(self.font_h2.render("Representacion de Datos", True, self.WARN), (115, 312))
+            self.screen.blit(self.font_body.render("Ventana historial:", True, self.TEXTO), (115, 350))
+            self._dibujar_boton(info_dat_hist, "i", (24, 38, 62), self.ACCENT)
+            self._dibujar_boton(btn_dat_hist_m, "-", self.BG, self.BORDE)
+            hs = self.font_body.render(str(cfg.CONFIG_DATOS["ventana_historia"]), True, self.TEXTO)
+            self.screen.blit(hs, (464 - hs.get_width() // 2, 350))
+            self._dibujar_boton(btn_dat_hist_p, "+", self.BG, self.BORDE)
+            self.screen.blit(self.font_body.render("Precision sensores:", True, self.TEXTO), (115, 396))
+            self._dibujar_boton(info_dat_prec, "i", (24, 38, 62), self.ACCENT)
+            self._dibujar_boton(btn_dat_prec, f"{cfg.CONFIG_DATOS['precision_sensores']} bins", self.BG, self.BORDE)
+
+            # Tarjeta Derecha: LoRA con inputs directos y botones [i]
+            pg.draw.rect(self.screen, self.PANEL_BG, pg.Rect(630, 128, 500, 310), border_radius=12)
+            pg.draw.rect(self.screen, (129, 140, 248) if usa_lora else self.BORDE, pg.Rect(630, 128, 500, 310), 2, border_radius=12)
+            if usa_lora:
+                self.screen.blit(self.font_h2.render("Parametros LoRA (Clic para editar)", True, (165, 180, 252)), (655, 136))
+                for k_row, y_row in lora_rows:
+                    tit_r = all_meta[k_row][0].split(" (")[0] + ":"
+                    self.screen.blit(self.font_body.render(tit_r, True, self.TEXTO), (655, y_row + 5))
+                    self._dibujar_boton(rects_info[k_row], "i", (24, 38, 62), self.ACCENT)
+                    r_in = rects_input[k_row]
+                    if k_row == "target_modules":
+                        lbl_mods = "Atencion + MLP" if len(cfg.CONFIG_LORA["target_modules"]) > 2 else "Solo Atencion"
+                        self._dibujar_boton(r_in, lbl_mods, self.BG, (129, 140, 248))
+                    else:
+                        editando = (campo_activo == k_row)
+                        pg.draw.rect(self.screen, (15, 23, 42) if editando else self.BG, r_in, border_radius=6)
+                        pg.draw.rect(self.screen, self.ACCENT if editando else self.BORDE, r_in, 2, border_radius=6)
+                        if editando:
+                            txt_show = texto_edit + "|"
+                        elif k_row == "learning_rate":
+                            txt_show = f"{cfg.CONFIG_LORA[k_row]:.0e}"
+                        else:
+                            txt_show = str(cfg.CONFIG_LORA[k_row])
+                        s_val = self.font_body.render(txt_show, True, self.TEXTO)
+                        self.screen.blit(s_val, (r_in.x + 12, r_in.y + 7))
+            else:
+                self.screen.blit(self.font_h2.render("LoRA no se usa en modo ICL puro", True, self.MUTED), (655, 150))
+                self.screen.blit(self.font_small.render("ICL usa el modelo base congelado sin entrenar pesos.", True, self.MUTED), (655, 185))
+
+            # Selector de configuración/modelo LoRA entrenado para simular
+            if usa_lora:
+                self.screen.blit(
+                    self.font_body.render("Modelo LoRA entrenado a simular (max 3):", True, self.TEXTO),
+                    (90, 456),
+                )
+                if not self.loras_disponibles:
+                    self.screen.blit(
+                        self.font_small.render("Aun no tienes modelos LoRA entrenados. Pulsa 'Entrenar Nuevo LoRA' abajo.", True, self.WARN),
+                        (90, 494),
+                    )
+                else:
+                    for idx_v, b_v in enumerate(btns_lora_ver):
+                        nm_v = self.loras_disponibles[idx_v]
+                        activo = (nm_v == self.lora_activo)
+                        self._dibujar_boton(
+                            b_v,
+                            f"{'● ' if activo else ''}{nm_v}",
+                            (35, 36, 78) if activo else self.PANEL_BG,
+                            (129, 140, 248) if activo else self.BORDE,
+                        )
+                self._dibujar_boton(
+                    btn_entrenar,
+                    "Entrenando..." if tr_snap["running"] else "Entrenar Nuevo LoRA",
+                    (35, 36, 78),
+                    (129, 140, 248),
+                )
+
+            self._dibujar_boton(btn_simular, "Simular Prueba (P1-P3)", (15, 52, 48), self.ACCENT)
+            self._dibujar_boton(btn_evaluar, "Evaluacion Oficial (B1-B3)", (52, 36, 16), self.WARN)
+            self._dibujar_boton(btn_volver, "Volver al Menu", self.PANEL_BG, self.BORDE)
+
+            # Barra de progreso de entrenamiento NO bloqueante debajo de los botones
+            if tr_snap["running"]:
+                barra_tr = pg.Rect(90, 626, self.ANCHO - 370, 26)
+                pg.draw.rect(self.screen, self.PANEL_BG, barra_tr, border_radius=6)
+                pg.draw.rect(self.screen, (129, 140, 248), barra_tr, 2, border_radius=6)
+                fw = max(0, int((barra_tr.w - 4) * (float(tr_snap["pct"]) / 100.0)))
+                if fw > 0:
+                    pg.draw.rect(
+                        self.screen,
+                        (129, 140, 248),
+                        pg.Rect(barra_tr.x + 2, barra_tr.y + 2, fw, barra_tr.h - 4),
+                        border_radius=4,
+                    )
+                loss_t = f"{tr_snap['loss']:.4f}" if isinstance(tr_snap["loss"], (int, float)) else "..."
+                elap = time.monotonic() - float(tr_snap["t_start"])
+                lbl_tr = (
+                    f"Entrenando '{tr_snap['name']}': {tr_snap['pct']:.0f}% | "
+                    f"Epoca {tr_snap['epoch']}/{tr_snap['total_epochs']} | Loss {loss_t} | {elap:.0f}s"
+                )
+                self.screen.blit(self.font_small.render(lbl_tr, True, self.TEXTO), (90, 660))
+                self._dibujar_boton(
+                    btn_cancel_train,
+                    "Cancelando..." if self._train_cancel_ev.is_set() else "Cancelar",
+                    (56, 20, 26),
+                    self.BAD,
+                )
+            else:
+                self.screen.blit(self.font_body.render(f"Estado: {self.estado_menu_msg}", True, self.TEXTO), (90, 634))
+
+            # Popup de información [i] para cualquier parámetro
+            if info_abierta is not None and info_abierta in all_meta:
+                tit_i, desc_i, rest_i = all_meta[info_abierta]
+                overlay = pg.Surface((self.ANCHO, self.ALTO), pg.SRCALPHA)
+                overlay.fill((0, 0, 0, 165))
+                self.screen.blit(overlay, (0, 0))
+                modal = pg.Rect(220, 200, self.ANCHO - 440, 300)
+                pg.draw.rect(self.screen, self.PANEL_BG, modal, border_radius=14)
+                pg.draw.rect(self.screen, self.ACCENT, modal, 2, border_radius=14)
+                self.screen.blit(self.font_title.render(f"Info: {tit_i}", True, self.ACCENT), (modal.x + 28, modal.y + 24))
+
+                def _draw_wrapped(text_in: str, y_start: int, color: Tuple[int, int, int]) -> int:
+                    lineas_w: List[str] = []
+                    cur_l = ""
+                    for pal in text_in.split():
+                        if len(cur_l) + len(pal) + 1 <= 68:
+                            cur_l = (cur_l + " " + pal).strip()
+                        else:
+                            lineas_w.append(cur_l)
+                            cur_l = pal
+                    if cur_l:
+                        lineas_w.append(cur_l)
+                    yy = y_start
+                    for ln_w in lineas_w[:3]:
+                        self.screen.blit(self.font_body.render(ln_w, True, color), (modal.x + 28, yy))
+                        yy += 24
+                    return yy
+
+                y_next = _draw_wrapped(desc_i, modal.y + 82, self.TEXTO)
+                _draw_wrapped(rest_i, max(y_next + 10, modal.y + 168), self.WARN)
+                self._dibujar_boton(btn_cerrar_info, "Entendido", (15, 52, 48), self.ACCENT)
+
+            pg.display.flip()
+            self.clock.tick(30)
+            pg.display.flip()
+            self.clock.tick(30)
+
     def _pantalla_menu(self) -> Optional[int]:
         pg = self.pygame
-        botones = [
-            (1, "[1] Grabar Jugadas (Pistas P1, P2, P3)", "Conduce con teclado y guarda data/mis_jugadas.json"),
-            (2, "[2] Entrenar Piloto (LORA o LORA+ICL)", "Envia tus jugadas al servidor para entrenar adaptador PEFT"),
-            (3, "[3] Modo Autonomo - Prueba (Pistas P)", "Prueba en vivo tu piloto consultando al servidor"),
-            (4, "[4] Evaluacion Oficial (Pistas B1, B2, B3)", "Corre las 3 pistas ocultas y registra tu puntaje al ranking"),
+        tarjetas_estrategia = [
+            ("LORA", "LORA", "Ajusta hiperparametros, entrena hasta 3 modelos y simula zero-shot", (35, 36, 78), (129, 140, 248)),
+            ("ICL", "ICL", "In-Context Learning: ajusta k_shots y KNN sin entrenar pesos", (15, 52, 48), self.ACCENT),
+            ("LORA_ICL", "LORA + ICL", "Hibrido: usa tu modelo LoRA entrenado + ejemplos en contexto", (52, 36, 16), self.WARN),
         ]
-        btn_editar_nombre = pg.Rect(self.ANCHO - 655, 82, 130, 32)
-        btn_icl = pg.Rect(self.ANCHO - 515, 82, 72, 32)
-        btn_lora = pg.Rect(self.ANCHO - 435, 82, 80, 32)
-        btn_lora_icl = pg.Rect(self.ANCHO - 347, 82, 110, 32)
-        btn_config = pg.Rect(self.ANCHO - 227, 82, 137, 32)
-        btn_lora_sel = pg.Rect(self.ANCHO - 320, 122, 230, 28)
-        btn_carrera_todos = pg.Rect(self.ANCHO - 320, 160, 230, 28)
+        btn_carrera_final = pg.Rect(self.ANCHO - 495, 82, 240, 32)
+        btn_editar_nombre = pg.Rect(self.ANCHO - 240, 82, 150, 32)
+        btn_grabar = pg.Rect(90, 205, self.ANCHO - 180, 88)
         btn_copiar_cmd = pg.Rect(self.ANCHO - 250, 142, 160, 28)
         btn_cola_abrir = pg.Rect(self.ANCHO - 375, 626, 140, 28)
         btn_cola_cancel = pg.Rect(self.ANCHO - 225, 626, 135, 28)
         cmd_backend = f'cd /d "{BASE_DIR.parent / "backend_server"}" && python -m uvicorn server:app --host 0.0.0.0 --port 8000'
 
+        card_w = (self.ANCHO - 180 - 40) // 3
+        card_rects = [pg.Rect(90 + i * (card_w + 20), 350, card_w, 165) for i in range(3)]
+
         while True:
-            rects = []
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     return None
                 if event.type == pg.KEYDOWN:
                     if event.key in (pg.K_1, pg.K_KP1):
-                        return 1
+                        self._pantalla_estrategia("LORA")
                     if event.key in (pg.K_2, pg.K_KP2):
-                        return 2
+                        self._pantalla_estrategia("ICL")
                     if event.key in (pg.K_3, pg.K_KP3):
-                        return 3
-                    if event.key in (pg.K_4, pg.K_KP4):
-                        return 4
+                        self._pantalla_estrategia("LORA_ICL")
+                    if event.key == pg.K_g:
+                        return 1
+                    if event.key == pg.K_c:
+                        self._pantalla_carrera_todos()
                     if event.key == pg.K_h:
                         self._chequear_salud_silenciosa()
-                    if event.key == pg.K_g:
-                        self._pantalla_carrera_todos()
                     if event.key == pg.K_ESCAPE:
                         return None
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                     mx, my = event.pos
                     if btn_editar_nombre.collidepoint((mx, my)):
                         self._pedir_nombre_participante(permitir_cancelar=True)
-                    elif btn_icl.collidepoint((mx, my)):
-                        cfg.ESTRATEGIA = "ICL"
-                        self.estado_menu_msg = "Estrategia cambiada a ICL (sin modificar pesos)."
-                    elif btn_lora.collidepoint((mx, my)):
-                        cfg.ESTRATEGIA = "LORA"
-                        self.estado_menu_msg = "Estrategia cambiada a LORA (zero-shot con tus pesos; usa [2] para entrenar)."
-                    elif btn_lora_icl.collidepoint((mx, my)):
-                        cfg.ESTRATEGIA = "LORA_ICL"
-                        self.estado_menu_msg = "Estrategia cambiada a LORA+ICL (usa tus pesos LoRA + k_shots en contexto)."
-                    elif btn_config.collidepoint((mx, my)):
-                        self._pantalla_configurar()
-                    elif btn_carrera_todos.collidepoint((mx, my)):
+                    elif btn_carrera_final.collidepoint((mx, my)):
                         self._pantalla_carrera_todos()
-                    elif cfg.ESTRATEGIA in {"LORA", "LORA_ICL"} and self.loras_disponibles and btn_lora_sel.collidepoint((mx, my)):
-                        if self.lora_activo in self.loras_disponibles:
-                            idx_l = (self.loras_disponibles.index(self.lora_activo) + 1) % len(self.loras_disponibles)
-                        else:
-                            idx_l = 0
-                        self.lora_activo = self.loras_disponibles[idx_l]
-                        self.estado_menu_msg = f"Adaptador LoRA activo: {self.lora_activo}"
+                    elif btn_grabar.collidepoint((mx, my)):
+                        return 1
                     elif btn_cola_abrir.collidepoint((mx, my)):
                         with self._bg_lock:
                             hay_cola = bool(self._bg_active_track or self._bg_queue or self._bg_results)
@@ -1256,43 +1751,22 @@ class JuegoPygame:
                             if copiado
                             else f"Ejecuta: {cmd_backend}"
                         )
-                    for idx, (m_id, _, _) in enumerate(botones):
-                        r = pg.Rect(90, 215 + idx * 105, self.ANCHO - 180, 86)
-                        if r.collidepoint(mx, my):
-                            return m_id
+                    else:
+                        for i, (est_id, _, _, _, _) in enumerate(tarjetas_estrategia):
+                            if card_rects[i].collidepoint((mx, my)):
+                                self._pantalla_estrategia(est_id)
+                                break
 
             self.screen.fill(self.BG)
             t1 = self.font_title.render("UIS Grand Prix Foundationals Models", True, self.ACCENT)
             self.screen.blit(t1, (90, 42))
 
             self.screen.blit(
-                self.font_body.render(f"Participante: {self.bridge.student_name} | Estrategia: {cfg.ESTRATEGIA}", True, self.TEXTO),
+                self.font_body.render(f"Participante: {self.bridge.student_name}", True, self.TEXTO),
                 (90, 86),
             )
+            self._dibujar_boton(btn_carrera_final, "[C] Ver Carrera Final (B1-B3)", (52, 36, 16), self.WARN)
             self._dibujar_boton(btn_editar_nombre, "Editar Nombre", self.PANEL_BG, self.BORDE)
-            self._dibujar_boton(
-                btn_icl,
-                "ICL",
-                (15, 52, 48) if cfg.ESTRATEGIA == "ICL" else self.PANEL_BG,
-                self.ACCENT if cfg.ESTRATEGIA == "ICL" else self.BORDE,
-            )
-            self._dibujar_boton(
-                btn_lora,
-                "LORA",
-                (35, 36, 78) if cfg.ESTRATEGIA == "LORA" else self.PANEL_BG,
-                (129, 140, 248) if cfg.ESTRATEGIA == "LORA" else self.BORDE,
-            )
-            self._dibujar_boton(
-                btn_lora_icl,
-                "LORA+ICL",
-                (52, 36, 16) if cfg.ESTRATEGIA == "LORA_ICL" else self.PANEL_BG,
-                self.WARN if cfg.ESTRATEGIA == "LORA_ICL" else self.BORDE,
-            )
-            self._dibujar_boton(btn_config, "Configurar", (24, 38, 62), self.ACCENT)
-            if cfg.ESTRATEGIA in {"LORA", "LORA_ICL"} and self.loras_disponibles:
-                lbl_la = f"LoRA activo: {self.lora_activo or self.loras_disponibles[-1]}"
-                self._dibujar_boton(btn_lora_sel, lbl_la, (35, 36, 78), (129, 140, 248))
-            self._dibujar_boton(btn_carrera_todos, "Ver Carrera Todos (B1-B3)", (52, 36, 16), self.WARN)
 
             if self.salud_servidor:
                 srv_txt = (
@@ -1319,16 +1793,40 @@ class JuegoPygame:
                 )
                 self._dibujar_boton(btn_copiar_cmd, "Copiar comando", (52, 38, 16), self.WARN)
 
-            for idx, (m_id, titulo, desc) in enumerate(botones):
-                r = pg.Rect(90, 215 + idx * 105, self.ANCHO - 180, 86)
-                rects.append(r)
-                hover = r.collidepoint(pg.mouse.get_pos())
-                bg = (24, 36, 58) if hover else self.PANEL_BG
-                border = self.ACCENT if hover else self.BORDE
-                pg.draw.rect(self.screen, bg, r, border_radius=12)
-                pg.draw.rect(self.screen, border, r, 2, border_radius=12)
-                self.screen.blit(self.font_h2.render(titulo, True, self.TEXTO), (r.x + 22, r.y + 16))
-                self.screen.blit(self.font_body.render(desc, True, self.MUTED), (r.x + 22, r.y + 46))
+            mouse_p = pg.mouse.get_pos()
+            self.screen.blit(
+                self.font_h2.render("1. Crear / Editar Dataset:", True, self.TEXTO),
+                (90, 174),
+            )
+            hover_g = btn_grabar.collidepoint(mouse_p)
+            pg.draw.rect(self.screen, (24, 36, 58) if hover_g else self.PANEL_BG, btn_grabar, border_radius=12)
+            pg.draw.rect(self.screen, self.ACCENT if hover_g else self.BORDE, btn_grabar, 2, border_radius=12)
+            self.screen.blit(self.font_h2.render("[G] Grabar Jugadas y Ver Frames (Pistas P1, P2, P3)", True, self.TEXTO), (btn_grabar.x + 24, btn_grabar.y + 16))
+            self.screen.blit(self.font_body.render("Conduce con teclado para crear/limpiar data/mis_jugadas.json", True, self.MUTED), (btn_grabar.x + 24, btn_grabar.y + 48))
+
+            self.screen.blit(
+                self.font_h2.render("2. Elige una estrategia de adaptacion:", True, self.TEXTO),
+                (90, 316),
+            )
+
+            for i, (est_id, titulo, desc, bg_col, brd_col) in enumerate(tarjetas_estrategia):
+                r = card_rects[i]
+                hover = r.collidepoint(mouse_p)
+                fill = tuple(min(255, c + 16) for c in bg_col) if hover else bg_col
+                pg.draw.rect(self.screen, fill, r, border_radius=14)
+                pg.draw.rect(self.screen, brd_col, r, 2, border_radius=14)
+                self.screen.blit(self.font_title.render(titulo, True, self.TEXTO), (r.x + 22, r.y + 22))
+                # Wrap corto en 2 líneas
+                palabras = desc.split()
+                l1, l2 = "", ""
+                for pal in palabras:
+                    if len(l1) + len(pal) + 1 <= 34:
+                        l1 = (l1 + " " + pal).strip()
+                    else:
+                        l2 = (l2 + " " + pal).strip()
+                self.screen.blit(self.font_small.render(l1, True, self.TEXTO), (r.x + 22, r.y + 74))
+                self.screen.blit(self.font_small.render(l2, True, self.MUTED), (r.x + 22, r.y + 98))
+                self.screen.blit(self.font_small.render(f"Entrar ({i + 1}) ->", True, brd_col), (r.x + 22, r.y + 130))
 
             with self._bg_lock:
                 bg_act = self._bg_active_track
@@ -1923,9 +2421,23 @@ class JuegoPygame:
             else:
                 self._dibujar_boton(btn_rec, f"(+{frames_sesion}) INICIAR GRABACION", (16, 66, 42), self.OK)
 
-            self._dibujar_boton(btn_ver_frames, "", (24, 38, 62), self.ACCENT)
-            l1 = self.font_body.render(f"Ver Frames: {len(jugadas)}", True, self.TEXTO)
-            l2 = self.font_small.render(f"P1: {conteo['P1']}  |  P2: {conteo['P2']}  |  P3: {conteo['P3']}", True, self.ACCENT)
+            excede_300 = len(jugadas) > 300
+            self._dibujar_boton(
+                btn_ver_frames,
+                "",
+                (68, 22, 28) if excede_300 else (24, 38, 62),
+                self.BAD if excede_300 else self.ACCENT,
+            )
+            l1 = self.font_body.render(
+                f"Ver Frames: {len(jugadas)} / 300" if excede_300 else f"Ver Frames: {len(jugadas)}",
+                True,
+                self.BAD if excede_300 else self.TEXTO,
+            )
+            l2 = self.font_small.render(
+                f"P1: {conteo['P1']}  |  P2: {conteo['P2']}  |  P3: {conteo['P3']}",
+                True,
+                self.BAD if excede_300 else self.ACCENT,
+            )
             self.screen.blit(l1, (btn_ver_frames.x + (btn_ver_frames.w - l1.get_width()) // 2, btn_ver_frames.y + 10))
             self.screen.blit(l2, (btn_ver_frames.x + (btn_ver_frames.w - l2.get_width()) // 2, btn_ver_frames.y + 35))
             self._dibujar_boton(btn_guardar_salir, "Guardar y Salir", (15, 52, 48), self.ACCENT)
@@ -1986,33 +2498,135 @@ class JuegoPygame:
             existentes = self.bridge.listar_adaptadores()
 
         nuevo_nombre = f"v{len(existentes) + 1}_{time.strftime('%H%M%S')}"
+        cancel_ev = threading.Event()
+        prog_lock = threading.Lock()
+        prog_state: Dict[str, Any] = {
+            "pct": 0.0,
+            "epoch": 0,
+            "total_epochs": int(cfg.CONFIG_LORA.get("epochs", 8)),
+            "loss": None,
+            "done": False,
+            "res": None,
+            "err": None,
+            "cancelled": False,
+        }
 
-        self.screen.fill(self.BG)
-        self.screen.blit(
-            self.font_title.render(f"Entrenando adaptador LoRA '{nuevo_nombre}'...", True, self.ACCENT),
-            (100, 260),
-        )
-        self.screen.blit(
-            self.font_body.render("Espera unos segundos mientras la GPU ajusta las matrices PEFT.", True, self.MUTED),
-            (100, 310),
-        )
-        pg.display.flip()
+        def _on_prog(job: Dict[str, Any]) -> None:
+            with prog_lock:
+                prog_state["pct"] = float(job.get("pct", prog_state["pct"]))
+                prog_state["epoch"] = int(job.get("epoch", prog_state["epoch"]))
+                prog_state["total_epochs"] = int(job.get("total_epochs", prog_state["total_epochs"]))
+                prog_state["loss"] = job.get("loss")
 
-        try:
-            res = self.bridge.entrenar_lora(
-                jugadas,
-                cfg.CONFIG_LORA,
-                cfg.CONFIG_DATOS,
-                adapter_name=nuevo_nombre,
+        def _worker_train() -> None:
+            try:
+                res = self.bridge.entrenar_lora(
+                    jugadas,
+                    cfg.CONFIG_LORA,
+                    cfg.CONFIG_DATOS,
+                    adapter_name=nuevo_nombre,
+                    on_progress=_on_prog,
+                    cancel_event=cancel_ev,
+                )
+                with prog_lock:
+                    prog_state["pct"] = 100.0
+                    prog_state["res"] = res
+                    prog_state["done"] = True
+            except InterruptedError:
+                with prog_lock:
+                    prog_state["cancelled"] = True
+                    prog_state["done"] = True
+            except Exception as exc:
+                with prog_lock:
+                    prog_state["err"] = str(exc)
+                    prog_state["done"] = True
+
+        t_train = threading.Thread(target=_worker_train, daemon=True)
+        t_train.start()
+        t_inicio = time.monotonic()
+        barra_bg = pg.Rect(140, 340, self.ANCHO - 280, 34)
+        btn_cancelar = pg.Rect(self.ANCHO // 2 - 110, 465, 220, 44)
+
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    cancel_ev.set()
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                    cancel_ev.set()
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    if btn_cancelar.collidepoint(event.pos):
+                        cancel_ev.set()
+
+            with prog_lock:
+                done = bool(prog_state["done"])
+                pct = float(prog_state["pct"])
+                ep = int(prog_state["epoch"])
+                tot_ep = int(prog_state["total_epochs"])
+                loss_v = prog_state["loss"]
+                res_ok = prog_state["res"]
+                err_msg = prog_state["err"]
+                was_cancelled = bool(prog_state["cancelled"])
+
+            if done:
+                if was_cancelled or cancel_ev.is_set():
+                    self.estado_menu_msg = "Entrenamiento LoRA cancelado."
+                elif err_msg:
+                    self.estado_menu_msg = f"Error LoRA: {err_msg}"
+                elif res_ok:
+                    self.loras_disponibles = self.bridge.listar_adaptadores()
+                    self.lora_activo = nuevo_nombre
+                    self.estado_menu_msg = (
+                        f"LoRA '{nuevo_nombre}' OK ({res_ok['ejemplos_entrenados']} ej, "
+                        f"loss={res_ok['loss_final']}, t={res_ok['tiempo_entrenamiento_s']}s)."
+                    )
+                return
+
+            self.screen.fill(self.BG)
+            self.screen.blit(
+                self.font_title.render(f"Entrenando adaptador LoRA '{nuevo_nombre}'...", True, self.ACCENT),
+                (140, 175),
             )
-            self.loras_disponibles = self.bridge.listar_adaptadores()
-            self.lora_activo = nuevo_nombre
-            self.estado_menu_msg = (
-                f"LoRA '{nuevo_nombre}' OK ({res['ejemplos_entrenados']} ej, "
-                f"loss={res['loss_final']}, t={res['tiempo_entrenamiento_s']}s)."
+            self.screen.blit(
+                self.font_body.render(
+                    "Puedes cancelar en cualquier momento; el servidor detendra el entrenamiento entre batches.",
+                    True,
+                    self.MUTED,
+                ),
+                (140, 225),
             )
-        except Exception as exc:
-            self.estado_menu_msg = f"Error LoRA: {exc}"
+
+            pg.draw.rect(self.screen, self.PANEL_BG, barra_bg, border_radius=8)
+            pg.draw.rect(self.screen, self.BORDE, barra_bg, 2, border_radius=8)
+            fill_w = max(0, int((barra_bg.w - 4) * (pct / 100.0)))
+            if fill_w > 0:
+                pg.draw.rect(
+                    self.screen,
+                    (129, 140, 248),
+                    pg.Rect(barra_bg.x + 2, barra_bg.y + 2, fill_w, barra_bg.h - 4),
+                    border_radius=6,
+                )
+            pct_txt = self.font_h2.render(f"{pct:.0f}%", True, self.TEXTO)
+            self.screen.blit(pct_txt, (barra_bg.centerx - pct_txt.get_width() // 2, barra_bg.y + 4))
+
+            loss_str = f"{loss_v:.4f}" if isinstance(loss_v, (int, float)) else "calculando..."
+            trans = time.monotonic() - t_inicio
+            self.screen.blit(
+                self.font_body.render(
+                    f"Epoca: {ep} / {tot_ep} | Loss: {loss_str} | Tiempo: {trans:.1f}s",
+                    True,
+                    self.TEXTO,
+                ),
+                (140, 398),
+            )
+            self._dibujar_boton(
+                btn_cancelar,
+                "Cancelando..." if cancel_ev.is_set() else "Cancelar Entrenamiento (ESC)",
+                (56, 20, 26),
+                self.BAD,
+            )
+            pg.display.flip()
+            self.clock.tick(30)
 
     def _correr_pista_autonoma_visual(
         self, clave_pista: str, jugadas_ref: List[Dict[str, Any]], titulo_modo: str
