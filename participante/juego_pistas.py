@@ -791,18 +791,19 @@ class JuegoPygame:
             color = self.WARN if i < n_fijos else (255, 130, 105)
             pg.draw.circle(self.screen, color, (cx, cy), max(4, int(r * escala)))
 
-        # Rayos de los 5 sensores + rayo al próximo checkpoint
+        # Rayos de los 5 sensores + rayo al próximo checkpoint (ocultos en pistas de test B1-B3)
         car_x, car_y, _ = self._w2s(estado.x, estado.y)
-        cp_pt = pista["puntos"][estado.siguiente_checkpoint % len(pista["puntos"])]
-        cp_sx, cp_sy, _ = self._w2s(cp_pt[0], cp_pt[1])
-        pg.draw.line(self.screen, (56, 189, 248), (car_x, car_y), (cp_sx, cp_sy), 2)
-        pg.draw.circle(self.screen, (56, 189, 248), (cp_sx, cp_sy), 5)
+        if clave_pista not in PISTAS_TEST:
+            cp_pt = pista["puntos"][estado.siguiente_checkpoint % len(pista["puntos"])]
+            cp_sx, cp_sy, _ = self._w2s(cp_pt[0], cp_pt[1])
+            pg.draw.line(self.screen, (56, 189, 248), (car_x, car_y), (cp_sx, cp_sy), 2)
+            pg.draw.circle(self.screen, (56, 189, 248), (cp_sx, cp_sy), 5)
 
-        for val, (hx, hy) in zip(sensores, impactos):
-            ix, iy, _ = self._w2s(hx, hy)
-            color_rayo = self.OK if val > 0.5 else (self.WARN if val > 0.25 else self.BAD)
-            pg.draw.line(self.screen, color_rayo, (car_x, car_y), (ix, iy), 2)
-            pg.draw.circle(self.screen, color_rayo, (ix, iy), 4)
+            for val, (hx, hy) in zip(sensores, impactos):
+                ix, iy, _ = self._w2s(hx, hy)
+                color_rayo = self.OK if val > 0.5 else (self.WARN if val > 0.25 else self.BAD)
+                pg.draw.line(self.screen, color_rayo, (car_x, car_y), (ix, iy), 2)
+                pg.draw.circle(self.screen, color_rayo, (ix, iy), 4)
 
         # Carro orientado
         largo = 1.05 * escala
@@ -3361,6 +3362,27 @@ class JuegoPygame:
 
         _iniciar_pista(pista_sel)
 
+        try:
+            return self._loop_carrera_todos(
+                datos, paleta, pista_sel, modo_legendario, pausado, frame_idx, estados_leg, _iniciar_pista
+            )
+        except Exception as exc:
+            self.estado_menu_msg = f"Error en Carrera Final: {exc}"
+            return
+
+    def _loop_carrera_todos(
+        self,
+        datos: Dict[str, Any],
+        paleta: List[Tuple[int, int, int]],
+        pista_sel: str,
+        modo_legendario: bool,
+        pausado: bool,
+        frame_idx: int,
+        estados_leg: List[Dict[str, Any]],
+        _iniciar_pista: Any,
+    ) -> None:
+        pg = self.pygame
+        _ = paleta
         while True:
             x0 = self.AREA_PISTA_W
             btn_b1 = pg.Rect(x0 + 18, 56, 76, 30)
@@ -3413,8 +3435,9 @@ class JuegoPygame:
 
             # Dibujar pista y obstáculos
             self.screen.fill(self.BG)
-            puntos = PISTAS[pista_sel]["puntos"]
-            ancho = PISTAS[pista_sel]["ancho"]
+            pista_obj = PISTAS[pista_sel]
+            puntos = pista_obj["puntos"]
+            ancho = pista_obj["ancho_medio"]
             escala_ref = self._w2s(0.0, 0.0)[2]
             poly = [self._w2s(px, py)[:2] for px, py in puntos]
             if len(poly) >= 2:
@@ -3424,7 +3447,7 @@ class JuegoPygame:
             pg.draw.circle(self.screen, self.WARN, (mx0, my0), 7)
 
             t_act = frame_idx * DT
-            for ox, oy, rad in obtener_obstaculos_pista(pista_sel, t_act):
+            for ox, oy, rad in obstaculos_en(pista_obj, t_act):
                 osx, osy, _ = self._w2s(ox, oy)
                 pg.draw.circle(self.screen, self.BAD, (osx, osy), max(4, int(rad * escala_ref)))
 
@@ -3557,6 +3580,10 @@ class JuegoPygame:
 
     def run(self) -> None:
         try:
+            if not self._pedir_nombre_participante(permitir_cancelar=False):
+                return
+            self.loras_disponibles = self.bridge.listar_adaptadores()
+            self.lora_activo = self.loras_disponibles[-1] if self.loras_disponibles else None
             while True:
                 modo = self._pantalla_menu()
                 if modo is None:

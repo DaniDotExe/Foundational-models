@@ -310,6 +310,28 @@ def eliminar_adaptador_estudiante(student_id: str, adapter_name: str) -> Dict[st
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/admin/limpiar")
+def limpiar_clase(clave: str = "") -> Dict[str, Any]:
+    """Limpia ranking, trayectorias y adaptadores de prueba antes de iniciar la clase."""
+    if clave != "dani":
+        raise HTTPException(status_code=403, detail="Clave docente incorrecta.")
+    with ranking_lock:
+        if RANKING_PATH.exists():
+            RANKING_PATH.unlink()
+        if TRAYECTORIAS_PATH.exists():
+            TRAYECTORIAS_PATH.unlink()
+    eliminados = []
+    for sid_or_dir in list(motor_global.adapters_dir.iterdir()):
+        if sid_or_dir.is_dir() and not sid_or_dir.name.startswith("."):
+            if "__" in sid_or_dir.name:
+                sid_p, aname_p = sid_or_dir.name.split("__", 1)
+                motor_global.eliminar_adaptador(sid_p, aname_p)
+            else:
+                motor_global.eliminar_adaptador(sid_or_dir.name, "default")
+            eliminados.append(sid_or_dir.name)
+    return {"status": "limpio", "adaptadores_eliminados": eliminados}
+
+
 @app.post("/entrenar_lora")
 def entrenar_lora(req: EntrenarLoraRequest) -> Dict[str, Any]:
     """Valida límites anti-trampa y entrena un adaptador LoRA para el estudiante."""
