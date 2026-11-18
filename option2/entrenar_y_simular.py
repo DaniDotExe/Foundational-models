@@ -28,7 +28,7 @@ MODELOS_SOPORTADOS = {
     "Qwen/Qwen2.5-3B-Instruct":   {"n_params": 3.090e9, "vram_gb": 6.0, "bono_icl": 22, "bono_cot": 26},
 }
 
-MAX_FLOPS = 1.0e15          # 1.0 PetaFLOP = 1,000 TFLOPs = 100 Créditos
+MAX_FLOPS = 4.5e14          # 450 TFLOPs = 100 Créditos (obliga a especializarse)
 MAX_CREDITOS = 100.0
 GPU_L4_FLOPS = 4.5e13       # ~45 TFLOP/s efectivos sostenidos en L4
 
@@ -160,31 +160,31 @@ def calcular_flops_stat(modelo_id: str, stat_key: str, cfg_stat: dict, cur_info:
     pen_dedup = 9 if not cur_cfg.get("dedup_minhash", False) else 0
     umbral = float(cur_cfg.get("umbral_minhash", 0.82))
     pen_umbral = 18 if umbral < 0.65 else (6 if umbral > 0.93 else 0)
-    bono_datos = min(12, int(n_datos * 0.28))
+    bono_datos = min(7, int(n_datos * 0.16))
 
     if via == "ICL":
         modo = cfg_stat.get("modo_icl", "few_shot")
         k = 0 if modo == "zero_shot" else (1 if modo == "one_shot" else int(cfg_stat.get("k_ejemplos", 4)))
         cot = bool(cfg_stat.get("usar_cot", False))
-        base = 42 + info_m["bono_icl"] + min(18, k * 4)
+        base = 38 + int(info_m["bono_icl"] * 0.75) + min(12, k * 3)
         if cot:
-            base += info_m["bono_cot"] if stat_key in ("correr", "sigilo") else (info_m["bono_cot"] // 2)
+            base += int(info_m["bono_cot"] * 0.75) if stat_key in ("correr", "sigilo") else (info_m["bono_cot"] // 3)
         elif stat_key == "correr":
-            base -= 14  # Correr requiere cálculo aritmético de estamina
+            base -= 14
         score = base - (pen_ruido // 2) - pen_umbral
     elif via == "LORA_LIGERO":
-        base = 74 + bono_datos + (4 if n_params > 1e9 else 0)
+        base = 66 + bono_datos + (3 if n_params > 1e9 else 0)
         if stat_key == "correr" and not cfg_stat.get("usar_cot", False):
             base -= 6
         score = base - pen_ruido - pen_dedup - pen_umbral
     elif via == "LORA_PROFUNDO":
-        base = 84 + bono_datos + (5 if n_params > 1e9 else 0)
+        base = 76 + bono_datos + (4 if n_params > 1e9 else 0)
         score = base - pen_ruido - pen_dedup - pen_umbral
     else:  # FULL_FT
-        base = 88 + bono_datos
+        base = 82 + bono_datos
         score = base - int(pen_ruido * 1.2) - pen_dedup - pen_umbral
 
-    score = max(15, min(99, int(round(score))))
+    score = max(15, min(94, int(round(score))))
     return {
         "via": via,
         "flops_totales": flops_totales,

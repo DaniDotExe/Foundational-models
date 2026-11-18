@@ -3,1068 +3,912 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Juegos del Hambre FM · Simulador de Estrategias y Arena Pixel Art</title>
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    try {
+      const savedTheme = localStorage.getItem("color-scheme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.querySelector('meta[name="color-scheme"]').content = savedTheme;
+      }
+    } catch (e) {}
+  </script>
+  <title>Arena de Modelos Fundacionales</title>
   <style>
     :root {
-      --bg: #080A10;
-      --panel: #111521;
-      --panel-2: #171D2E;
-      --border: #252E46;
-      --teal: #14B8A6;
-      --green: #10B981;
-      --amber: #F59E0B;
-      --indigo: #818CF8;
-      --rose: #F43F5E;
-      --text: #F8FAFC;
-      --muted: #94A3B8;
-      --mono: 'JetBrains Mono', Consolas, monospace;
-      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+      color-scheme: light dark;
+      &:has(> head > meta[name="color-scheme"][content="dark"]) { color-scheme: dark; }
+      &:has(> head > meta[name="color-scheme"][content="light"]) { color-scheme: light; }
+
+      --bg: light-dark(#F1F5F9, #090D16);
+      --panel: light-dark(#FFFFFF, #111827);
+      --panel-2: light-dark(#F8FAFC, #1E293B);
+      --panel-inset: light-dark(#E2E8F0, #0B0F19);
+      --border: light-dark(#CBD5E1, #26334D);
+      --text: light-dark(#0F172A, #F8FAFC);
+      --muted: light-dark(#64748B, #94A3B8);
+      --brand: light-dark(#2563EB, #3B82F6);
+      --brand-soft: light-dark(rgba(37,99,235,0.10), rgba(59,130,246,0.16));
+      --ok: light-dark(#059669, #10B981);
+      --ok-soft: light-dark(#ECFDF5, rgba(16,185,129,0.14));
+      --bad: light-dark(#E11D48, #F43F5E);
+      --amber: light-dark(#D97706, #F59E0B);
+      --shadow: light-dark(0 1px 3px rgba(15,23,42,0.06), 0 4px 20px rgba(0,0,0,0.35));
+      --mono: ui-monospace, 'JetBrains Mono', SFMono-Regular, Consolas, monospace;
+      --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      min-height: 100vh;
-      padding: 16px 22px 36px;
+      background: var(--bg); color: var(--text); font-family: var(--sans);
+      min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased;
     }
-    header {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 20px;
-      margin-bottom: 16px;
-    }
-    .brand-tag { font-family: var(--mono); font-size: 11px; color: var(--amber); font-weight: 700; letter-spacing: 1.1px; }
-    h1 { font-size: 20px; font-weight: 800; margin-top: 2px; }
-    .budget-strip {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-      background: #0B0E17;
-      border: 1px solid var(--border);
-      padding: 9px 16px;
-      border-radius: 10px;
-    }
-    .metric-box { text-align: right; }
-    .metric-box .lbl { font-family: var(--mono); font-size: 10px; color: var(--muted); }
-    .metric-box .val { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--text); }
-    .status-pill {
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 8px;
-    }
-    .status-ok { background: #0D2B24; color: var(--green); border: 1px solid var(--green); }
-    .status-bad { background: #2D131D; color: var(--rose); border: 1px solid var(--rose); }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 470px 1fr;
-      gap: 16px;
-      align-items: start;
+    .overlay {
+      position: fixed; inset: 0; z-index: 100; background: rgba(9, 13, 22, 0.72);
+      backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; padding: 20px;
     }
-    @media (max-width: 1180px) { .layout { grid-template-columns: 1fr; } }
+    .overlay.hidden { display: none; }
+    .modal-box {
+      width: 100%; max-width: 440px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
 
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
+    .navbar {
+      height: 60px; background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 0 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
     }
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
+    .nav-left { display: flex; align-items: center; gap: 12px; }
+    .logo-badge { background: var(--brand); color: #FFF; font-family: var(--mono); font-weight: 800; font-size: 11px; padding: 4px 8px; border-radius: 6px; }
+    .nav-title { font-weight: 800; font-size: 15.5px; letter-spacing: -0.3px; }
+    .user-chip {
+      display: inline-flex; align-items: center; gap: 6px; background: var(--panel-2);
+      border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
     }
-    .card-tag { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; color: var(--teal); }
-    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin: 6px 0;
-      font-size: 13px;
-      color: #CBD5E1;
+    .tabs {
+      display: flex; gap: 4px; background: var(--panel-2); padding: 4px;
+      border-radius: 10px; border: 1px solid var(--border);
     }
-    select, input[type="number"], input[type="text"] {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 5px 9px;
-      border-radius: 6px;
-      font-family: var(--mono);
-      font-size: 12px;
+    .tab-btn {
+      cursor: pointer; border: none; background: transparent; color: var(--muted);
+      font-family: var(--sans); font-weight: 700; font-size: 13px; padding: 7px 15px; border-radius: 7px; transition: 0.15s;
     }
-    .stat-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { background: var(--brand); color: #FFF; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+
+    .view-tab { display: none; max-width: 1380px; width: 100%; margin: 20px auto; padding: 0 20px; }
+    .view-tab.active { display: block; }
+
+    .grid-2 { display: grid; grid-template-columns: 1.25fr 0.95fr; gap: 18px; align-items: start; }
+    .grid-sim { display: grid; grid-template-columns: 490px 1fr; gap: 18px; align-items: start; }
+    @media (max-width: 1020px) { .grid-2, .grid-sim { grid-template-columns: 1fr; } }
+
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); margin-bottom: 14px; }
+    .sec-head {
+      font-size: 11px; font-family: var(--mono); font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .stat-box {
-      background: var(--panel-2);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 10px 12px;
+
+    .seg-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .seg-btn {
+      cursor: pointer; background: var(--panel-2); border: 1.5px solid var(--border);
+      border-radius: 9px; padding: 10px 8px; text-align: center; color: var(--text); transition: 0.12s;
     }
-    .stat-box h4 {
-      font-size: 13px;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 6px;
+    .seg-btn:hover:not(:disabled) { border-color: var(--brand); }
+    .seg-btn.active { border-color: var(--brand); background: var(--brand-soft); }
+    .seg-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+    .seg-btn .t1 { font-weight: 700; font-size: 13px; display: block; }
+    .seg-btn .t2 { font-size: 10.5px; color: var(--muted); font-family: var(--mono); display: block; margin-top: 2px; }
+
+    .adapt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cot-row {
+      margin-top: 10px; padding: 9px 12px; border-radius: 9px; background: var(--panel-2);
+      border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; font-weight: 600;
     }
-    .badge-score {
-      font-family: var(--mono);
-      font-size: 11.5px;
-      padding: 2px 7px;
-      border-radius: 5px;
-      background: #0F172A;
-      color: var(--teal);
-      border: 1px solid var(--border);
+
+    textarea, input[type="text"], input[type="number"], input[type="password"] {
+      width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+      color: var(--text); padding: 9px 11px; border-radius: 9px; font-family: var(--mono); font-size: 12px;
     }
+
+    .budget-meter { margin: 8px 0 12px; }
+    .meter-top { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; }
+    .meter-track { width: 100%; height: 9px; background: var(--panel-inset); border-radius: 99px; overflow: hidden; }
+    .meter-fill { height: 100%; background: var(--brand); transition: width 0.2s; }
+    .meter-fill.over { background: var(--bad); }
+
     .btn {
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--panel-2);
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 8px 13px;
-      border-radius: 8px;
-      transition: 0.15s;
+      cursor: pointer; border: 1px solid var(--border); background: var(--panel-2);
+      color: var(--text); font-family: var(--sans); font-size: 12.5px; font-weight: 600;
+      padding: 8px 14px; border-radius: 9px; transition: 0.12s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
-    .btn:hover { border-color: var(--teal); }
-    .btn-primary { background: var(--teal); color: #041311; border-color: var(--teal); }
-    .btn-amber { background: var(--amber); color: #1A1002; border-color: var(--amber); }
+    .btn:hover:not(:disabled) { border-color: var(--brand); }
+    .btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .btn-primary { background: var(--brand); color: #FFF; border-color: var(--brand); }
+    .btn-ok { background: var(--ok); color: #FFF; border-color: var(--ok); }
+    .btn-amber { background: var(--amber); color: #FFF; border-color: var(--amber); }
+    .btn-block { width: 100%; padding: 11px; font-size: 13px; margin-top: 8px; }
 
-    .arena-top {
-      display: grid;
-      grid-template-columns: 510px 1fr;
-      gap: 16px;
-      align-items: start;
+    .pixel-canvas {
+      width: 100%; max-width: 450px; aspect-ratio: 1 / 1; display: block; margin: 0 auto;
+      image-rendering: pixelated; image-rendering: crisp-edges;
+      border: 2px solid var(--border); border-radius: 12px; background: #14261C;
     }
-    @media (max-width: 1400px) { .arena-top { grid-template-columns: 1fr; } }
 
-    .canvas-wrap {
-      background: #07090E;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .chapter-bar {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px;
+      padding: 8px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
     }
-    #pixelCanvas {
-      width: 480px;
-      height: 480px;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-      border: 1px solid #1E293B;
-      border-radius: 6px;
-      background: #14261C;
+    .chap-pill {
+      cursor: pointer; min-width: 26px; height: 24px; padding: 0 5px;
+      border-radius: 5px; border: 1px solid var(--border); background: var(--panel);
+      color: var(--text); font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; position: relative;
     }
-    .controls-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      margin-top: 10px;
+    .chap-pill.has-my-action { border-color: var(--brand); background: var(--brand-soft); }
+    .chap-pill.has-my-action::after {
+      content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--brand);
+      position: absolute; top: 2px; right: 2px;
     }
-    .log-box {
-      background: #0A0D14;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      height: 195px;
-      overflow-y: auto;
-      font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.55;
+    .chap-pill.dead-chap {
+      background: var(--panel-inset); color: var(--muted); border-color: transparent;
+      opacity: 0.42; filter: grayscale(1);
     }
-    .log-line { margin-bottom: 4px; border-bottom: 1px dashed #1A2234; padding-bottom: 3px; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: var(--mono);
-      font-size: 11.5px;
+    .chap-pill.current { outline: 2px solid var(--text); z-index: 2; }
+
+    .player-bar { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+    .coach-box {
+      border-left: 4px solid var(--brand); background: var(--panel-2);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; transition: 0.2s;
     }
-    th, td {
-      padding: 6px 8px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
+    .coach-box.disabled-dead {
+      border-left-color: var(--muted); opacity: 0.45; filter: grayscale(0.9); pointer-events: none;
     }
-    th { color: var(--muted); font-size: 10.5px; }
-    .hp-bar {
-      width: 58px;
-      height: 7px;
-      background: #1E293B;
-      border-radius: 4px;
-      overflow: hidden;
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 5px;
+
+    .stat-line { margin-bottom: 11px; }
+    .stat-line-top { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; }
+    .stat-track { width: 100%; height: 8px; background: var(--panel-inset); border-radius: 99px; overflow: hidden; }
+    .stat-bar { height: 100%; background: var(--ok); transition: width 0.25s; }
+
+    .p-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+    .p-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 10px; font-family: var(--mono); font-size: 11px;
     }
-    .hp-fill { height: 100%; background: var(--green); }
-    .dead-row { opacity: 0.42; text-decoration: line-through; }
-    pre.code-out {
-      background: #080B11;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
-      font-family: var(--mono);
-      font-size: 11px;
-      max-height: 180px;
-      overflow: auto;
-      color: #A7F3D0;
-      margin-top: 8px;
+    .p-item.dead { opacity: 0.38; text-decoration: line-through; }
+    .log-feed {
+      background: var(--panel-2); border: 1px solid var(--border); border-radius: 9px;
+      padding: 9px 11px; height: 165px; overflow-y: auto; font-family: var(--mono); font-size: 11px; line-height: 1.5;
+    }
+    .ds-item {
+      display: flex; align-items: flex-start; gap: 7px; padding: 6px 0;
+      border-bottom: 1px dashed var(--border); font-family: var(--mono); font-size: 11px;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <div class="brand-tag">OPTION 2 · LOS JUEGOS DEL HAMBRE DE MODELOS FUNDACIONALES</div>
-    <h1>Arena Multi-Modelo (0.5B / 1.5B / 3B) · Presupuesto de Adaptación y Visualizador Pixel Art</h1>
-  </div>
-  <div class="budget-strip">
-    <div class="metric-box">
-      <div class="lbl">MODELO ELEGIDO</div>
-      <div class="val" id="hdrModel">Qwen2.5-1.5B</div>
+<!-- MODAL BIENVENIDA (NOMBRE PREGRABADO) -->
+<div id="welcomeOverlay" class="overlay hidden">
+  <div class="modal-box">
+    <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">Identificación del Participante</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Se guardará automáticamente en tu navegador.</p>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Tu Nombre</label>
+      <input type="text" id="welcomeNombre" placeholder="Ej. Sofía / Participante 03" />
     </div>
-    <div class="metric-box">
-      <div class="lbl">CÓMPUTO (MÁX 1000 TFLOPs)</div>
-      <div class="val" id="hdrFlops">0.0 TFLOPs</div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Token asignado (token_estudiante_01..12)</label>
+      <input type="text" id="welcomeToken" value="token_estudiante_01" />
     </div>
-    <div class="metric-box">
-      <div class="lbl">CRÉDITOS ENTRENAMIENTO</div>
-      <div class="val" id="hdrCredits">0.0 / 100</div>
-    </div>
-    <div class="metric-box">
-      <div class="lbl">RADAR MEDIO</div>
-      <div class="val" id="hdrRadar" style="color:var(--teal)">0 / 100</div>
-    </div>
-    <div id="hdrStatus" class="status-pill status-ok">✅ DENTRO DE PRESUPUESTO</div>
-  </div>
-</header>
-
-<div class="layout">
-  <!-- COLUMNA IZQUIERDA: CONFIGURACIÓN DEL TRIBUTO -->
-  <div>
-    <div class="card">
-      <div class="card-header">
-        <span class="card-tag">1. IDENTIDAD Y MODELO BASE (ESCALA N)</span>
-      </div>
-      <div class="row">
-        <label>Nombre del Tributo / Distrito:</label>
-        <input type="text" id="inpEquipo" value="Distrito_01" oninput="recalcular()" />
-      </div>
-      <div class="row">
-        <label>Modelo Fundacional Base:</label>
-        <select id="selModelo" onchange="recalcular()">
-          <option value="Qwen/Qwen2.5-0.5B-Instruct">Qwen2.5-0.5B-Instruct (0.49B · Permite Full-FT/LoRA)</option>
-          <option value="Qwen/Qwen2.5-1.5B-Instruct" selected>Qwen2.5-1.5B-Instruct (1.54B · Equilibrado LoRA/ICL)</option>
-          <option value="Qwen/Qwen2.5-3B-Instruct">Qwen2.5-3B-Instruct (3.09B · Rey de ICL + CoT)</option>
-        </select>
-      </div>
-      <div class="row">
-        <label>Doctrina Táctica Turno 1:</label>
-        <select id="selDoctrina" onchange="recalcular()">
-          <option value="CORNUCOPIA">⚔️ CORNUCOPIA (Disputar arma +18 ATQ en el centro)</option>
-          <option value="BOSQUE" selected>🌲 BOSQUE (Huir a los bordes y asegurar supervivencia)</option>
-          <option value="CAZADOR">🏹 CAZADOR (Acechar tributos heridos)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <span class="card-tag">2. TUBERÍA DE CURACIÓN DE DATOS (CALIDAD vs CANTIDAD D)</span>
-      </div>
-      <div class="row">
-        <label>Filtrar ruido y trampas (bayas venenosas / errores):</label>
-        <input type="checkbox" id="chkRuido" checked onchange="recalcular()" />
-      </div>
-      <div class="row">
-        <label>Deduplicación MinHash (3-gramas):</label>
-        <input type="checkbox" id="chkDedup" checked onchange="recalcular()" />
-      </div>
-      <div class="row">
-        <label>Umbral Jaccard MinHash (0.50 - 0.95):</label>
-        <input type="number" id="inpUmbral" value="0.82" min="0.50" max="0.95" step="0.02" onchange="recalcular()" />
-      </div>
-      <div class="row">
-        <label>Fracción de datos limpios D (0.20 - 1.00):</label>
-        <input type="number" id="inpFraccion" value="0.85" min="0.20" max="1.00" step="0.05" onchange="recalcular()" />
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <span class="card-tag">3. ADAPTACIÓN POR HABILIDAD (4 STATS)</span>
-        <span style="font-size:11px;color:var(--muted)">Sin micro-hiperparámetros</span>
-      </div>
-      <div class="stat-grid">
-        <!-- COMER -->
-        <div class="stat-box">
-          <h4><span>🫐 Comer</span><span class="badge-score" id="sc_comer">80</span></h4>
-          <div class="row">
-            <span>Vía:</span>
-            <select id="via_comer" onchange="recalcular()">
-              <option value="ICL">ICL (Prompt)</option>
-              <option value="LORA_LIGERO" selected>LoRA Ligero</option>
-              <option value="LORA_PROFUNDO">LoRA Profundo</option>
-              <option value="FULL_FT">Full Fine-Tuning</option>
-            </select>
-          </div>
-          <div class="row">
-            <span>Ejemplos k (ICL):</span>
-            <input type="number" id="k_comer" value="4" min="0" max="10" style="width:58px" onchange="recalcular()" />
-          </div>
-          <div class="row">
-            <span>Usar CoT:</span>
-            <input type="checkbox" id="cot_comer" onchange="recalcular()" />
-          </div>
-        </div>
-
-        <!-- GUERRA -->
-        <div class="stat-box">
-          <h4><span>⚔️ Guerra</span><span class="badge-score" id="sc_guerra">85</span></h4>
-          <div class="row">
-            <span>Vía:</span>
-            <select id="via_guerra" onchange="recalcular()">
-              <option value="ICL">ICL (Prompt)</option>
-              <option value="LORA_LIGERO">LoRA Ligero</option>
-              <option value="LORA_PROFUNDO" selected>LoRA Profundo</option>
-              <option value="FULL_FT">Full Fine-Tuning</option>
-            </select>
-          </div>
-          <div class="row">
-            <span>Ejemplos k (ICL):</span>
-            <input type="number" id="k_guerra" value="4" min="0" max="10" style="width:58px" onchange="recalcular()" />
-          </div>
-          <div class="row">
-            <span>Usar CoT:</span>
-            <input type="checkbox" id="cot_guerra" onchange="recalcular()" />
-          </div>
-        </div>
-
-        <!-- CORRER -->
-        <div class="stat-box">
-          <h4><span>🏃 Correr</span><span class="badge-score" id="sc_correr">82</span></h4>
-          <div class="row">
-            <span>Vía:</span>
-            <select id="via_correr" onchange="recalcular()">
-              <option value="ICL" selected>ICL (Prompt)</option>
-              <option value="LORA_LIGERO">LoRA Ligero</option>
-              <option value="LORA_PROFUNDO">LoRA Profundo</option>
-              <option value="FULL_FT">Full Fine-Tuning</option>
-            </select>
-          </div>
-          <div class="row">
-            <span>Ejemplos k (ICL):</span>
-            <input type="number" id="k_correr" value="4" min="0" max="10" style="width:58px" onchange="recalcular()" />
-          </div>
-          <div class="row">
-            <span>Usar CoT:</span>
-            <input type="checkbox" id="cot_correr" checked onchange="recalcular()" />
-          </div>
-        </div>
-
-        <!-- SIGILO -->
-        <div class="stat-box">
-          <h4><span>🕶️ Sigilo</span><span class="badge-score" id="sc_sigilo">75</span></h4>
-          <div class="row">
-            <span>Vía:</span>
-            <select id="via_sigilo" onchange="recalcular()">
-              <option value="ICL" selected>ICL (Prompt)</option>
-              <option value="LORA_LIGERO">LoRA Ligero</option>
-              <option value="LORA_PROFUNDO">LoRA Profundo</option>
-              <option value="FULL_FT">Full Fine-Tuning</option>
-            </select>
-          </div>
-          <div class="row">
-            <span>Ejemplos k (ICL):</span>
-            <input type="number" id="k_sigilo" value="3" min="0" max="10" style="width:58px" onchange="recalcular()" />
-          </div>
-          <div class="row">
-            <span>Usar CoT:</span>
-            <input type="checkbox" id="cot_sigilo" onchange="recalcular()" />
-          </div>
-        </div>
-      </div>
-      <div id="ruleWarning" style="margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--rose);display:none;"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <span class="card-tag">4. RADAR DE HABILIDADES Y EXPORTACIÓN A CONFIG.PY</span>
-        <button class="btn" onclick="copiarConfig()">📋 Copiar config.py</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:14px;">
-        <canvas id="radarCanvas" width="180" height="180" style="background:#0B0E17;border:1px solid var(--border);border-radius:8px;"></canvas>
-        <div style="flex:1;font-size:12px;color:var(--muted);line-height:1.5;">
-          <div>• <b>Simular vs Bots:</b> 0 créditos. Prueba tu tributo antes de entrenar en Colab.</div>
-          <div>• <b>Bono Eficiencia:</b> <span id="lblBono" style="color:var(--green);font-weight:700">+0.0</span> estamina/hambre inicial por créditos ahorrados.</div>
-          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="iniciarSimulacion(false)">🧪 Simular vs 5 Bots (Gratis)</button>
-            <button class="btn btn-amber" onclick="iniciarSimulacion(true)">🏹 Arena Final PvP (12 Distritos)</button>
-          </div>
-        </div>
-      </div>
-      <pre class="code-out" id="codeOut"></pre>
-    </div>
-  </div>
-
-  <!-- COLUMNA DERECHA: ARENA PIXEL ART + REPLAY + TABLA EN VIVO -->
-  <div>
-    <div class="card">
-      <div class="card-header">
-        <span class="card-tag" id="arenaModeTag">ARENA PIXEL ART 12×12 · SIMULACIÓN LOCAL</span>
-        <span style="font-family:var(--mono);font-size:12px;" id="lblTurnoInfo">Turno 1 / 25 · Zona Segura: Radio 6</span>
-      </div>
-
-      <div class="arena-top">
-        <!-- LIENZO PIXEL ART -->
-        <div class="canvas-wrap">
-          <canvas id="pixelCanvas" width="192" height="192"></canvas>
-          <div class="controls-bar">
-            <div style="display:flex;gap:6px;">
-              <button class="btn" id="btnPlay" onclick="togglePlay()">⏸ Pausa</button>
-              <button class="btn" onclick="irTurno(0)">⏮ T1</button>
-              <button class="btn" onclick="irTurno(turnoActual - 1)">◀</button>
-              <button class="btn" onclick="irTurno(turnoActual + 1)">▶</button>
-            </div>
-            <input type="range" id="sliderTurno" min="0" max="24" value="0" style="flex:1" oninput="irTurno(parseInt(this.value))" />
-            <select id="selSpeed" onchange="cambiarVelocidad()">
-              <option value="900">1x (Normal)</option>
-              <option value="450">2x (Rápido)</option>
-              <option value="1600">0.5x (Análisis)</option>
-            </select>
-          </div>
-          <div style="display:flex;gap:12px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap;">
-            <span>🟨 Cornucopia (Centro)</span>
-            <span>🟦 Bayas Seguras</span>
-            <span>🟥 Veneno/Trampa</span>
-            <span>🟪 Niebla Capitolio</span>
-            <span>🐺 Bestias (cada 5T)</span>
-          </div>
-        </div>
-
-        <!-- TABLA DE TRIBUTOS Y BITÁCORA -->
-        <div>
-          <div class="card-title">Estado de los Tributos en Tiempo Real</div>
-          <div style="max-height:265px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tributo</th>
-                  <th>Modelo</th>
-                  <th>HP</th>
-                  <th>Hambre</th>
-                  <th>Radar (C/G/Co/S)</th>
-                  <th>Kills</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody id="tbodyTributos"></tbody>
-            </table>
-          </div>
-
-          <div class="card-title">Bitácora del Capitolio (Eventos del Turno)</div>
-          <div class="log-box" id="logEventos"></div>
-        </div>
-      </div>
-    </div>
+    <button type="button" class="btn btn-primary btn-block" onclick="guardarIdentidadInicial()">Entrar →</button>
   </div>
 </div>
 
+<!-- BARRA SUPERIOR CON LAS 3 PESTAÑAS -->
+<nav class="navbar">
+  <div class="nav-left">
+    <span class="logo-badge">FM ARENA</span>
+    <span class="user-chip">
+      👤 <span id="lblNombreTop">Participante</span>
+      <button type="button" onclick="abrirEditarNombre()" style="background:none;border:none;cursor:pointer;font-size:11px;" title="Editar nombre">✏️</button>
+    </span>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn active" id="tabBtnTrain" onclick="switchTab('train')">1. 🧠 Entrenamiento</button>
+    <button type="button" class="tab-btn" id="tabBtnSim" onclick="switchTab('sim')">2. 🧪 Simulación</button>
+    <button type="button" class="tab-btn" id="tabBtnFinal" onclick="switchTab('final')">3. 🔒 Arena Final</button>
+  </div>
+
+  <div class="nav-right">
+    <button type="button" class="btn" id="btnThemeToggle" onclick="toggleTheme()">☀️ Claro</button>
+  </div>
+</nav>
+
+<!-- ================= TAB 1: ENTRENAMIENTO ================= -->
+<section id="viewTrain" class="view-tab active">
+  <div class="grid-2">
+    <div>
+      <div class="panel">
+        <div class="sec-head"><span>1. Tamaño del Modelo</span><span>Parámetros</span></div>
+        <div class="seg-3">
+          <button type="button" class="seg-btn" id="mod_05" onclick="setModelo('Qwen/Qwen2.5-0.5B-Instruct')">
+            <span class="t1">Pequeño</span><span class="t2">0.5B · Rápido</span>
+          </button>
+          <button type="button" class="seg-btn active" id="mod_15" onclick="setModelo('Qwen/Qwen2.5-1.5B-Instruct')">
+            <span class="t1">Mediano</span><span class="t2">1.5B · Balance</span>
+          </button>
+          <button type="button" class="seg-btn" id="mod_30" onclick="setModelo('Qwen/Qwen2.5-3B-Instruct')">
+            <span class="t1">Grande</span><span class="t2">3.0B · Razonador</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="sec-head"><span>2. Estrategia de Adaptación</span><span id="lblModoResumen">Zero-Shot</span></div>
+        <div class="adapt-grid">
+          <button type="button" class="seg-btn active" id="ad_ZERO" onclick="setAdaptacion('ZERO')">
+            <span class="t1">Zero-Shot</span><span class="t2">Solo tu Prompt (0 ej.)</span>
+          </button>
+          <button type="button" class="seg-btn" id="ad_ONE" onclick="setAdaptacion('ONE')">
+            <span class="t1">One-Shot</span><span class="t2">Prompt + 1 ejemplo ☑</span>
+          </button>
+          <button type="button" class="seg-btn" id="ad_FEW" onclick="setAdaptacion('FEW')">
+            <span class="t1">Few-Shot</span><span class="t2">Prompt + hasta 5 ej. ☑</span>
+          </button>
+          <button type="button" class="seg-btn" id="ad_LORA" onclick="setAdaptacion('LORA')">
+            <span class="t1">Fine-Tuning LoRA</span><span class="t2">Entrena pesos con Dataset</span>
+          </button>
+          <button type="button" class="seg-btn" id="ad_FULL" onclick="setAdaptacion('FULL')" style="grid-column:1 / -1;">
+            <span class="t1">Full Fine-Tuning</span><span class="t2">Entrena toda la red (Solo Pequeño)</span>
+          </button>
+        </div>
+
+        <label class="cot-row" style="cursor:pointer;">
+          <span>🧠 Activar Chain-of-Thought (Paso a paso · Alto costo en FLOPs)</span>
+          <input type="checkbox" id="chkCoT" onchange="recalcular()" style="width:16px;height:16px;" />
+        </label>
+      </div>
+
+      <div class="panel">
+        <div class="sec-head">
+          <span>3. Prompt Principal (Instrucción)</span>
+          <span id="lblCharCount">0 / 100</span>
+        </div>
+        <textarea id="inpEstrategia" maxlength="100" rows="2" oninput="recalcular()">Cauteloso: evita peleas sin arma, descarta bayas raras y huye de la niebla.</textarea>
+
+        <div class="sec-head" style="margin-top:14px;">
+          <span>Mi Dataset (<span id="lblSeleccionados">0</span> activos ☑)</span>
+          <span id="lblDatasetPts">0 / 100 pts</span>
+        </div>
+        <div id="datasetPreviewBox" style="max-height:170px;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="sec-head"><span>Atributos de tu Participante</span><span>Base Igual (Sin Semilla)</span></div>
+        <div id="statsInfoBars"></div>
+      </div>
+
+      <div class="panel">
+        <div class="budget-meter">
+          <div class="meter-top">
+            <span>Costo de Cómputo por Entrenamiento</span>
+            <span id="lblFlopsMeter" style="font-family:var(--mono);">0.0 / 150 TFLOPs</span>
+          </div>
+          <div class="meter-track"><div class="meter-fill" id="barFlopsFill" style="width:20%"></div></div>
+        </div>
+
+        <button type="button" class="btn btn-ok btn-block" id="btnEntrenarGpu" onclick="enviarAGpuServidor()">🚀 Entrenar y Evaluar Atributos en GPU</button>
+        <button type="button" class="btn btn-primary btn-block" onclick="switchTab('sim')">Ir a Pestaña 2: Simulación →</button>
+        <div id="serverStatusMsg" style="margin-top:8px;font-family:var(--mono);font-size:11.5px;min-height:18px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAB 2: SIMULACIÓN (PRÁCTICA + COACH) ================= -->
+<section id="viewSim" class="view-tab">
+  <div class="grid-sim">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--brand);font-weight:700;" id="arenaModeTag">SIMULACIÓN ONLINE (SPAWNS ALEATORIOS)</div>
+          <div style="font-weight:800;font-size:15px;" id="lblTurnoInfo">Presiona Simular para iniciar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11.5px;color:var(--muted);font-family:var(--mono);">🎲 Semilla Bots:</span>
+          <input type="number" id="inpSeedRivales" value="101" style="width:72px;padding:6px 8px;" />
+          <button type="button" class="btn btn-primary" onclick="correrSimulacionOnline()">🧪 Simular en GPU</button>
+        </div>
+      </div>
+
+      <canvas id="pixelCanvas" class="pixel-canvas" width="384" height="384"></canvas>
+
+      <div class="sec-head" style="margin-top:12px;margin-bottom:4px;">
+        <span>Línea de Capítulos (🔵 = Acción de tu participante · Gris = Muerto)</span>
+      </div>
+      <div class="chapter-bar" id="chapterTimeline">
+        <span style="font-size:11.5px;color:var(--muted);font-family:var(--mono);">Sin capítulos aún.</span>
+      </div>
+
+      <div class="player-bar">
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn" id="btnPlay" onclick="togglePlay()">▶ Auto</button>
+          <button type="button" class="btn" onclick="pausarYIr(0)">⏮ T1</button>
+          <button type="button" class="btn" onclick="pausarYIr(turnoActual - 1)">◀ Ant.</button>
+          <button type="button" class="btn btn-primary" onclick="pausarYIr(turnoActual + 1)">Sig. Capítulo ▶</button>
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted);">🟦 Cuadro = Tu Visión</span>
+      </div>
+    </div>
+
+    <div>
+      <!-- COACH FILTRADO A TU PARTICIPANTE -->
+      <div class="coach-box" id="coachContainer">
+        <div class="sec-head" style="margin-bottom:6px;">
+          <span>🎓 Etiquetar Eventos de TU Participante en este Capítulo</span>
+          <span>+10 pts Dataset</span>
+        </div>
+        <div id="coachSceneBox" style="font-family:var(--mono);font-size:11.5px;margin-bottom:9px;padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:7px;">
+          Aquí aparecerán únicamente las referencias de la bitácora a tu participante.
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button type="button" class="btn" id="btnCoachOk" onclick="setCoachLabel('CORRECTA')" style="flex:1;border-color:var(--ok);color:var(--ok);">✅ Premiar (Qué SÍ hacer)</button>
+          <button type="button" class="btn" id="btnCoachBad" onclick="setCoachLabel('INCORRECTA')" style="flex:1;">❌ Castigar (Qué NO hacer)</button>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="inpCoachComment" placeholder="Comentario para el modelo (qué hacer o evitar)..." style="flex:1;" />
+          <button type="button" class="btn btn-primary" onclick="guardarEjemploCoach()">Guardar en Dataset</button>
+        </div>
+        <div id="coachFeedbackMsg" style="margin-top:5px;font-family:var(--mono);font-size:11px;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="sec-head"><span>Participantes en Simulación</span><span id="lblVivosCount">0 Vivos</span></div>
+        <div id="winnerBanner" style="display:none;margin-bottom:8px;padding:8px 10px;border-radius:8px;background:var(--ok-soft);color:var(--ok);font-family:var(--mono);font-size:11.5px;font-weight:700;"></div>
+        <div class="p-list" id="tributeGrid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="sec-head"><span>Bitácora del Capítulo</span></div>
+        <div class="log-feed" id="logEventos"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAB 3: ARENA FINAL PVP (BLOQUEADA CON CLAVE) ================= -->
+<section id="viewFinal" class="view-tab">
+  <!-- PANTALLA DE CANDADO -->
+  <div id="finalLockBox" class="panel" style="max-width:440px;margin:40px auto;text-align:center;padding:28px;">
+    <div style="font-size:32px;margin-bottom:8px;">🔒</div>
+    <h2 style="font-size:18px;font-weight:800;margin-bottom:6px;">Arena Final PvP Bloqueada</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+      Esta pestaña se activa únicamente al final de la sesión con la clave del profesor.
+    </p>
+    <input type="password" id="inpClaveArena" placeholder="Clave del profesor (por defecto: arena2026)" style="margin-bottom:10px;text-align:center;" />
+    <button type="button" class="btn btn-primary btn-block" onclick="desbloquearArenaFinal()">Desbloquear Arena Final →</button>
+    <div id="lockErrorMsg" style="margin-top:8px;font-family:var(--mono);font-size:11.5px;color:var(--bad);"></div>
+  </div>
+
+  <!-- CONTENIDO DESBLOQUEADO DE LA ARENA FINAL + CONTROLES DEL PROFESOR -->
+  <div id="finalUnlockedContent" style="display:none;">
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="sec-head"><span>👨‍🏫 Controles Globales del Profesor y Lanzamiento PvP (12 Participantes)</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;font-size:12px;">
+        <div><label>Turno límite Niebla</label><input type="number" id="profMaxTurnos" value="30" /></div>
+        <div><label>Inicio cierre Niebla</label><input type="number" id="profInicioNiebla" value="6" /></div>
+        <div><label>Daño Niebla (HP)</label><input type="number" id="profDanoNiebla" value="22" /></div>
+        <div><label>Frecuencia Bestias</label><input type="number" id="profBestias" value="5" /></div>
+        <div><label>Cooldown (seg)</label><input type="number" id="profCooldown" value="60" /></div>
+        <div><label>Límite FLOPs</label><input type="number" id="profMaxFlops" value="150" /></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="btn" onclick="guardarConfigProfesor()">💾 Guardar Reglas Globales</button>
+        <button type="button" class="btn btn-amber" onclick="lanzarArenaPvPServidor()">🏹 Ejecutar Arena Final PvP (Los 12 Participantes) en GPU</button>
+        <span id="profMsg" style="font-family:var(--mono);font-size:12px;"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <script>
 const MODELOS = {
-  "Qwen/Qwen2.5-0.5B-Instruct": { corto: "Qwen2.5-0.5B", n: 0.494e9, bono_icl: 0, bono_cot: 4 },
-  "Qwen/Qwen2.5-1.5B-Instruct": { corto: "Qwen2.5-1.5B", n: 1.540e9, bono_icl: 12, bono_cot: 16 },
-  "Qwen/Qwen2.5-3B-Instruct":   { corto: "Qwen2.5-3B",   n: 3.090e9, bono_icl: 22, bono_cot: 26 }
+  "Qwen/Qwen2.5-0.5B-Instruct": { id: "mod_05", corto: "Pequeño (0.5B)", n: 0.494e9 },
+  "Qwen/Qwen2.5-1.5B-Instruct": { id: "mod_15", corto: "Mediano (1.5B)", n: 1.540e9 },
+  "Qwen/Qwen2.5-3B-Instruct":   { id: "mod_30", corto: "Grande (3.0B)",  n: 3.090e9 }
 };
-const MAX_FLOPS = 1.0e15;
+let MAX_FLOPS = 1.5e14;
+const COSTO_POR_EJEMPLO_DATASET = 10;
+const STATS_BASE_IGUALES = { vision: 2, corto: 50, largo: 50, defensa: 50, supervivencia: 50 };
 
-let estadoActual = null;
+const STATS_DEF = [
+  { key: "vision",        label: "👁️ Visión en Mapa",        esCasillas: true },
+  { key: "corto",         label: "⚔️ Dominio Corto Alcance",  esCasillas: false },
+  { key: "largo",         label: "🏹 Dominio Largo Alcance",  esCasillas: false },
+  { key: "defensa",       label: "🛡️ Defensa y Bloqueo",      esCasillas: false },
+  { key: "supervivencia", label: "🫐 Supervivencia / Niebla", esCasillas: false }
+];
+
+let estado = { modelo: "Qwen/Qwen2.5-1.5B-Instruct", adaptacion: "ZERO" };
+let nombreUsuario = "";
+let tokenUsuario = "token_estudiante_01";
+let claveArenaGuardada = "";
 let partidaTurnos = [];
 let turnoActual = 0;
 let timerPlay = null;
-let animTick = 0;
+let coachLabelActual = "CORRECTA";
+let textoEventoMioActual = "";
+let miDataset = [];
+try {
+  miDataset = JSON.parse(localStorage.getItem("hg_fm_dataset") || "[]");
+  nombreUsuario = localStorage.getItem("hg_fm_nombre") || "";
+  tokenUsuario = localStorage.getItem("hg_fm_token") || "token_estudiante_01";
+} catch (e) {}
+let statsActuales = { ...STATS_BASE_IGUALES };
+
+function verificarIdentidad() {
+  if (!nombreUsuario) document.getElementById("welcomeOverlay").classList.remove("hidden");
+  else {
+    document.getElementById("welcomeOverlay").classList.add("hidden");
+    document.getElementById("lblNombreTop").textContent = nombreUsuario;
+  }
+}
+function guardarIdentidadInicial() {
+  const n = document.getElementById("welcomeNombre").value.trim();
+  const t = document.getElementById("welcomeToken").value.trim() || "token_estudiante_01";
+  if (!n) return;
+  nombreUsuario = n; tokenUsuario = t;
+  try { localStorage.setItem("hg_fm_nombre", n); localStorage.setItem("hg_fm_token", t); } catch (e) {}
+  verificarIdentidad(); recalcular();
+}
+function abrirEditarNombre() {
+  document.getElementById("welcomeNombre").value = nombreUsuario;
+  document.getElementById("welcomeToken").value = tokenUsuario;
+  document.getElementById("welcomeOverlay").classList.remove("hidden");
+}
+
+function switchTab(tab) {
+  document.getElementById("viewTrain").classList.toggle("active", tab === "train");
+  document.getElementById("viewSim").classList.toggle("active", tab === "sim");
+  document.getElementById("viewFinal").classList.toggle("active", tab === "final");
+  document.getElementById("tabBtnTrain").classList.toggle("active", tab === "train");
+  document.getElementById("tabBtnSim").classList.toggle("active", tab === "sim");
+  document.getElementById("tabBtnFinal").classList.toggle("active", tab === "final");
+}
+
+function desbloquearArenaFinal() {
+  const inp = document.getElementById("inpClaveArena").value.trim();
+  if (!inp) return;
+  if (inp !== "arena2026") {
+    document.getElementById("lockErrorMsg").textContent = "Clave incorrecta.";
+    return;
+  }
+  claveArenaGuardada = inp;
+  document.getElementById("finalLockBox").style.display = "none";
+  document.getElementById("finalUnlockedContent").style.display = "block";
+  document.getElementById("tabBtnFinal").textContent = "3. 🏹 Arena Final";
+  cargarConfigProfesor();
+}
+
+function getResolvedScheme() {
+  const meta = document.querySelector('meta[name="color-scheme"]').content;
+  if (meta === "light" || meta === "dark") return meta;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function updateThemeButton() {
+  const btn = document.getElementById("btnThemeToggle");
+  if (btn) btn.textContent = getResolvedScheme() === "dark" ? "☀️ Claro" : "🌙 Oscuro";
+}
+function toggleTheme() {
+  const target = getResolvedScheme() === "dark" ? "light" : "dark";
+  const sys = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  const meta = document.querySelector('meta[name="color-scheme"]');
+  try {
+    if (target === sys) { localStorage.removeItem("color-scheme"); meta.content = "light dark"; }
+    else { localStorage.setItem("color-scheme", target); meta.content = target; }
+  } catch (e) { meta.content = target; }
+  updateThemeButton();
+}
+
+function setModelo(mod) {
+  estado.modelo = mod;
+  for (const m of Object.values(MODELOS)) document.getElementById(m.id).classList.toggle("active", MODELOS[mod].id === m.id);
+  const btnFull = document.getElementById("ad_FULL");
+  btnFull.disabled = (mod !== "Qwen/Qwen2.5-0.5B-Instruct");
+  if (btnFull.disabled && estado.adaptacion === "FULL") setAdaptacion("LORA");
+  recalcular();
+}
+
+function setAdaptacion(ad) {
+  estado.adaptacion = ad;
+  for (const k of ["ZERO", "ONE", "FEW", "LORA", "FULL"]) {
+    document.getElementById(`ad_${k}`).classList.toggle("active", k === ad);
+  }
+  if (ad === "ZERO") miDataset.forEach(x => x.activo = false);
+  else if (ad === "ONE") miDataset.forEach((x, i) => x.activo = (i === 0));
+  else if (ad === "FEW") miDataset.forEach((x, i) => x.activo = (i < 5));
+  else miDataset.forEach(x => x.activo = true);
+  renderMiDataset(); recalcular();
+}
+
+function toggleEjemploActivo(idx, checked) {
+  if (estado.adaptacion === "ZERO") return;
+  if (estado.adaptacion === "ONE" && checked) miDataset.forEach((x, i) => x.activo = (i === idx));
+  else if (estado.adaptacion === "FEW" && checked && miDataset.filter(x => x.activo).length >= 5) {
+    renderMiDataset(); return;
+  } else miDataset[idx].activo = checked;
+  try { localStorage.setItem("hg_fm_dataset", JSON.stringify(miDataset)); } catch (e) {}
+  renderMiDataset(); recalcular();
+}
+
+function renderMiDataset() {
+  const costoDs = miDataset.length * COSTO_POR_EJEMPLO_DATASET;
+  const activos = miDataset.filter(x => x.activo).length;
+  document.getElementById("lblDatasetPts").textContent = `${costoDs} / 100 pts`;
+  document.getElementById("lblSeleccionados").textContent = activos;
+
+  const box = document.getElementById("datasetPreviewBox");
+  if (!miDataset.length) {
+    box.innerHTML = `<div style="color:var(--muted);font-size:11.5px;padding:6px 0;">Sin jugadas guardadas. Ve a la Pestaña 2 (Simulación) para etiquetar jugadas de tu participante.</div>`;
+    return;
+  }
+  box.innerHTML = miDataset.map((ej, i) => `
+    <div class="ds-item">
+      <input type="checkbox" ${ej.activo ? "checked" : ""} ${estado.adaptacion === "ZERO" ? "disabled" : ""} onchange="toggleEjemploActivo(${i}, this.checked)" style="margin-top:2px;" />
+      <div style="flex:1;">
+        <b>${ej.etiqueta === "CORRECTA" ? "✅" : "❌"} [Cap.${ej.capitulo}]</b> ${ej.escena}<br>
+        <span style="color:var(--brand);">→ "${ej.comentario}"</span>
+      </div>
+      <button type="button" onclick="borrarEjemploDataset(${i})" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;">✕</button>
+    </div>
+  `).join("");
+}
+
+function borrarEjemploDataset(idx) {
+  miDataset.splice(idx, 1);
+  try { localStorage.setItem("hg_fm_dataset", JSON.stringify(miDataset)); } catch (e) {}
+  renderMiDataset(); recalcular();
+}
+
+function setCoachLabel(lbl) {
+  coachLabelActual = lbl;
+  const ok = document.getElementById("btnCoachOk"), bad = document.getElementById("btnCoachBad");
+  ok.style.borderColor = lbl === "CORRECTA" ? "var(--ok)" : "var(--border)";
+  ok.style.color = lbl === "CORRECTA" ? "var(--ok)" : "var(--text)";
+  bad.style.borderColor = lbl === "INCORRECTA" ? "var(--bad)" : "var(--border)";
+  bad.style.color = lbl === "INCORRECTA" ? "var(--bad)" : "var(--text)";
+}
+
+function guardarEjemploCoach() {
+  if (!partidaTurnos.length) return;
+  const f = partidaTurnos[turnoActual];
+  const pj = f.agentes[0];
+  const msg = document.getElementById("coachFeedbackMsg");
+  if (!pj.vivo) { msg.style.color = "var(--bad)"; msg.textContent = "No puedes etiquetar capítulos donde ya moriste."; return; }
+  if (!textoEventoMioActual) { msg.style.color = "var(--bad)"; msg.textContent = "Sin evento de tu participante en este capítulo."; return; }
+  const comentario = document.getElementById("inpCoachComment").value.trim();
+  if ((miDataset.length + 1) * COSTO_POR_EJEMPLO_DATASET > 100) { msg.style.color = "var(--bad)"; msg.textContent = "Límite de Dataset alcanzado (100/100 pts)."; return; }
+  if (!comentario) { msg.style.color = "var(--bad)"; msg.textContent = "Escribe tu comentario antes de guardar."; return; }
+
+  miDataset.push({
+    capitulo: f.turno, escena: textoEventoMioActual, accion_tomada: pj.accion,
+    etiqueta: coachLabelActual, comentario, activo: estado.adaptacion !== "ZERO"
+  });
+  try { localStorage.setItem("hg_fm_dataset", JSON.stringify(miDataset)); } catch (e) {}
+  document.getElementById("inpCoachComment").value = "";
+  msg.style.color = "var(--ok)"; msg.textContent = "Guardado en tu Dataset (+10 pts).";
+  renderMiDataset(); recalcular();
+}
 
 function calcularTodo() {
-  const equipo = document.getElementById("inpEquipo").value.trim() || "Distrito_01";
-  const modeloId = document.getElementById("selModelo").value;
-  const doctrina = document.getElementById("selDoctrina").value;
-  const filtrarRuido = document.getElementById("chkRuido").checked;
-  const dedup = document.getElementById("chkDedup").checked;
-  const umbral = parseFloat(document.getElementById("inpUmbral").value) || 0.82;
-  const fraccion = parseFloat(document.getElementById("inpFraccion").value) || 0.85;
+  const equipo = nombreUsuario || "Participante_01";
+  const estrategia = document.getElementById("inpEstrategia").value;
+  document.getElementById("lblCharCount").textContent = `${estrategia.length} / 100`;
+  const infoM = MODELOS[estado.modelo];
+  const cot = document.getElementById("chkCoT").checked;
+  const activos = miDataset.filter(x => x.activo);
+  const kUsados = estado.adaptacion === "ZERO" ? 0 : (estado.adaptacion === "ONE" ? Math.min(1, activos.length) : (estado.adaptacion === "FEW" ? Math.min(5, activos.length) : Math.max(1, activos.length)));
+  const tokEstrategia = Math.ceil(estrategia.length / 4);
+  const costoDatasetPts = miDataset.length * COSTO_POR_EJEMPLO_DATASET;
 
-  const infoM = MODELOS[modeloId];
-  const nDatosBase = Math.max(8, Math.round((filtrarRuido ? 46 : 62) * (dedup ? (umbral < 0.65 ? 0.55 : 1.0) : 1.35) * fraccion));
+  document.getElementById("lblModoResumen").textContent = `${estado.adaptacion}${cot ? " + CoT" : ""}`;
 
-  const statsKeys = ["comer", "guerra", "correr", "sigilo"];
-  const statsCfg = {};
-  const statsScores = {};
   let flopsTotales = 0;
-  let creditosTotales = 0;
-  const errores = [];
+  let viaServer = "ICL";
+  if (estado.adaptacion === "LORA") viaServer = "LORA_LIGERO";
+  if (estado.adaptacion === "FULL") viaServer = "FULL_FT";
 
-  const penRuido = filtrarRuido ? 0 : 24;
-  const penDedup = dedup ? 0 : 9;
-  const penUmbral = umbral < 0.65 ? 18 : (umbral > 0.93 ? 6 : 0);
-  const bonoDatos = Math.min(12, Math.floor(nDatosBase * 0.28));
-
-  for (const key of statsKeys) {
-    const via = document.getElementById(`via_${key}`).value;
-    const k = parseInt(document.getElementById(`k_${key}`).value) || 0;
-    const cot = document.getElementById(`cot_${key}`).checked;
-    statsCfg[key] = { via, k, cot };
-
-    if (via === "FULL_FT" && modeloId !== "Qwen/Qwen2.5-0.5B-Instruct") {
-      errores.push(`FULL_FT en '${key.toUpperCase()}' solo está permitido en Qwen2.5-0.5B (evita OOM en GPU L4).`);
-    }
-    if (via === "LORA_PROFUNDO" && modeloId === "Qwen/Qwen2.5-3B-Instruct") {
-      errores.push(`LORA_PROFUNDO en '${key.toUpperCase()}' excede el perfil seguro en el modelo 3B.`);
-    }
-
-    let flopsStat = 0;
-    let score = 50;
-    if (via === "ICL") {
-      const tokPrompt = 60 + k * (110 + (cot ? 55 : 0));
-      const tokOut = cot ? 95 : 24;
-      flopsStat = 2.0 * infoM.n * 25 * (tokPrompt + tokOut) * 1.8;
-      let base = 42 + infoM.bono_icl + Math.min(18, k * 4);
-      if (cot) base += (key === "correr" || key === "sigilo") ? infoM.bono_cot : Math.floor(infoM.bono_cot / 2);
-      else if (key === "correr") base -= 14;
-      score = base - Math.floor(penRuido / 2) - penUmbral;
-    } else if (via === "LORA_LIGERO") {
-      const tokD = nDatosBase * 110 * 2 * 3.2;
-      flopsStat = 4.08 * infoM.n * tokD + 2.0 * infoM.n * 25 * 65;
-      let base = 74 + bonoDatos + (infoM.n > 1e9 ? 4 : 0);
-      if (key === "correr" && !cot) base -= 6;
-      score = base - penRuido - penDedup - penUmbral;
-    } else if (via === "LORA_PROFUNDO") {
-      const tokD = nDatosBase * 110 * 4 * 3.2;
-      flopsStat = 4.16 * infoM.n * tokD + 2.0 * infoM.n * 25 * 65;
-      let base = 84 + bonoDatos + (infoM.n > 1e9 ? 5 : 0);
-      score = base - penRuido - penDedup - penUmbral;
-    } else {
-      const tokD = nDatosBase * 110 * 3 * 3.5;
-      flopsStat = 6.0 * infoM.n * tokD + 2.0 * infoM.n * 25 * 65;
-      let base = 88 + bonoDatos;
-      score = base - Math.floor(penRuido * 1.2) - penDedup - penUmbral;
-    }
-
-    score = Math.max(15, Math.min(99, Math.round(score)));
-    statsScores[key] = score;
-    flopsTotales += flopsStat;
-    creditosTotales += (flopsStat / MAX_FLOPS) * 100.0;
-    document.getElementById(`sc_${key}`).textContent = `${score}/100`;
-  }
-
-  creditosTotales = Math.round(creditosTotales * 10) / 10;
-  const valido = creditosTotales <= 100.0 && errores.length === 0;
-  const bonoEficiencia = valido ? Math.round(Math.max(0, (100 - creditosTotales) * 0.25) * 10) / 10 : 0;
-  const mediaRadar = Math.round(((statsScores.comer + statsScores.guerra + statsScores.correr + statsScores.sigilo) / 4) * 10) / 10;
-
-  document.getElementById("hdrModel").textContent = infoM.corto;
-  document.getElementById("hdrFlops").textContent = `${(flopsTotales / 1e12).toFixed(1)} TFLOPs`;
-  document.getElementById("hdrCredits").textContent = `${creditosTotales.toFixed(1)} / 100`;
-  document.getElementById("hdrRadar").textContent = `${mediaRadar} / 100`;
-  document.getElementById("lblBono").textContent = `+${bonoEficiencia}`;
-
-  const pill = document.getElementById("hdrStatus");
-  if (valido) {
-    pill.className = "status-pill status-ok";
-    pill.textContent = "✅ CONFIGURACIÓN VÁLIDA";
+  if (viaServer === "ICL") {
+    const tokPrompt = 45 + tokEstrategia + kUsados * (70 + (cot ? 65 : 0));
+    const tokOut = cot ? 135 : 20;
+    flopsTotales = 4 * (2.0 * infoM.n * 22 * (tokPrompt + tokOut) * (cot ? 2.1 : 1.0));
+  } else if (viaServer === "LORA_LIGERO") {
+    const tokD = (kUsados * 85 + tokEstrategia) * 3 * 3.5;
+    flopsTotales = 4 * (4.1 * infoM.n * tokD) + 4 * (2.0 * infoM.n * 22 * (50 + (cot ? 120 : 20)));
   } else {
-    pill.className = "status-pill status-bad";
-    pill.textContent = creditosTotales > 100 ? "❌ EXCEDE 100 CRÉDITOS" : "❌ REGLA DE MODELO VIOLADA";
+    const tokD = (kUsados * 85 + tokEstrategia) * 4 * 4.0;
+    flopsTotales = 4 * (6.0 * infoM.n * tokD) + 4 * (2.0 * infoM.n * 22 * (50 + (cot ? 120 : 20)));
   }
 
-  const warn = document.getElementById("ruleWarning");
-  if (errores.length > 0) {
-    warn.style.display = "block";
-    warn.innerHTML = errores.map(e => `⚠️ ${e}`).join("<br>");
-  } else {
-    warn.style.display = "none";
+  const tflops = flopsTotales / 1e12;
+  const maxTflops = MAX_FLOPS / 1e12;
+  const pct = Math.min(100, Math.round((flopsTotales / MAX_FLOPS) * 100));
+  const valido = flopsTotales <= MAX_FLOPS && costoDatasetPts <= 100;
+
+  document.getElementById("lblFlopsMeter").textContent = `${tflops.toFixed(1)} / ${maxTflops} TFLOPs`;
+  const fill = document.getElementById("barFlopsFill");
+  fill.style.width = `${pct}%`;
+  fill.classList.toggle("over", !valido);
+
+  const btnEnt = document.getElementById("btnEntrenarGpu");
+  if (btnEnt) btnEnt.disabled = !valido;
+
+  document.getElementById("statsInfoBars").innerHTML = STATS_DEF.map(s => {
+    const val = statsActuales[s.key];
+    const textoVal = s.esCasillas ? `${val} casillas` : `${val} / 100`;
+    const pctBar = s.esCasillas ? (val / 4) * 100 : val;
+    return `
+      <div class="stat-line">
+        <div class="stat-line-top">
+          <span>${s.label}</span>
+          <span style="font-family:var(--mono);">${textoVal}</span>
+        </div>
+        <div class="stat-track"><div class="stat-bar" style="width:${pctBar}%"></div></div>
+      </div>`;
+  }).join("");
+
+  return { equipo, modeloId: estado.modelo, estrategia: estrategia.trim(), viaServer, cot, kUsados, activos, valido };
+}
+
+function renderBarraCapitulos() {
+  const cont = document.getElementById("chapterTimeline");
+  if (!partidaTurnos.length) {
+    cont.innerHTML = `<span style="font-size:11.5px;color:var(--muted);font-family:var(--mono);">Sin capítulos aún.</span>`;
+    return;
   }
-
-  dibujarRadar(statsScores);
-  actualizarCodigoPython(equipo, modeloId, doctrina, { filtrarRuido, dedup, umbral, fraccion }, statsCfg);
-
-  return { equipo, modeloId, infoM, doctrina, statsScores, creditosTotales, bonoEficiencia, valido };
-}
-
-function dibujarRadar(s) {
-  const cv = document.getElementById("radarCanvas");
-  const ctx = cv.getContext("2d");
-  ctx.clearRect(0, 0, cv.width, cv.height);
-  const cx = 90, cy = 90, R = 64;
-
-  ctx.strokeStyle = "#252E46";
-  ctx.lineWidth = 1;
-  for (const r of [0.33, 0.66, 1.0]) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, R * r, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  ctx.beginPath();
-  ctx.moveTo(cx - R, cy); ctx.lineTo(cx + R, cy);
-  ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy + R);
-  ctx.stroke();
-
-  const pts = [
-    [cx, cy - (s.comer / 100) * R],
-    [cx + (s.guerra / 100) * R, cy],
-    [cx, cy + (s.correr / 100) * R],
-    [cx - (s.sigilo / 100) * R, cy]
-  ];
-  ctx.fillStyle = "rgba(20, 184, 166, 0.28)";
-  ctx.strokeStyle = "#14B8A6";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#CBD5E1";
-  ctx.font = "bold 10px monospace";
-  ctx.textAlign = "center";
-  ctx.fillText(`COMER (${s.comer})`, cx, 14);
-  ctx.fillText(`CORRER (${s.correr})`, cx, 174);
-  ctx.fillText(`G(${s.guerra})`, 162, cy + 4);
-  ctx.fillText(`S(${s.sigilo})`, 18, cy + 4);
-}
-
-function actualizarCodigoPython(equipo, modeloId, doctrina, cur, statsCfg) {
-  const fmtStat = (c) => `{ "via": "${c.via}", "modo_icl": "${c.k === 0 ? 'zero_shot' : (c.k === 1 ? 'one_shot' : 'few_shot')}", "k_ejemplos": ${c.k}, "usar_cot": ${c.cot ? 'True' : 'False'} }`;
-  const txt = `EQUIPO = "${equipo}"
-MODELO_BASE = "${modeloId}"
-DOCTRINA_ARENA = "${doctrina}"
-
-CURACION = {
-    "dedup_minhash": ${cur.dedup ? "True" : "False"},
-    "umbral_minhash": ${cur.umbral},
-    "filtrar_ruido": ${cur.filtrarRuido ? "True" : "False"},
-    "fraccion_datos_D": ${cur.fraccion},
-}
-
-STAT_COMER  = ${fmtStat(statsCfg.comer)}
-STAT_GUERRA = ${fmtStat(statsCfg.guerra)}
-STAT_CORRER = ${fmtStat(statsCfg.correr)}
-STAT_SIGILO = ${fmtStat(statsCfg.sigilo)}`;
-  document.getElementById("codeOut").textContent = txt;
-}
-
-function copiarConfig() {
-  navigator.clipboard.writeText(document.getElementById("codeOut").textContent);
-}
-
-function generarPartida(esPvP12) {
-  const cfg = calcularTodo();
-  document.getElementById("arenaModeTag").textContent = esPvP12
-    ? "🏹 ARENA FINAL PVP · LOS 12 DISTRITOS EN VIVO (12×12)"
-    : "🧪 SIMULACIÓN LOCAL GRATIS · TU TRIBUTO VS 5 AGENTES IMAGINARIOS";
-
-  const colores = [
-    "#14B8A6", "#F43F5E", "#F59E0B", "#818CF8", "#10B981", "#EC4899",
-    "#38BDF8", "#A855F7", "#84CC16", "#FB923C", "#2DD4BF", "#E879F9"
-  ];
-  const spawns = [
-    [5,4], [6,4], [7,5], [7,6], [6,7], [5,7],
-    [4,6], [4,5], [2,2], [9,2], [2,9], [9,9]
-  ];
-
-  let participantes = [];
-  const bono = Math.round(cfg.bonoEficiencia);
-  participantes.push({
-    id: 1,
-    nombre: cfg.equipo,
-    modelo: cfg.infoM.corto,
-    doctrina: cfg.doctrina,
-    color: colores[0],
-    x: cfg.doctrina === "CORNUCOPIA" ? 5 : 1,
-    y: cfg.doctrina === "CORNUCOPIA" ? 4 : 1,
-    hp: 100,
-    hambre: Math.min(100, 85 + bono),
-    estamina: Math.min(100, 85 + bono),
-    arma: 0,
-    kills: 0,
-    vivo: true,
-    accion: "LISTO",
-    stats: { ...cfg.statsScores }
-  });
-
-  if (!esPvP12) {
-    const bots = [
-      { nombre: "Cato_Carnicero", modelo: "Qwen2.5-0.5B", doctrina: "CORNUCOPIA", x: 6, y: 5, stats: { comer: 55, guerra: 92, correr: 60, sigilo: 50 } },
-      { nombre: "Foxface_Astuta", modelo: "Qwen2.5-3B",   doctrina: "BOSQUE",     x: 10, y: 2, stats: { comer: 90, guerra: 52, correr: 88, sigilo: 91 } },
-      { nombre: "Rue_Exploradora",modelo: "Qwen2.5-1.5B", doctrina: "BOSQUE",     x: 2, y: 9, stats: { comer: 86, guerra: 58, correr: 84, sigilo: 88 } },
-      { nombre: "Thresh_Tanque",  modelo: "Qwen2.5-1.5B", doctrina: "CAZADOR",    x: 9, y: 9, stats: { comer: 72, guerra: 86, correr: 70, sigilo: 68 } },
-      { nombre: "Novato_Ruidoso", modelo: "Qwen2.5-0.5B", doctrina: "CORNUCOPIA", x: 6, y: 6, stats: { comer: 35, guerra: 45, correr: 40, sigilo: 38 } }
-    ];
-    bots.forEach((b, idx) => {
-      participantes.push({
-        id: idx + 2, nombre: b.nombre, modelo: b.modelo, doctrina: b.doctrina,
-        color: colores[idx + 1], x: b.x, y: b.y, hp: 100, hambre: 82, estamina: 82,
-        arma: 0, kills: 0, vivo: true, accion: "LISTO", stats: b.stats
-      });
-    });
-  } else {
-    for (let i = 1; i < 12; i++) {
-      const mList = ["Qwen2.5-0.5B", "Qwen2.5-1.5B", "Qwen2.5-3B"];
-      const dList = ["CORNUCOPIA", "BOSQUE", "CAZADOR"];
-      const doc = dList[i % 3];
-      let [sx, sy] = spawns[i];
-      if (doc === "BOSQUE") { sx = sx < 6 ? 1 : 10; sy = sy < 6 ? 1 : 10; }
-      participantes.push({
-        id: i + 1,
-        nombre: `Distrito_${String(i + 1).padStart(2, "0")}`,
-        modelo: mList[i % 3],
-        doctrina: doc,
-        color: colores[i],
-        x: sx, y: sy, hp: 100, hambre: 84, estamina: 84, arma: 0, kills: 0, vivo: true, accion: "LISTO",
-        stats: {
-          comer: 60 + ((i * 7) % 32),
-          guerra: 58 + ((i * 11) % 34),
-          correr: 62 + ((i * 5) % 30),
-          sigilo: 56 + ((i * 9) % 34)
-        }
-      });
-    }
-  }
-
-  let seed = 1337 + cfg.statsScores.comer * 3 + cfg.statsScores.guerra * 7;
-  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
-  const rInt = (a, b) => Math.floor(a + rnd() * (b - a + 1));
-
-  const turnos = [];
-  let radioSeguro = 6;
-
-  for (let t = 1; t <= 25; t++) {
-    const eventos = [];
-    if (t >= 6 && t % 4 === 2) {
-      radioSeguro = Math.max(2, radioSeguro - 1);
-      eventos.push(`⚠️ La Niebla Tóxica del Capitolio reduce la zona segura a radio ${radioSeguro}.`);
-    }
-    const bestias = (t % 5 === 0);
-    if (bestias) eventos.push(`🐺 ¡El Capitolio libera Bestias Mutantes en el perímetro!`);
-
-    for (const p of participantes) {
-      if (!p.vivo) continue;
-      p.hambre = Math.max(0, p.hambre - 6);
-      p.estamina = Math.min(100, p.estamina + 4);
-
-      const distCentro = Math.max(Math.abs(p.x - 5.5), Math.abs(p.y - 5.5));
-      if (t === 1 && p.doctrina === "CORNUCOPIA") {
-        p.x = 5 + rInt(0, 1); p.y = 5 + rInt(0, 1);
-        if (p.stats.guerra + rInt(-10, 12) >= 70) {
-          p.arma = 18;
-          p.accion = "ESPADA_CORNUCOPIA";
-          eventos.push(`⚔️ ${p.nombre} conquista arma (+18 ATQ) en la Cornucopia.`);
-        } else {
-          p.hp -= 18;
-          p.accion = "HERIDO";
-          eventos.push(`💥 ${p.nombre} sufre -18 HP luchando en la Cornucopia.`);
-        }
-      } else if (distCentro > radioSeguro) {
-        if (p.stats.correr + rInt(-10, 10) >= 70 && p.estamina >= 10) {
-          p.estamina -= 10;
-          p.x += p.x < 5 ? 1 : (p.x > 6 ? -1 : 0);
-          p.y += p.y < 5 ? 1 : (p.y > 6 ? -1 : 0);
-          p.accion = "SPRINT_CENTRO";
-          eventos.push(`🏃 ${p.nombre} calcula ruta CoT y escapa de la niebla.`);
-        } else {
-          p.hp -= 16;
-          p.accion = "NIEBLA_TOXICA";
-          eventos.push(`☠️ ${p.nombre} inhala niebla tóxica (-16 HP).`);
-        }
-      } else {
-        const dirs = [[-1,0],[1,0],[0,-1],[0,1],[0,0]];
-        const [dx, dy] = dirs[rInt(0, dirs.length - 1)];
-        p.x = Math.max(0, Math.min(11, p.x + dx));
-        p.y = Math.max(0, Math.min(11, p.y + dy));
-        p.accion = "EXPLORAR";
-      }
-
-      if (p.hambre < 64 && p.vivo) {
-        if (p.stats.comer + rInt(-12, 12) >= 65) {
-          p.hambre = Math.min(100, p.hambre + 28);
-          p.hp = Math.min(100, p.hp + 4);
-          p.accion = "COMER_BAYAS";
-          eventos.push(`🫐 ${p.nombre} identifica alimento seguro (+28 Hambre).`);
-        } else {
-          p.hp -= 18;
-          p.accion = "VENENO";
-          eventos.push(`🍄 ${p.nombre} se intoxica con bayas venenosas (-18 HP).`);
-        }
-      }
-
-      if (bestias && distCentro >= radioSeguro - 0.5 && p.vivo) {
-        if (p.stats.sigilo + rInt(-10, 10) < 68) {
-          p.hp -= 15;
-          p.accion = "MORDIDA_BESTIA";
-          eventos.push(`🐺 Bestia mutante ataca a ${p.nombre} (-15 HP).`);
-        }
-      }
-
-      if (p.hambre === 0) p.hp -= 12;
-      if (p.hp <= 0) {
-        p.hp = 0; p.vivo = false; p.accion = "CAIDO";
-        eventos.push(`💀 ¡Cañonazo en la Arena! ${p.nombre} ha caído.`);
-      }
-    }
-
-    const vivos = participantes.filter(x => x.vivo);
-    for (let i = 0; i < vivos.length - 1; i += 2) {
-      const a = vivos[i], b = vivos[i + 1];
-      if (Math.abs(a.x - b.x) <= 2 && Math.abs(a.y - b.y) <= 2) {
-        const pa = a.stats.guerra + a.arma + rInt(-12, 12);
-        const pb = b.stats.guerra + b.arma + rInt(-12, 12);
-        const [gan, per] = pa >= pb ? [a, b] : [b, a];
-        if (per.stats.correr + per.stats.sigilo > 158 && per.estamina >= 14) {
-          per.estamina -= 14;
-          per.accion = "ESQUIVAR";
-          eventos.push(`💨 ${per.nombre} esquiva con sigilo a ${gan.nombre}.`);
-        } else {
-          const dmg = Math.max(14, Math.min(35, Math.round((gan.stats.guerra + gan.arma) * 0.28)));
-          per.hp = Math.max(0, per.hp - dmg);
-          gan.accion = "ATACAR";
-          eventos.push(`⚔️ ${gan.nombre} ataca a ${per.nombre} (-${dmg} HP).`);
-          if (per.hp === 0) {
-            per.vivo = false; per.accion = "CAIDO"; gan.kills += 1;
-            eventos.push(`💀 ¡Cañonazo! ${gan.nombre} elimina a ${per.nombre}.`);
-          }
-        }
-      }
-    }
-
-    turnos.push({
-      turno: t,
-      radioSeguro,
-      bestias,
-      eventos: eventos.length ? eventos : ["Silencio tenso en la Arena..."],
-      agentes: participantes.map(p => ({ ...p, stats: { ...p.stats } }))
-    });
-  }
-  return turnos;
+  const miNombre = partidaTurnos[0].agentes[0].nombre;
+  cont.innerHTML = partidaTurnos.map((f, idx) => {
+    const pj = f.agentes[0];
+    const tieneAccionMia = pj.vivo && f.eventos.some(e => e.includes(miNombre));
+    const cls = [
+      "chap-pill",
+      idx === turnoActual ? "current" : "",
+      !pj.vivo ? "dead-chap" : (tieneAccionMia ? "has-my-action" : "")
+    ].join(" ");
+    return `<button type="button" class="${cls}" onclick="pausarYIr(${idx})">${f.turno}</button>`;
+  }).join("");
 }
 
 function dibujarMapaPixelArt(frame) {
   const cv = document.getElementById("pixelCanvas");
   const ctx = cv.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  const TILE = 16; // 12 * 16 = 192x192 píxeles reales
+  const TILE = 32, S = 2;
 
   for (let y = 0; y < 12; y++) {
     for (let x = 0; x < 12; x++) {
       const dist = Math.max(Math.abs(x - 5.5), Math.abs(y - 5.5));
       const px = x * TILE, py = y * TILE;
-
-      // Suelo base ajedrezado
-      ctx.fillStyle = (x + y) % 2 === 0 ? "#193324" : "#152B1E";
+      ctx.fillStyle = (x + y) % 2 === 0 ? "#183022" : "#14291D";
       ctx.fillRect(px, py, TILE, TILE);
-
-      // Cornucopia en el centro (5..6, 5..6)
       if (x >= 5 && x <= 6 && y >= 5 && y <= 6) {
-        ctx.fillStyle = "#3B2F1E";
-        ctx.fillRect(px, py, TILE, TILE);
-        ctx.fillStyle = "#F59E0B";
-        ctx.fillRect(px + 3, py + 3, 10, 10);
-        ctx.fillStyle = "#FEF08A";
-        ctx.fillRect(px + 5, py + 5, 6, 6);
+        ctx.fillStyle = "#3B2F1E"; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = "#F59E0B"; ctx.fillRect(px + 3*S, py + 3*S, 10*S, 10*S);
       } else if ((x * 7 + y * 13) % 9 === 0) {
-        // Árbol pixel art
-        ctx.fillStyle = "#4A2E1B";
-        ctx.fillRect(px + 6, py + 10, 4, 5);
-        ctx.fillStyle = "#15803D";
-        ctx.fillRect(px + 3, py + 3, 10, 8);
-        ctx.fillStyle = "#22C55E";
-        ctx.fillRect(px + 5, py + 4, 6, 4);
+        ctx.fillStyle = "#4A2E1B"; ctx.fillRect(px + 6*S, py + 10*S, 4*S, 5*S);
+        ctx.fillStyle = "#15803D"; ctx.fillRect(px + 3*S, py + 3*S, 10*S, 8*S);
       } else if ((x + y * 3) % 11 === 0) {
-        // Arbusto de bayas seguras (azul)
-        ctx.fillStyle = "#166534";
-        ctx.fillRect(px + 4, py + 6, 8, 7);
-        ctx.fillStyle = "#38BDF8";
-        ctx.fillRect(px + 5, py + 7, 2, 2);
-        ctx.fillRect(px + 9, py + 8, 2, 2);
-      } else if ((x * 5 + y) % 13 === 0) {
-        // Hongo/baya venenosa (rojo)
-        ctx.fillStyle = "#E11D48";
-        ctx.fillRect(px + 5, py + 7, 6, 4);
-        ctx.fillStyle = "#FDE047";
-        ctx.fillRect(px + 7, py + 8, 2, 2);
+        ctx.fillStyle = "#166534"; ctx.fillRect(px + 4*S, py + 6*S, 8*S, 7*S);
+        ctx.fillStyle = "#38BDF8"; ctx.fillRect(px + 5*S, py + 7*S, 2*S, 2*S);
       }
-
-      // Niebla tóxica del Capitolio fuera del radio seguro
       if (dist > frame.radioSeguro) {
-        ctx.fillStyle = "rgba(190, 24, 93, 0.48)";
-        ctx.fillRect(px, py, TILE, TILE);
-        ctx.fillStyle = "rgba(244, 63, 94, 0.7)";
-        ctx.fillRect(px + 2, py + 2, 2, 2);
-        ctx.fillRect(px + 11, py + 10, 2, 2);
+        ctx.fillStyle = "rgba(190, 24, 93, 0.48)"; ctx.fillRect(px, py, TILE, TILE);
       }
     }
   }
 
-  // Dibujar bestias mutantes en las esquinas del borde si están activas
-  if (frame.bestias) {
-    const posBestias = [[1,5],[10,5],[5,1],[5,10]];
-    for (const [bx, by] of posBestias) {
-      const px = bx * TILE, py = by * TILE;
-      ctx.fillStyle = "#A855F7";
-      ctx.fillRect(px + 3, py + 5, 10, 7);
-      ctx.fillStyle = "#F43F5E";
-      ctx.fillRect(px + 4, py + 6, 2, 2);
-      ctx.fillRect(px + 9, py + 6, 2, 2);
-    }
+  if (frame.agentes && frame.agentes.length > 0 && frame.agentes[0].vivo) {
+    const pj = frame.agentes[0];
+    const vis = (pj.stats && pj.stats.vision) ? pj.stats.vision : 2;
+    const x0 = Math.max(0, pj.x - vis) * TILE;
+    const y0 = Math.max(0, pj.y - vis) * TILE;
+    const x1 = Math.min(11, pj.x + vis) * TILE + TILE;
+    const y1 = Math.min(11, pj.y + vis) * TILE + TILE;
+    ctx.strokeStyle = "rgba(59, 130, 246, 0.75)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x0 + 1, y0 + 1, x1 - x0 - 2, y1 - y0 - 2);
   }
 
-  // Dibujar tributos (primero caídos, luego vivos)
-  const ordenados = [...frame.agentes].sort((a, b) => (a.vivo === b.vivo ? 0 : (a.vivo ? 1 : -1)));
+  const ordenados = [...(frame.agentes || [])].sort((a, b) => (a.vivo === b.vivo ? 0 : (a.vivo ? 1 : -1)));
   ordenados.forEach((ag, idx) => {
-    const offsetX = (idx % 2) * 2 - 1;
-    const px = ag.x * TILE + offsetX;
-    const py = ag.y * TILE;
-
-    if (!ag.vivo) {
-      // Calavera / lápida pixel art
-      ctx.fillStyle = "#475569";
-      ctx.fillRect(px + 4, py + 6, 8, 8);
-      ctx.fillStyle = "#0F172A";
-      ctx.fillRect(px + 5, py + 8, 2, 2);
-      ctx.fillRect(px + 9, py + 8, 2, 2);
-      return;
-    }
-
-    // Sombra
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    ctx.fillRect(px + 4, py + 13, 8, 2);
-
-    // Cuerpo del tributo (color de su distrito)
-    ctx.fillStyle = ag.color;
-    ctx.fillRect(px + 4, py + 6, 8, 7);
-
-    // Cabeza
-    ctx.fillStyle = "#FDE68A";
-    ctx.fillRect(px + 5, py + 2, 6, 4);
-
-    // Ojos
-    ctx.fillStyle = "#0F172A";
-    ctx.fillRect(px + 6, py + 3, 1, 1);
-    ctx.fillRect(px + 9, py + 3, 1, 1);
-
-    // Espada dorada si tiene bono de Cornucopia
-    if (ag.arma > 0) {
-      ctx.fillStyle = "#FACC15";
-      ctx.fillRect(px + 12, py + 4, 2, 7);
-    }
-
-    // Barra de vida sobre la cabeza (8px ancho)
-    ctx.fillStyle = "#090D16";
-    ctx.fillRect(px + 4, py, 8, 2);
+    const px = ag.x * TILE + ((idx % 2) * 4 - 2), py = ag.y * TILE;
+    if (!ag.vivo) { ctx.fillStyle = "#475569"; ctx.fillRect(px + 4*S, py + 6*S, 8*S, 8*S); return; }
+    ctx.fillStyle = ag.color; ctx.fillRect(px + 4*S, py + 6*S, 8*S, 7*S);
+    ctx.fillStyle = "#FDE68A"; ctx.fillRect(px + 5*S, py + 2*S, 6*S, 4*S);
+    if (ag.armaObj && ag.armaObj.bono > 0) { ctx.fillStyle = ag.armaObj.tipo === "LARGO" ? "#38BDF8" : "#FACC15"; ctx.fillRect(px + 12*S, py + 4*S, 2*S, 7*S); }
+    ctx.fillStyle = "#090D16"; ctx.fillRect(px + 3*S, py, 10*S, 3);
     ctx.fillStyle = ag.hp > 40 ? "#10B981" : "#F43F5E";
-    ctx.fillRect(px + 4, py, Math.max(1, Math.round((ag.hp / 100) * 8)), 2);
+    ctx.fillRect(px + 3*S, py, Math.max(2, Math.round((ag.hp / 100) * 10*S)), 3);
+
+    const etiqueta = ag.nombre.length > 12 ? ag.nombre.slice(0, 11) + "…" : ag.nombre;
+    ctx.font = "bold 9px monospace";
+    const tw = ctx.measureText(etiqueta).width + 6;
+    const lx = Math.max(2, Math.min(cv.width - tw - 2, px + 8*S - tw / 2));
+    const ly = Math.max(10, py - 2);
+    ctx.fillStyle = "rgba(8,11,18,0.88)"; ctx.fillRect(lx, ly - 9, tw, 10);
+    ctx.fillStyle = ag.color; ctx.textAlign = "left"; ctx.fillText(etiqueta, lx + 3, ly - 1);
   });
 }
 
 function irTurno(idx) {
   if (!partidaTurnos.length) return;
   turnoActual = Math.max(0, Math.min(partidaTurnos.length - 1, idx));
-  document.getElementById("sliderTurno").value = turnoActual;
   const f = partidaTurnos[turnoActual];
-
-  document.getElementById("lblTurnoInfo").textContent =
-    `Turno ${f.turno} / ${partidaTurnos.length} · Zona Segura: Radio ${f.radioSeguro}` + (f.bestias ? " · 🐺 BESTIAS" : "");
-
+  document.getElementById("lblTurnoInfo").textContent = `Capítulo ${f.turno} / ${partidaTurnos.length} · Zona Segura: Radio ${f.radioSeguro}`;
   dibujarMapaPixelArt(f);
+  renderBarraCapitulos();
 
-  // Actualizar tabla
-  const tbody = document.getElementById("tbodyTributos");
-  const orden = [...f.agentes].sort((a, b) => (b.vivo - a.vivo) || (b.hp - a.hp) || (b.kills - a.kills));
-  tbody.innerHTML = orden.map(a => `
-    <tr class="${a.vivo ? '' : 'dead-row'}">
-      <td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${a.color};margin-right:6px;"></span><b>${a.nombre}</b></td>
-      <td>${a.modelo}</td>
-      <td><div class="hp-bar"><div class="hp-fill" style="width:${a.hp}%;background:${a.hp>40?'#10B981':'#F43F5E'}"></div></div>${a.hp}</td>
-      <td>${a.hambre}%</td>
-      <td>${a.stats.comer}/${a.stats.guerra}/${a.stats.correr}/${a.stats.sigilo}</td>
-      <td>${a.kills}</td>
-      <td>${a.accion}</td>
-    </tr>
-  `).join("");
+  const vivos = f.agentes.filter(a => a.vivo);
+  document.getElementById("lblVivosCount").textContent = `${vivos.length} / ${f.agentes.length} Vivos`;
+  const banner = document.getElementById("winnerBanner");
+  if (vivos.length === 1) { banner.style.display = "block"; banner.textContent = `🏆 Ganador único: ${vivos[0].nombre} (${vivos[0].hp} HP)`; }
+  else banner.style.display = "none";
 
-  // Actualizar bitácora
-  const logBox = document.getElementById("logEventos");
-  logBox.innerHTML = f.eventos.map(e => `<div class="log-line"><b>[T${f.turno}]</b> ${e}</div>`).join("");
-}
+  const orden = [...f.agentes].sort((a, b) => (b.vivo - a.vivo) || (b.hp - a.hp));
+  document.getElementById("tributeGrid").innerHTML = orden.map(a => {
+    const arm = a.armaObj || { nombre: "Puños", rango: 1, bono: 0, icono: "✊" };
+    const vis = (a.stats && a.stats.vision) ? a.stats.vision : 2;
+    return `<div class="p-item ${a.vivo ? '' : 'dead'}">
+      <div><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${a.color};margin-right:5px;"></span><b>${a.nombre}</b> <span style="color:var(--muted)">👁️${vis} ${arm.icono}R:${arm.rango}</span></div>
+      <div>${a.vivo ? a.hp + ' HP' : 'MUERTO'} · <b>${a.accion}</b></div>
+    </div>`;
+  }).join("");
 
-function iniciarSimulacion(esPvP12) {
-  partidaTurnos = generarPartida(esPvP12);
-  document.getElementById("sliderTurno").max = partidaTurnos.length - 1;
-  irTurno(0);
-  if (timerPlay) clearInterval(timerPlay);
-  const vel = parseInt(document.getElementById("selSpeed").value) || 900;
-  document.getElementById("btnPlay").textContent = "⏸ Pausa";
-  timerPlay = setInterval(() => {
-    if (turnoActual < partidaTurnos.length - 1) {
-      irTurno(turnoActual + 1);
-    } else {
-      clearInterval(timerPlay);
-      timerPlay = null;
-      document.getElementById("btnPlay").textContent = "▶ Play";
-    }
-  }, vel);
-}
+  const pj = f.agentes[0];
+  document.getElementById("logEventos").innerHTML = f.eventos.map(e => {
+    const esMio = e.includes(pj.nombre);
+    return `<div style="padding:3px 5px;border-bottom:1px dashed var(--border);${esMio ? 'background:var(--brand-soft);font-weight:700;' : 'opacity:0.65;'}"><b>[Cap.${f.turno}]</b> ${e}</div>`;
+  }).join("");
 
-function togglePlay() {
-  if (timerPlay) {
-    clearInterval(timerPlay);
-    timerPlay = null;
-    document.getElementById("btnPlay").textContent = "▶ Play";
+  const coachCont = document.getElementById("coachContainer");
+  const coachBox = document.getElementById("coachSceneBox");
+  document.getElementById("coachFeedbackMsg").textContent = "";
+
+  if (!pj.vivo) {
+    coachCont.classList.add("disabled-dead");
+    textoEventoMioActual = "";
+    coachBox.innerHTML = `💀 <b>${pj.nombre} ya está muerto en el Capítulo ${f.turno}.</b> Los capítulos en gris no se pueden etiquetar.`;
   } else {
+    coachCont.classList.remove("disabled-dead");
+    const eventosMios = f.eventos.filter(e => e.includes(pj.nombre));
+    if (eventosMios.length > 0) {
+      textoEventoMioActual = eventosMios.join(" | ");
+      coachBox.innerHTML = `<div style="color:var(--brand);font-weight:700;margin-bottom:2px;">Referencias a ${pj.nombre} en la bitácora (Cap.${f.turno}):</div>` +
+        eventosMios.map(ev => `<div>• ${ev}</div>`).join("");
+    } else {
+      textoEventoMioActual = "";
+      coachBox.innerHTML = `<span style="color:var(--muted);">En este capítulo ${pj.nombre} no tuvo eventos en la bitácora. Avanza a un capítulo marcado con 🔵.</span>`;
+    }
+  }
+}
+
+function pausarYIr(idx) {
+  if (timerPlay) { clearInterval(timerPlay); timerPlay = null; document.getElementById("btnPlay").textContent = "▶ Auto"; }
+  irTurno(idx);
+}
+function togglePlay() {
+  if (timerPlay) { clearInterval(timerPlay); timerPlay = null; document.getElementById("btnPlay").textContent = "▶ Auto"; }
+  else {
     if (turnoActual >= partidaTurnos.length - 1) turnoActual = -1;
-    const vel = parseInt(document.getElementById("selSpeed").value) || 900;
-    document.getElementById("btnPlay").textContent = "⏸ Pausa";
+    document.getElementById("btnPlay").textContent = "⏸";
     timerPlay = setInterval(() => {
       if (turnoActual < partidaTurnos.length - 1) irTurno(turnoActual + 1);
-      else { clearInterval(timerPlay); timerPlay = null; document.getElementById("btnPlay").textContent = "▶ Play"; }
-    }, vel);
+      else { clearInterval(timerPlay); timerPlay = null; document.getElementById("btnPlay").textContent = "▶ Auto"; }
+    }, 1000);
   }
 }
 
-function cambiarVelocidad() {
-  if (timerPlay) {
-    togglePlay();
-    togglePlay();
-  }
+function recalcular() { calcularTodo(); }
+
+function _payloadActual(cfg) {
+  const seedRiv = parseInt(document.getElementById("inpSeedRivales").value) || 101;
+  return {
+    config: {
+      equipo: cfg.equipo, token: tokenUsuario, modelo_base: cfg.modeloId,
+      prompt_estrategia: cfg.estrategia, via_global: cfg.viaServer, usar_cot: cfg.cot,
+      dataset_personal: cfg.activos
+    },
+    reporte_local: { valido: cfg.valido },
+    seed_rivales: seedRiv
+  };
 }
 
-function recalcular() {
-  calcularTodo();
-  if (!partidaTurnos.length) iniciarSimulacion(false);
+async function enviarAGpuServidor() {
+  const cfg = calcularTodo();
+  const msg = document.getElementById("serverStatusMsg");
+  if (!cfg.valido) { msg.style.color = "var(--bad)"; msg.textContent = "Excedes el límite de 150 TFLOPs."; return; }
+  msg.style.color = "var(--amber)"; msg.textContent = "Entrenando y evaluando atributos en GPU...";
+  try {
+    const resp = await fetch("/entrenar_tributo", {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Team-Token": tokenUsuario },
+      body: JSON.stringify(_payloadActual(cfg))
+    });
+    const data = await resp.json();
+    if (!resp.ok) { msg.style.color = "var(--bad)"; msg.textContent = data.detail || "Error"; return; }
+    if (data.tributo && data.tributo.radar_stats) { statsActuales = data.tributo.radar_stats; recalcular(); }
+    msg.style.color = "var(--ok)"; msg.textContent = `✅ Evaluado en ${data.tributo.tiempo_gpu_s}s (${data.tributo.modo_gpu}).`;
+  } catch (e) { msg.style.color = "var(--muted)"; msg.textContent = "Abre desde la URL de Colab/GCP."; }
+}
+
+async function correrSimulacionOnline() {
+  const cfg = calcularTodo();
+  document.getElementById("lblTurnoInfo").textContent = "⏳ Simulando en GPU...";
+  try {
+    const resp = await fetch("/simular_gpu", {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Team-Token": tokenUsuario },
+      body: JSON.stringify(_payloadActual(cfg))
+    });
+    if (!resp.ok) return;
+    const replay = await resp.json();
+    partidaTurnos = replay.turnos;
+    document.getElementById("arenaModeTag").textContent = `SIMULACIÓN ONLINE (SEMILLA BOTS: ${document.getElementById("inpSeedRivales").value}) · GANADOR: ${replay.ganador}`;
+    irTurno(0);
+  } catch (e) { document.getElementById("lblTurnoInfo").textContent = "Sin conexión al servidor Colab/GCP."; }
+}
+
+async function cargarConfigProfesor() {
+  try {
+    const r = await fetch("/admin/config"); if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById("profMaxTurnos").value = d.max_turnos_niebla;
+    document.getElementById("profInicioNiebla").value = d.turno_inicio_niebla;
+    document.getElementById("profDanoNiebla").value = d.dano_niebla;
+    document.getElementById("profBestias").value = d.frecuencia_bestias;
+    document.getElementById("profCooldown").value = d.cooldown_s;
+    document.getElementById("profMaxFlops").value = d.max_flops_tflops;
+    MAX_FLOPS = d.max_flops_tflops * 1e12;
+  } catch (e) {}
+}
+
+async function guardarConfigProfesor() {
+  const msg = document.getElementById("profMsg");
+  const maxFl = parseFloat(document.getElementById("profMaxFlops").value) || 150;
+  try {
+    const resp = await fetch("/admin/config", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        max_turnos_niebla: parseInt(document.getElementById("profMaxTurnos").value) || 30,
+        turno_inicio_niebla: parseInt(document.getElementById("profInicioNiebla").value) || 6,
+        dano_niebla: parseInt(document.getElementById("profDanoNiebla").value) || 22,
+        frecuencia_bestias: parseInt(document.getElementById("profBestias").value) || 5,
+        cooldown_s: parseInt(document.getElementById("profCooldown").value) || 60,
+        max_flops_tflops: maxFl
+      })
+    });
+    if (resp.ok) { MAX_FLOPS = maxFl * 1e12; recalcular(); msg.style.color = "var(--ok)"; msg.textContent = "✅ Reglas guardadas."; }
+  } catch (e) { msg.style.color = "var(--bad)"; msg.textContent = "Sin conexión."; }
+}
+
+async function lanzarArenaPvPServidor() {
+  const seedRiv = parseInt(document.getElementById("inpSeedRivales").value) || 101;
+  const resp = await fetch(`/correr_arena_pvp?seed_rivales=${seedRiv}&clave=${encodeURIComponent(claveArenaGuardada)}`, { method: "POST" });
+  if (resp.ok) {
+    const replay = await resp.json();
+    partidaTurnos = replay.turnos;
+    document.getElementById("arenaModeTag").textContent = `🏹 ARENA PVP FINAL (12) · GANADOR: ${replay.ganador}`;
+    switchTab("sim");
+    irTurno(0);
+  }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  recalcular();
+  verificarIdentidad(); updateThemeButton(); renderMiDataset(); recalcular();
+  dibujarMapaPixelArt({ radioSeguro: 6, bestias: false, agentes: [] });
 });
 </script>
 </body>
