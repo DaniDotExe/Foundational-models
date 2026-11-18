@@ -12,10 +12,10 @@ __pycache__/
 *$py.class
 
 # Grand Prix caches and runtime outputs
-grand_prix/backend_server/adapters_cache/*
-!grand_prix/backend_server/adapters_cache/.gitkeep
-!grand_prix/backend_server/adapters_cache/README.md
-grand_prix/backend_server/ranking.json
+backend_server/adapters_cache/*
+!backend_server/adapters_cache/.gitkeep
+!backend_server/adapters_cache/README.md
+backend_server/ranking.json
 
 # C extensions
 *.so

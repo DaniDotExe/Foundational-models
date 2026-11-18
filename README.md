@@ -7,7 +7,6 @@ Plataforma educativa competitiva de conducción autónoma para comparar **In-Con
 ## 1. Arquitectura Cliente–Servidor
 
 ```text
-grand_prix/
 ├── backend_server/               # GPU Server (RTX 3060 local o Colab A100/L4)
 │   ├── .env / .env.example       # Modelo base, límites anti-trampa y peso de latencia
 │   ├── requirements.txt
@@ -75,14 +74,14 @@ Solo necesitas abrir **2 ventanas de terminal (`cmd.exe`)** con tu entorno activ
 
 ### 1. Instalar librerías (solo la primera vez)
 ```bat
-pip install -r "grand_prix\backend_server\requirements.txt"
-pip install -r "grand_prix\cliente_estudiante\requirements.txt"
+pip install -r "backend_server\requirements.txt"
+pip install -r "cliente_estudiante\requirements.txt"
 ```
 > *Si usas Python 3.14 y `pygame` falla al instalar, usa `pip install pygame-ce`.*
 
 ### 2. Terminal 1 — Iniciar el Backend (GPU)
 ```bat
-cd /d "grand_prix\backend_server"
+cd /d "backend_server"
 uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 Espera a ver `Application startup complete.` y deja esta ventana abierta.
@@ -90,7 +89,7 @@ Espera a ver `Application startup complete.` y deja esta ventana abierta.
 
 ### 3. Terminal 2 — Abrir el Simulador
 ```bat
-cd /d "grand_prix\cliente_estudiante"
+cd /d "cliente_estudiante"
 python juego_pistas.py
 ```
 
@@ -101,7 +100,7 @@ python juego_pistas.py
 ### Uso rápido dentro del Simulador
 
 1. **`[1]` Grabar Jugadas (`P1`, `P2`, `P3`):** elige pista (`P1 | P2 | P3`), ajusta `Cada N frames`, pulsa **`INICIAR GRABACION`**, maneja con **Flechas** o **`W/A/S/D`** (`R` reinicia) y pulsa **`Guardar y Salir`**. *(Ya trae 120 ejemplos semilla en `data/mis_jugadas.json`).*
-2. En `grand_prix\cliente_estudiante\config_estudiante.py`, elige **`ESTRATEGIA = "ICL"`** o **`"LORA"`**.
+2. En `cliente_estudiante\config_estudiante.py`, elige **`ESTRATEGIA = "ICL"`** o **`"LORA"`**.
 3. Si elegiste `"LORA"`, ejecuta **`[2]` Entrenar Piloto**.
 4. Prueba en **`[3]` Modo Autónomo - Prueba (`P1–P3`)**.
 5. Compite en **`[4]` Evaluación Oficial (`B1–B3`)** y mira tu posición en `/ranking`.
@@ -115,7 +114,7 @@ Para atender hasta **12 estudiantes en paralelo** sin modificar el backend:
 ### Celda 1: Instalar dependencias y `cloudflared`
 ```python
 !nvidia-smi
-!pip -q install -r /content/grand_prix/backend_server/requirements.txt
+!pip -q install -r /content/backend_server/requirements.txt
 
 !wget -q -O /usr/local/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
 !chmod +x /usr/local/bin/cloudflared
@@ -125,7 +124,7 @@ Para atender hasta **12 estudiantes en paralelo** sin modificar el backend:
 ```python
 import os, re, shutil, subprocess, time, urllib.request
 
-os.chdir("/content/grand_prix/backend_server")
+os.chdir("/content/backend_server")
 if not os.path.exists(".env") and os.path.exists(".env.example"):
     shutil.copy(".env.example", ".env")
 
@@ -168,11 +167,11 @@ print(f"  RANKING EN VIVO: {public_url}/ranking")
 print("=" * 68)
 ```
 
-Cada estudiante actualiza `SERVER_URL` en su `grand_prix/cliente_estudiante/.env` y ejecuta `python juego_pistas.py`.
+Cada estudiante actualiza `SERVER_URL` en su `cliente_estudiante/.env` y ejecuta `python juego_pistas.py`.
 
 ---
 
-## 6. Endpoints del Backend (`grand_prix/backend_server/server.py`)
+## 6. Endpoints del Backend (`backend_server/server.py`)
 
 | Método | Ruta | Descripción |
 |---|---|---|
