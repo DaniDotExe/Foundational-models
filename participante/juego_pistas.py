@@ -3236,8 +3236,55 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _pedir_clave_docente(self) -> bool:
+        pg = self.pygame
+        clave = ""
+        error_msg = ""
+        caja = pg.Rect(340, 320, self.ANCHO - 680, 48)
+        btn_ok = pg.Rect(340, 395, 220, 44)
+        btn_cancel = pg.Rect(self.ANCHO - 560, 395, 220, 44)
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return False
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        return False
+                    if event.key in (pg.K_RETURN, pg.K_KP_ENTER):
+                        if clave == "dani":
+                            return True
+                        error_msg = "Clave incorrecta."
+                        clave = ""
+                    elif event.key == pg.K_BACKSPACE:
+                        clave = clave[:-1]
+                    elif event.unicode and event.unicode.isprintable() and len(clave) < 24:
+                        clave += event.unicode
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    if btn_cancel.collidepoint(event.pos):
+                        return False
+                    if btn_ok.collidepoint(event.pos):
+                        if clave == "dani":
+                            return True
+                        error_msg = "Clave incorrecta."
+                        clave = ""
+
+            self.screen.fill(self.BG)
+            self.screen.blit(self.font_title.render("Acceso Docente — Carrera Final", True, self.ACCENT), (340, 220))
+            self.screen.blit(self.font_body.render("Ingresa la clave para proyectar la carrera de todos:", True, self.TEXTO), (340, 275))
+            pg.draw.rect(self.screen, self.PANEL_BG, caja, border_radius=10)
+            pg.draw.rect(self.screen, self.ACCENT, caja, 2, border_radius=10)
+            self.screen.blit(self.font_h2.render("*" * len(clave) + "|", True, self.TEXTO), (caja.x + 14, caja.y + 12))
+            if error_msg:
+                self.screen.blit(self.font_body.render(error_msg, True, self.BAD), (340, 460))
+            self._dibujar_boton(btn_ok, "Entrar", (15, 52, 48), self.ACCENT)
+            self._dibujar_boton(btn_cancel, "Cancelar", self.PANEL_BG, self.BORDE)
+            pg.display.flip()
+            self.clock.tick(30)
+
     def _pantalla_carrera_todos(self) -> None:
         pg = self.pygame
+        if not self._pedir_clave_docente():
+            return
         try:
             datos = self.bridge.obtener_trayectorias_b().get("pistas", {})
         except Exception as exc:
