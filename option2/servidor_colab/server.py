@@ -1,9 +1,12 @@
 """
 Servidor FastAPI para Google Colab Pro (desarrollo) y GCP (producción).
-- 5 atributos tácticos: Visión (1-4 casillas), Corto Alcance, Largo Alcance, Defensa, Supervivencia.
-- Todos los participantes reales parten exactamente con las mismas stats base (sin semilla).
-- Los bots de práctica usan 'seed_rivales' seleccionable para variar sus stats.
-- Spawns siempre aleatorios en todo el mapa 12x12.
+Reglas Oficiales (Múltiplos de 10 · Mapa 12x12 · Visión 2 · Daño a dist <= 1):
+- Stats: Vida (100 HP) y Energía (100). Turno normal: -10 Energía; HUIR: -20 Energía; Energía=0 -> -10 HP.
+- Armas (solo cuerpo a cuerpo dist<=1): Desarmado (10), Cuchillo (20), Espada (30).
+- Objetos (se consumen al usarse): Comida (+40 Energía), Veneno (-20 HP), Botiquín (+30 HP).
+- DEFENDER: Si lo atacan varios, bloquea el 100% del golpe más fuerte (y contraataca 10 HP a ese atacante),
+  pero recibe completos los ataques adicionales por el flanco.
+- Niebla: Cierra hacia una Zona Segura aleatoria (zona_x, zona_y) quitando -20 HP por turno fuera.
 """
 import copy
 import json
@@ -12,7 +15,7 @@ import random
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,16 +27,7 @@ MODELOS_VALIDOS = {
     "Qwen/Qwen2.5-1.5B-Instruct",
     "Qwen/Qwen2.5-3B-Instruct",
 }
-MAX_CREDITOS = 100.0
 TOKENS_VALIDOS = {f"token_estudiante_{i:02d}": f"Participante_{i:02d}" for i in range(1, 13)}
-
-STATS_BASE_IGUALES = {
-    "vision": 2,          # 1 a 4 casillas de alcance visual
-    "corto": 50,          # Dominio cuerpo a cuerpo (Puños, Daga, Espada)
-    "largo": 50,          # Dominio distancia (Lanza, Arco)
-    "defensa": 50,        # Bloqueo y reducción de daño
-    "supervivencia": 50,  # Forrajeo seguro y evasión de niebla
-}
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 HTML_PATH = BASE_DIR / "arena_pixelart.html"
@@ -42,20 +36,17 @@ SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
 PROFESOR_CONFIG = {
     "max_turnos_niebla": int(os.environ.get("MAX_TURNOS_NIEBLA", "30")),
-    "turno_inicio_niebla": 6,
-    "dano_niebla": 22,
-    "frecuencia_bestias": 5,
+    "turno_inicio_niebla": 5,
+    "dano_niebla": 20,
     "cooldown_s": int(os.environ.get("COOLDOWN_ENTRENAMIENTO_S", "60")),
     "max_flops_tflops": 150.0,
     "clave_arena": os.environ.get("CLAVE_ARENA", "arena2026"),
 }
 
 ARMAS = {
-    "PUNOS":  {"nombre": "Puños",  "tipo": "CORTO", "rango": 1, "bono": 0,  "icono": "✊"},
-    "DAGA":   {"nombre": "Daga",   "tipo": "CORTO", "rango": 1, "bono": 10, "icono": "🗡️"},
-    "ESPADA": {"nombre": "Espada", "tipo": "CORTO", "rango": 1, "bono": 18, "icono": "⚔️"},
-    "LANZA":  {"nombre": "Lanza",  "tipo": "LARGO", "rango": 2, "bono": 15, "icono": "🔱"},
-    "ARCO":   {"nombre": "Arco",   "tipo": "LARGO", "rango": 3, "bono": 14, "icono": "🏹"},
+    "DESARMADO": {"nombre": "Desarmado", "dano": 10, "icono": "✊"},
+    "CUCHILLO":  {"nombre": "Cuchillo",  "dano": 20, "icono": "🗡️"},
+    "ESPADA":    {"nombre": "Espada",    "dano": 30, "icono": "⚔️"},
 }
 
 app = FastAPI(title="Arena FM · Servidor Online Colab Pro / GCP")
@@ -89,33 +80,33 @@ def _cargar_ejemplos_curados(cfg: Dict[str, Any]) -> List[str]:
     textos = []
     estrategia = str(cfg.get("prompt_estrategia", "")).strip()
     if estrategia:
-        textos.append(f"[ESTRATEGIA_PRINCIPAL] {estrategia}")
+        textos.append(f"[INSTRUCCION_PRINCIPAL] {estrategia}")
     for ej in cfg.get("dataset_personal", []):
         if ej.get("etiqueta") == "CORRECTA":
-            textos.append(f"[PREMIAR_SI] {ej.get('escena')} | Razón: {ej.get('comentario')}")
+            textos.append(f"[PREMIAR_SI] {ej.get('escena')} -> Acción: {ej.get('accion_tomada')} | Razón: {ej.get('comentario')}")
         else:
-            textos.append(f"[CASTIGAR_NO] {ej.get('escena')} | Razón: {ej.get('comentario')}")
+            textos.append(f"[CASTIGAR_NO] {ej.get('escena')} -> Evitar: {ej.get('accion_tomada')} | Razón: {ej.get('comentario')}")
     return textos
 
 
-def _construir_prompt_icl_coach(cfg: Dict[str, Any], tarea: str) -> str:
+def _construir_prompt_icl_coach(cfg: Dict[str, Any]) -> str:
     estrategia = str(cfg.get("prompt_estrategia", "")).strip()
     ejemplos = cfg.get("dataset_personal", [])
     si_hacer = [e for e in ejemplos if e.get("etiqueta") == "CORRECTA"][-5:]
     no_hacer = [e for e in ejemplos if e.get("etiqueta") == "INCORRECTA"][-5:]
-    lineas = [f"Eres un participante en una Arena de supervivencia decidiendo sobre '{tarea}'."]
+    lineas = ["Eres un participante en una Arena de supervivencia 12x12."]
     if estrategia:
-        lineas.append(f"INSTRUCCIÓN PRINCIPAL: {estrategia}")
+        lineas.append(f"TU ESTRATEGIA PRINCIPAL: {estrategia}")
     if si_hacer:
-        lineas.append("--- ACCIONES PREMIADAS (QUÉ SÍ HACER) ---")
+        lineas.append("--- QUÉ SÍ HACER (Ejemplos premiados) ---")
         for e in si_hacer:
-            lineas.append(f"- En '{e['escena']}' -> SÍ hacer porque: {e['comentario']}")
+            lineas.append(f"- {e['escena']} -> SÍ elegir {e['accion_tomada']}: {e['comentario']}")
     if no_hacer:
-        lineas.append("--- ACCIONES CASTIGADAS (QUÉ NO HACER) ---")
+        lineas.append("--- QUÉ NO HACER (Errores castigados) ---")
         for e in no_hacer:
-            lineas.append(f"- En '{e['escena']}' -> NO hacer porque: {e['comentario']}")
+            lineas.append(f"- {e['escena']} -> NO elegir {e['accion_tomada']}: {e['comentario']}")
     if cfg.get("usar_cot", False):
-        lineas.append("Razona paso a paso brevemente antes de dar la decisión final.")
+        lineas.append("Razona paso a paso brevemente antes de escribir la acción final.")
     return "\n".join(lineas)
 
 
@@ -179,12 +170,13 @@ def ejecutar_entrenamiento_real_gpu(token: str, model_id: str, cfg: Dict[str, An
     return "LORA_GUARDADO"
 
 
-def inferir_decision_modelo(mdl, tok, cfg: Dict[str, Any], tarea: str, situacion: str, opciones: List[str]) -> str:
+def inferir_accion_json(mdl, tok, cfg: Dict[str, Any], entorno_json: Dict[str, Any]) -> str:
     import torch
 
-    ctx = _construir_prompt_icl_coach(cfg, tarea)
-    max_new = 40 if cfg.get("usar_cot", False) else 12
-    prompt = f"{ctx}\n\nSituación actual: {situacion}\nElige SOLO una opción ({', '.join(opciones)}):\nRespuesta:"
+    opciones = entorno_json["acciones_validas"]
+    ctx = _construir_prompt_icl_coach(cfg)
+    max_new = 42 if cfg.get("usar_cot", False) else 12
+    prompt = f"{ctx}\n\nEntorno JSON:\n{json.dumps(entorno_json, ensure_ascii=False)}\nElige SOLO una acción de {opciones}:\nAcción:"
     device = next(mdl.parameters()).device
     inp = tok(prompt, return_tensors="pt", truncation=True, max_length=512).to(device)
     with torch.no_grad():
@@ -196,97 +188,106 @@ def inferir_decision_modelo(mdl, tok, cfg: Dict[str, Any], tarea: str, situacion
     return opciones[0]
 
 
-def evaluar_modelo_real_gpu(token: str, model_id: str, cfg: Dict[str, Any], modo_gpu: str) -> Dict[str, int]:
-    from peft import PeftModel
+def _direccion_cardinal(x0: int, y0: int, x1: int, y1: int) -> str:
+    ns = "NORTE" if y1 < y0 else ("SUR" if y1 > y0 else "")
+    eo = "OESTE" if x1 < x0 else ("ESTE" if x1 > x0 else "")
+    return (ns + eo) or "AQUI"
 
-    tok, base_mdl = obtener_modelo_gpu(model_id)
-    mdl_eval = base_mdl
-    lora_dir = SAVE_DIR / f"{token}_lora"
-    if "LORA" in modo_gpu and lora_dir.exists():
-        mdl_eval = PeftModel.from_pretrained(base_mdl, lora_dir)
-        mdl_eval.eval()
 
-    pruebas = {
-        "corto": [
-            ("Rival a dist=1 sin escudo y tú tienes Espada(R:1, +18) con 85 HP.", "ATACAR_CORTO", ["ATACAR_CORTO", "RETROCEDER"]),
-            ("Rival a dist=1 con Lanza y tú tienes 20 HP y Puños.", "RETROCEDER", ["ATACAR_CORTO", "RETROCEDER"]),
-        ],
-        "largo": [
-            ("Rival a dist=3 distraído y tú tienes Arco(R:3, +14).", "DISPARAR_LEJOS", ["DISPARAR_LEJOS", "ESPERAR"]),
-            ("Rival a dist=3 pero tú solo tienes Daga(R:1).", "ESPERAR", ["DISPARAR_LEJOS", "ESPERAR"]),
-        ],
-        "defensa": [
-            ("Te disparan con Arco desde dist=3 y tienes poca vida (25 HP).", "CUBRIRSE", ["CUBRIRSE", "CARGAR_CIEGO"]),
-            ("Emboscada de 2 rivales armados a dist=1.", "CUBRIRSE", ["CUBRIRSE", "CARGAR_CIEGO"]),
-        ],
-        "supervivencia": [
-            ("Hallas frutos rojos con anillos amarillos y olor a almendra amarga.", "DESCARTAR", ["COMER", "DESCARTAR"]),
-            ("La niebla cierra en 1 turno y estás fuera del radio seguro.", "CORRER_ZONA", ["CORRER_ZONA", "QUEDARSE"]),
-        ],
-    }
+def _paso_hacia(x0: int, y0: int, x1: int, y1: int) -> Tuple[int, int]:
+    dx = 1 if x1 > x0 else (-1 if x1 < x0 else 0)
+    dy = 1 if y1 > y0 else (-1 if y1 < y0 else 0)
+    return max(0, min(11, x0 + dx)), max(0, min(11, y0 + dy))
 
-    n_ej = len(cfg.get("dataset_personal", []))
-    bono_ds = min(18, n_ej * 3)
-    bono_via = 10 if ("LORA" in modo_gpu or "FULL" in modo_gpu) else (6 if cfg.get("usar_cot") else 0)
 
-    scores = {}
-    try:
-        for k, casos in pruebas.items():
-            aciertos = sum(1 for p, esp, ops in casos if inferir_decision_modelo(mdl_eval, tok, cfg, k, p, ops) == esp)
-            scores[k] = min(95, int(45 + (aciertos / len(casos)) * 25 + bono_ds + bono_via))
-        media_combate = (scores["corto"] + scores["largo"] + scores["supervivencia"]) / 3.0
-        scores["vision"] = 4 if media_combate >= 82 else (3 if media_combate >= 65 else 2)
-    finally:
-        if "LORA" in modo_gpu and mdl_eval is not base_mdl:
-            MODELOS_EN_VRAM[model_id] = (tok, mdl_eval.unload())
-            MODELOS_EN_VRAM[model_id][1].eval()
-    return scores
+def generar_mapa_objetos(rng: random.Random) -> Dict[Tuple[int, int], Dict[str, Any]]:
+    """Coloca comida buena (+40 Energía), veneno (-20 HP), botiquines (+30 HP) y armas (Cuchillo 20, Espada 30)."""
+    casillas = [(x, y) for x in range(12) for y in range(12)]
+    seleccion = rng.sample(casillas, 34)
+    objetos = {}
+    for i, pos in enumerate(seleccion):
+        if i < 10:
+            objetos[pos] = {"tipo": "COMIDA", "es_veneno": False, "desc": "Fruta azul de olor dulce (+40 Energía)"}
+        elif i < 18:
+            objetos[pos] = {"tipo": "COMIDA", "es_veneno": True, "desc": "Hongos rojos con manchas blancas y olor amargo"}
+        elif i < 24:
+            objetos[pos] = {"tipo": "BOTIQUIN", "desc": "Botiquín médico (+30 Vida)"}
+        elif i < 30:
+            objetos[pos] = {"tipo": "ARMA", "arma": dict(ARMAS["CUCHILLO"]), "desc": "Cuchillo (20 daño)"}
+        else:
+            objetos[pos] = {"tipo": "ARMA", "arma": dict(ARMAS["ESPADA"]), "desc": "Espada (30 daño)"}
+    return objetos
 
 
 def generar_bots_con_semilla(seed_rivales: int) -> List[Dict[str, Any]]:
-    """Genera 5 bots rivales cuyas stats dependen exclusivamente de seed_rivales."""
     rng_b = random.Random(seed_rivales)
     nombres = ["Brutus_Bot", "Foxface_Bot", "Cato_Bot", "Clove_Bot", "Thresh_Bot"]
     colores = ["#F43F5E", "#F59E0B", "#818CF8", "#10B981", "#EC4899"]
-    armas_Keys = ["ESPADA", "ARCO", "LANZA", "DAGA", "PUNOS"]
+    perfiles = ["AGRESIVO", "CAUTELOSO", "AGRESIVO", "EQUILIBRADO", "DEFENSIVO"]
     bots = []
     for i in range(5):
         bots.append({
             "id": i + 2,
             "nombre": nombres[i],
-            "modelo": f"Bot-Seed-{seed_rivales}",
+            "modelo": f"Bot-{perfiles[(i + seed_rivales) % 5]}",
+            "perfil_bot": perfiles[(i + seed_rivales) % 5],
+            "agresividad_seed": rng_b.randint(40, 90),
             "color": colores[i],
             "hp": 100,
-            "hambre": 85,
-            "estamina": 85,
-            "armaObj": dict(ARMAS[armas_Keys[(i + seed_rivales) % len(armas_Keys)]]),
+            "energia": 100,
+            "armaObj": dict(ARMAS["DESARMADO"]),
             "kills": 0,
             "vivo": True,
             "accion": "LISTO",
-            "stats": {
-                "vision": rng_b.randint(2, 4),
-                "corto": rng_b.randint(55, 88),
-                "largo": rng_b.randint(55, 88),
-                "defensa": rng_b.randint(50, 85),
-                "supervivencia": rng_b.randint(55, 90),
-            },
         })
     return bots
 
 
-def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict[int, Dict[str, Any]]) -> Dict[str, Any]:
+def _decidir_accion_bot(a: Dict[str, Any], entorno: Dict[str, Any], obj_casilla: Any, rng: random.Random) -> str:
+    ops = entorno["acciones_validas"]
+    if "IR_ZONA_SEGURA" in ops and entorno["niebla"].startswith("FUERA"):
+        return "IR_ZONA_SEGURA"
+    if "RECOGER_BOTIQUIN" in ops and a["hp"] <= 80:
+        return "RECOGER_BOTIQUIN"
+    if "EQUIPAR_ARMA" in ops:
+        return "EQUIPAR_ARMA"
+    if "COMER" in ops and a["energia"] <= 70:
+        if obj_casilla and obj_casilla.get("es_veneno") and a.get("agresividad_seed", 60) > 55:
+            return "DESCARTAR"
+        return "COMER"
+    if "ATACAR" in ops:
+        if a["hp"] <= 30 and "HUIR" in ops:
+            return "HUIR"
+        if a.get("perfil_bot") == "DEFENSIVO" and "DEFENDER" in ops and rng.random() < 0.55:
+            return "DEFENDER"
+        return "ATACAR"
+    if "IR_A_OBJETO" in ops:
+        return "IR_A_OBJETO"
+    if "ACERCARSE_RIVAL" in ops and a["hp"] >= 50:
+        return "ACERCARSE_RIVAL"
+    if "IR_ZONA_SEGURA" in ops and rng.random() < 0.5:
+        return "IR_ZONA_SEGURA"
+    return "EXPLORAR"
+
+
+def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict[int, Dict[str, Any]], seed_mapa: int = 101) -> Dict[str, Any]:
     rng = random.SystemRandom()
     max_turnos = max(10, int(PROFESOR_CONFIG["max_turnos_niebla"]))
     inicio_niebla = int(PROFESOR_CONFIG["turno_inicio_niebla"])
     dano_niebla = int(PROFESOR_CONFIG["dano_niebla"])
-    freq_bestias = int(PROFESOR_CONFIG["frecuencia_bestias"])
     usar_gpu_real = os.environ.get("RUN_REAL_GPU", "0") == "1"
 
-    # Spawns SIEMPRE en posiciones aleatorias distintas de todo el mapa 12x12
-    todas_casillas = [(x, y) for x in range(12) for y in range(12)]
-    spawns_aleatorios = rng.sample(todas_casillas, len(agentes))
-    for idx, a in enumerate(agentes):
-        a["x"], a["y"] = spawns_aleatorios[idx]
+    # Zona segura aleatoria en el mapa 12x12 (no siempre el centro)
+    zona_x, zona_y = rng.randint(2, 9), rng.randint(2, 9)
+    objetos_mapa = generar_mapa_objetos(rng)
+    # Garantizar Espada y Botiquín cerca del punto final de la Zona Segura
+    objetos_mapa[(zona_x, zona_y)] = {"tipo": "ARMA", "arma": dict(ARMAS["ESPADA"]), "desc": "Espada (30 daño)"}
+    objetos_mapa[(max(0, zona_x - 1), zona_y)] = {"tipo": "BOTIQUIN", "desc": "Botiquín médico (+30 Vida)"}
+
+    # Spawns siempre aleatorios en las 144 casillas
+    todas = [(x, y) for x in range(12) for y in range(12)]
+    for idx, pos in enumerate(rng.sample(todas, len(agentes))):
+        agentes[idx]["x"], agentes[idx]["y"] = pos
 
     modelos_activos = {}
     if usar_gpu_real:
@@ -307,147 +308,265 @@ def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict
 
     try:
         for turno in range(1, max_turnos + 1):
-            if sum(1 for a in agentes if a["vivo"]) <= 1:
+            vivos_inicio = [a for a in agentes if a["vivo"]]
+            if len(vivos_inicio) <= 1:
                 break
+            # Guardar estado previo por si hay desempate en muerte simultánea
+            snapshot_previo = {a["id"]: (a["hp"], a["kills"], a["energia"]) for a in vivos_inicio}
             eventos = []
+
             if turno >= inicio_niebla:
                 paso = max(1, (max_turnos - inicio_niebla) // 6)
                 if (turno - inicio_niebla) % paso == 0:
-                    radio_seguro = max(0 if turno < max_turnos - 2 else -1, radio_seguro - 1)
-                    eventos.append(f"⚠️ La Niebla se cierra a radio {max(0, radio_seguro)}.")
-            if turno >= max_turnos - 1:
+                    radio_seguro = max(0 if turno < max_turnos - 1 else -1, radio_seguro - 1)
+                    eventos.append(f"⚠️ La Niebla se cierra hacia ({zona_x},{zona_y}) con radio {max(0, radio_seguro)}.")
+            if turno == max_turnos:
                 radio_seguro = -1
-                eventos.append("☠️ ¡MUERTE SÚBITA! La Niebla cubre todo el mapa.")
+                eventos.append("☠️ ¡LÍMITE DE TURNOS! La Niebla cubre todo el mapa.")
 
-            bestias = (freq_bestias > 0 and turno % freq_bestias == 0)
-            if bestias:
-                eventos.append("🐺 ¡Aparecen Bestias Mutantes en el perímetro!")
+            # 1. Construir el JSON de entorno (Visión = 2 casillas) y decidir acción de cada vivo
+            decisiones = {}
+            objetivo_cercano_por_id = {}
+            recurso_cercano_por_id = {}
 
-            for a in agentes:
+            orden_agentes = [a for a in agentes if a["vivo"]]
+            rng.shuffle(orden_agentes)
+
+            for a in orden_agentes:
+                pos_a = (a["x"], a["y"])
+                dist_z = max(abs(a["x"] - zona_x), abs(a["y"] - zona_y))
+                fuera_niebla = dist_z > radio_seguro
+                dir_zona = _direccion_cardinal(a["x"], a["y"], zona_x, zona_y)
+
+                obj_aqui = objetos_mapa.get(pos_a)
+                texto_aqui = obj_aqui["desc"] if obj_aqui else "Nada"
+
+                # Escanear Visión = 2 casillas
+                rivales_vista = []
+                rival_mas_cerca = None
+                min_d_riv = 99
+                for otro in agentes:
+                    if not otro["vivo"] or otro["id"] == a["id"]:
+                        continue
+                    d = max(abs(a["x"] - otro["x"]), abs(a["y"] - otro["y"]))
+                    if d <= 2:
+                        tag_rango = "EN RANGO DE DAÑO (dist=1)" if d <= 1 else "a dist=2"
+                        rivales_vista.append(f"{otro['nombre']} {tag_rango} con {otro['armaObj']['nombre']}({otro['armaObj']['dano']}) y {otro['hp']} HP")
+                        if d < min_d_riv:
+                            min_d_riv = d
+                            rival_mas_cerca = otro
+                objetivo_cercano_por_id[a["id"]] = (rival_mas_cerca, min_d_riv)
+
+                objetos_vista = []
+                mejor_obj_pos = None
+                min_d_obj = 99
+                for (ox, oy), oinfo in objetos_mapa.items():
+                    if (ox, oy) == pos_a:
+                        continue
+                    d = max(abs(a["x"] - ox), abs(a["y"] - oy))
+                    if d <= 2:
+                        objetos_vista.append(f"{oinfo['desc']} al {_direccion_cardinal(a['x'], a['y'], ox, oy)} (dist={d})")
+                        if d < min_d_obj:
+                            min_d_obj = d
+                            mejor_obj_pos = (ox, oy)
+                recurso_cercano_por_id[a["id"]] = mejor_obj_pos
+
+                # Filtrar acciones válidas según el contexto real
+                acciones_validas = []
+                if obj_aqui:
+                    if obj_aqui["tipo"] == "COMIDA":
+                        acciones_validas.extend(["COMER", "DESCARTAR"])
+                    elif obj_aqui["tipo"] == "BOTIQUIN" and a["hp"] < 100:
+                        acciones_validas.append("RECOGER_BOTIQUIN")
+                    elif obj_aqui["tipo"] == "ARMA" and obj_aqui["arma"]["dano"] > a["armaObj"]["dano"]:
+                        acciones_validas.append("EQUIPAR_ARMA")
+                if rival_mas_cerca and min_d_riv <= 1:
+                    acciones_validas.extend(["ATACAR", "DEFENDER"])
+                    if a["energia"] >= 20:
+                        acciones_validas.append("HUIR")
+                if rival_mas_cerca and min_d_riv == 2:
+                    acciones_validas.append("ACERCARSE_RIVAL")
+                    if a["energia"] >= 20:
+                        acciones_validas.append("HUIR")
+                if mejor_obj_pos:
+                    acciones_validas.append("IR_A_OBJETO")
+                if fuera_niebla or dist_z > max(1, radio_seguro - 1):
+                    acciones_validas.append("IR_ZONA_SEGURA")
+                acciones_validas.append("EXPLORAR")
+
+                entorno_json = {
+                    "turno": turno,
+                    "vida": a["hp"],
+                    "energia": a["energia"],
+                    "arma": f"{a['armaObj']['nombre']} ({a['armaObj']['dano']} daño)",
+                    "niebla": f"{'PELIGRO FUERA DE ZONA (-20 HP)' if fuera_niebla else 'SEGURA'} (Zona segura hacia {dir_zona})",
+                    "en_tu_casilla": texto_aqui,
+                    "vista_2_casillas": rivales_vista + objetos_vista,
+                    "acciones_validas": acciones_validas,
+                }
+                a["json_entorno"] = entorno_json
+
+                if a["id"] in modelos_activos:
+                    mdl, tok, _, _, _ = modelos_activos[a["id"]]
+                    act = inferir_accion_json(mdl, tok, configs_por_id[a["id"]], entorno_json)
+                else:
+                    act = _decidir_accion_bot(a, entorno_json, obj_aqui, rng)
+                decisiones[a["id"]] = act
+                a["accion"] = act
+
+            # 2. Ejecutar desgaste de Energía (-10 normal, -20 si HUIR), objetos y movimientos (excepto combate dist<=1)
+            atacantes_por_defensor: Dict[int, List[Dict[str, Any]]] = {a["id"]: [] for a in agentes}
+
+            for a in orden_agentes:
                 if not a["vivo"]:
                     continue
-                a["hambre"] = max(0, a["hambre"] - 6)
-                dist_c = max(abs(a["x"] - 5.5), abs(a["y"] - 5.5))
-                es_real = (a["id"] in modelos_activos)
+                act = decisiones[a["id"]]
+                gasto_en = 20 if act == "HUIR" else 10
+                a["energia"] = max(0, a["energia"] - gasto_en)
+                pos_a = (a["x"], a["y"])
+                obj_aqui = objetos_mapa.get(pos_a)
 
-                if dist_c > radio_seguro:
-                    huye = False
-                    if es_real:
-                        mdl, tok, _, _, _ = modelos_activos[a["id"]]
-                        dec = inferir_decision_modelo(mdl, tok, configs_por_id[a["id"]], "supervivencia", f"Fuera de zona segura (dist={dist_c:.1f}, radio={radio_seguro}).", ["CORRER_CENTRO", "QUEDARSE"])
-                        huye = (dec == "CORRER_CENTRO")
+                if act == "COMER" and obj_aqui and obj_aqui["tipo"] == "COMIDA":
+                    del objetos_mapa[pos_a]
+                    if obj_aqui.get("es_veneno"):
+                        a["hp"] = max(0, a["hp"] - 20)
+                        eventos.append(f"🍄 {a['nombre']} eligió COMER hongos venenosos (-20 HP).")
                     else:
-                        huye = (a["stats"]["supervivencia"] + rng.randint(-10, 10) >= 62)
+                        a["energia"] = min(100, a["energia"] + 40)
+                        eventos.append(f"🍎 {a['nombre']} eligió COMER fruta segura (+40 Energía).")
+                elif act == "DESCARTAR" and obj_aqui and obj_aqui["tipo"] == "COMIDA":
+                    del objetos_mapa[pos_a]
+                    eventos.append(f"🗑️ {a['nombre']} descartó comida sospechosa en su casilla.")
+                elif act == "RECOGER_BOTIQUIN" and obj_aqui and obj_aqui["tipo"] == "BOTIQUIN":
+                    del objetos_mapa[pos_a]
+                    a["hp"] = min(100, a["hp"] + 30)
+                    eventos.append(f"💊 {a['nombre']} usó un Botiquín (+30 HP).")
+                elif act == "EQUIPAR_ARMA" and obj_aqui and obj_aqui["tipo"] == "ARMA":
+                    nueva = dict(obj_aqui["arma"])
+                    del objetos_mapa[pos_a]
+                    a["armaObj"] = nueva
+                    eventos.append(f"{nueva['icono']} {a['nombre']} equipó {nueva['nombre']} ({nueva['dano']} daño).")
+                elif act == "HUIR":
+                    riv, _ = objetivo_cercano_por_id.get(a["id"], (None, 99))
+                    if riv:
+                        dx = -1 if riv["x"] > a["x"] else (1 if riv["x"] < a["x"] else rng.choice([-1, 1]))
+                        dy = -1 if riv["y"] > a["y"] else (1 if riv["y"] < a["y"] else rng.choice([-1, 1]))
+                        a["x"] = max(0, min(11, a["x"] + dx * 2))
+                        a["y"] = max(0, min(11, a["y"] + dy * 2))
+                    eventos.append(f"💨 {a['nombre']} huyó rápidamente (-20 Energía).")
+                elif act == "IR_ZONA_SEGURA":
+                    a["x"], a["y"] = _paso_hacia(a["x"], a["y"], zona_x, zona_y)
+                    eventos.append(f"🏃 {a['nombre']} avanzó hacia la Zona Segura ({zona_x},{zona_y}).")
+                elif act == "IR_A_OBJETO" and recurso_cercano_por_id.get(a["id"]):
+                    ox, oy = recurso_cercano_por_id[a["id"]]
+                    a["x"], a["y"] = _paso_hacia(a["x"], a["y"], ox, oy)
+                    eventos.append(f"🔍 {a['nombre']} fue hacia un objeto cercano.")
+                elif act == "ACERCARSE_RIVAL":
+                    riv, _ = objetivo_cercano_por_id.get(a["id"], (None, 99))
+                    if riv:
+                        a["x"], a["y"] = _paso_hacia(a["x"], a["y"], riv["x"], riv["y"])
+                        eventos.append(f"⚔️ {a['nombre']} se acercó a {riv['nombre']}.")
+                elif act == "ATACAR":
+                    riv, d_riv = objetivo_cercano_por_id.get(a["id"], (None, 99))
+                    if riv and riv["vivo"] and d_riv <= 1:
+                        atacantes_por_defensor[riv["id"]].append(a)
+                elif act == "EXPLORAR":
+                    # Si ya está fuera de la niebla o al borde, tiende hacia zona segura
+                    if max(abs(a["x"] - zona_x), abs(a["y"] - zona_y)) >= radio_seguro:
+                        a["x"], a["y"] = _paso_hacia(a["x"], a["y"], zona_x, zona_y)
+                    else:
+                        a["x"] = max(0, min(11, a["x"] + rng.choice([-1, 0, 1])))
+                        a["y"] = max(0, min(11, a["y"] + rng.choice([-1, 0, 1])))
 
-                    if huye:
-                        a["x"] += 1 if a["x"] < 5 else (-1 if a["x"] > 6 else 0)
-                        a["y"] += 1 if a["y"] < 5 else (-1 if a["y"] > 6 else 0)
-                        a["accion"] = "CORRER_ZONA"
-                        eventos.append(f"🏃 {a['nombre']} corre hacia la zona segura.")
-                    else:
-                        a["hp"] -= dano_niebla
-                        a["accion"] = "NIEBLA"
-                        eventos.append(f"☠️ {a['nombre']} recibe -{dano_niebla} HP por la Niebla.")
+            # 3. Resolver Combates Simultáneos (Regla: DEFENDER bloquea 100% el ataque más fuerte y contraataca 10 HP; el 2do atacante entra completo)
+            agentes_por_id = {a["id"]: a for a in agentes}
+            for def_id, lista_atq in atacantes_por_defensor.items():
+                if not lista_atq:
+                    continue
+                defensor = agentes_por_id[def_id]
+                if not defensor["vivo"]:
+                    continue
+                # Si el defensor eligió HUIR y ya se alejó a dist > 1, esquiva
+                atq_en_rango = [at for at in lista_atq if max(abs(at["x"] - defensor["x"]), abs(at["y"] - defensor["y"])) <= 1]
+                if not atq_en_rango:
+                    continue
+
+                # Ordenar atacantes por MAYOR daño de arma (y menor vida en caso de empate)
+                atq_en_rango.sort(key=lambda x: (-x["armaObj"]["dano"], x["hp"]))
+
+                if decisiones.get(def_id) == "DEFENDER":
+                    principal = atq_en_rango[0]
+                    principal["hp"] = max(0, principal["hp"] - 10)
+                    eventos.append(
+                        f"🛡️ {defensor['nombre']} se defendió y bloqueó el 100% de {principal['armaObj']['nombre']} ({principal['armaObj']['dano']}) de {principal['nombre']}, contraatacando (-10 HP a {principal['nombre']})."
+                    )
+                    if principal["hp"] == 0 and principal["vivo"]:
+                        principal["vivo"] = False
+                        principal["accion"] = "CAIDO"
+                        defensor["kills"] += 1
+                        eventos.append(f"💀 {defensor['nombre']} eliminó a {principal['nombre']} con su contraataque.")
+
+                    # Los demás atacantes (si eran 2 o más) entran completos por el flanco
+                    for extra in atq_en_rango[1:]:
+                        if not defensor["vivo"]:
+                            break
+                        dmg = extra["armaObj"]["dano"]
+                        defensor["hp"] = max(0, defensor["hp"] - dmg)
+                        eventos.append(
+                            f"⚔️ {extra['nombre']} atacó por el flanco a {defensor['nombre']} mientras bloqueaba a otro (-{dmg} HP con {extra['armaObj']['nombre']})."
+                        )
+                        if defensor["hp"] == 0:
+                            defensor["vivo"] = False
+                            defensor["accion"] = "CAIDO"
+                            extra["kills"] += 1
+                            eventos.append(f"💀 {extra['nombre']} eliminó a {defensor['nombre']}.")
                 else:
-                    dx = 1 if (radio_seguro <= 2 and a["x"] < 5) else (-1 if (radio_seguro <= 2 and a["x"] > 6) else rng.choice([-1, 0, 1]))
-                    dy = 1 if (radio_seguro <= 2 and a["y"] < 5) else (-1 if (radio_seguro <= 2 and a["y"] > 6) else rng.choice([-1, 0, 1]))
-                    a["x"] = max(0, min(11, a["x"] + dx))
-                    a["y"] = max(0, min(11, a["y"] + dy))
-                    a["accion"] = "EXPLORAR"
-                    if a["armaObj"]["bono"] == 0 and rng.randint(1, 6) == 1:
-                        nueva = dict(rng.choice([ARMAS["DAGA"], ARMAS["ESPADA"], ARMAS["LANZA"], ARMAS["ARCO"]]))
-                        a["armaObj"] = nueva
-                        eventos.append(f"{nueva['icono']} {a['nombre']} equipa {nueva['nombre']} (Rango {nueva['rango']}, +{nueva['bono']} ATQ).")
+                    for at in atq_en_rango:
+                        if not defensor["vivo"]:
+                            break
+                        dmg = at["armaObj"]["dano"]
+                        defensor["hp"] = max(0, defensor["hp"] - dmg)
+                        eventos.append(f"{at['armaObj']['icono']} {at['nombre']} atacó con {at['armaObj']['nombre']} a {defensor['nombre']} (-{dmg} HP).")
+                        if defensor["hp"] == 0:
+                            defensor["vivo"] = False
+                            defensor["accion"] = "CAIDO"
+                            at["kills"] += 1
+                            eventos.append(f"💀 {at['nombre']} eliminó a {defensor['nombre']}.")
 
-                # Forrajeo
-                if a["hambre"] < 62 and a["vivo"]:
-                    veneno = rng.random() < 0.42
-                    desc = "frutos rojos con olor amargo" if veneno else "bayas azules dulces"
-                    if es_real:
-                        mdl, tok, _, _, _ = modelos_activos[a["id"]]
-                        dec = inferir_decision_modelo(mdl, tok, configs_por_id[a["id"]], "supervivencia", f"Tienes {a['hambre']}% hambre y ves {desc}.", ["COMER", "DESCARTAR"])
-                        come = (dec == "COMER")
-                    else:
-                        come = (not veneno) or (a["stats"]["supervivencia"] + rng.randint(-10, 10) < 65)
-
-                    if come and not veneno:
-                        a["hambre"] = min(100, a["hambre"] + 28)
-                        a["hp"] = min(100, a["hp"] + 4)
-                        a["accion"] = "COMER"
-                        eventos.append(f"🫐 {a['nombre']} come bayas seguras (+28 Hambre).")
-                    elif come and veneno:
-                        a["hp"] -= 18
-                        a["accion"] = "VENENO"
-                        eventos.append(f"🍄 {a['nombre']} se intoxica comiendo bayas venenosas (-18 HP).")
-                    else:
-                        a["accion"] = "DESCARTAR"
-                        eventos.append(f"🛡️ {a['nombre']} descarta frutos venenosos.")
-
-                if bestias and dist_c >= max(1, radio_seguro - 0.5) and a["vivo"]:
-                    if a["stats"]["defensa"] + rng.randint(-10, 10) < 66:
-                        a["hp"] -= 15
-                        a["accion"] = "BESTIA"
-                        eventos.append(f"🐺 Bestia mutante hiere a {a['nombre']} (-15 HP).")
-
-                if a["hambre"] == 0:
-                    a["hp"] -= 14
-                if a["hp"] <= 0:
-                    a["hp"] = 0
+            # 4. Aplicar daño por Energía=0 (-10 HP) y daño por Niebla (-20 HP)
+            for a in orden_agentes:
+                if not a["vivo"]:
+                    continue
+                if a["energia"] == 0:
+                    a["hp"] = max(0, a["hp"] - 10)
+                    eventos.append(f"⚡ {a['nombre']} perdió -10 HP por agotamiento (0 Energía).")
+                dist_z = max(abs(a["x"] - zona_x), abs(a["y"] - zona_y))
+                if dist_z > radio_seguro:
+                    a["hp"] = max(0, a["hp"] - dano_niebla)
+                    eventos.append(f"🟪 {a['nombre']} sufrió -{dano_niebla} HP fuera de la Zona Segura.")
+                if a["hp"] == 0:
                     a["vivo"] = False
                     a["accion"] = "CAIDO"
-                    eventos.append(f"💀 {a['nombre']} ha muerto en el capítulo {turno}.")
-
-            # Combates según Visión (casillas) + Corto vs Largo Alcance + Defensa
-            vivos = [x for x in agentes if x["vivo"]]
-            rng.shuffle(vivos)
-            for atacante in vivos:
-                if not atacante["vivo"]:
-                    continue
-                vision_casillas = int(atacante["stats"].get("vision", 2))
-                objetivo, min_dist = None, 99
-                for otro in vivos:
-                    if otro["id"] == atacante["id"] or not otro["vivo"]:
-                        continue
-                    d = max(abs(atacante["x"] - otro["x"]), abs(atacante["y"] - otro["y"]))
-                    if d < min_dist:
-                        min_dist = d
-                        objetivo = otro
-                if not objetivo or min_dist > vision_casillas:
-                    continue
-
-                arm = atacante["armaObj"]
-                if min_dist <= arm["rango"]:
-                    stat_atq = atacante["stats"]["largo"] if arm["tipo"] == "LARGO" else atacante["stats"]["corto"]
-                    def_obj = objetivo["stats"]["defensa"]
-                    if def_obj + rng.randint(-8, 12) >= stat_atq + 18 and len(vivos) > 2:
-                        objetivo["accion"] = "BLOQUEAR"
-                        eventos.append(f"🛡️ {objetivo['nombre']} bloquea el ataque de {atacante['nombre']} (dist={min_dist}).")
-                    else:
-                        mitigacion = int(def_obj * 0.14)
-                        dano = max(10, min(42, int(stat_atq * 0.28 + arm["bono"] - mitigacion + rng.randint(-3, 4))))
-                        objetivo["hp"] = max(0, objetivo["hp"] - dano)
-                        atacante["accion"] = "DISPARAR" if arm["tipo"] == "LARGO" else "ATACAR"
-                        eventos.append(f"{arm['icono']} {atacante['nombre']} ataca con {arm['nombre']} (R:{arm['rango']}, dist={min_dist}) a {objetivo['nombre']} (-{dano} HP).")
-                        if objetivo["hp"] == 0:
-                            objetivo["vivo"] = False
-                            objetivo["accion"] = "CAIDO"
-                            atacante["kills"] += 1
-                            eventos.append(f"💀 {atacante['nombre']} elimina a {objetivo['nombre']}.")
-                else:
-                    atacante["x"] += 1 if atacante["x"] < objetivo["x"] else (-1 if atacante["x"] > objetivo["x"] else 0)
-                    atacante["y"] += 1 if atacante["y"] < objetivo["y"] else (-1 if atacante["y"] > objetivo["y"] else 0)
-                    atacante["accion"] = "ACECHAR"
-                    eventos.append(f"👁️ {atacante['nombre']} avista a {objetivo['nombre']} a {min_dist} casillas y se acerca.")
+                    eventos.append(f"💀 {a['nombre']} cayó en el capítulo {turno}.")
 
             restantes = [a for a in agentes if a["vivo"]]
+            # Desempate garantizado si los últimos murieron al mismo tiempo
+            if len(restantes) == 0 and len(vivos_inicio) > 0:
+                ganador_desempate = max(vivos_inicio, key=lambda x: snapshot_previo[x["id"]])
+                ganador_desempate["vivo"] = True
+                ganador_desempate["hp"] = 10
+                ganador_desempate["accion"] = "SOBREVIVE_DESEMPATE"
+                restantes = [ganador_desempate]
+                eventos.append(f"⚖️ ¡Desempate final! {ganador_desempate['nombre']} sobrevive con 10 HP por tener mejor estado previo.")
+
             if len(restantes) == 1:
                 eventos.append(f"🏆 ¡VICTORIA FINAL! {restantes[0]['nombre']} es el único sobreviviente.")
 
             turnos_log.append({
                 "turno": turno,
-                "radioSeguro": max(0, radio_seguro),
-                "bestias": bestias,
-                "eventos": eventos if eventos else ["Exploración sin encuentros..."],
+                "zonaSegura": {"x": zona_x, "y": zona_y, "radio": max(0, radio_seguro)},
+                "objetos": [{"x": k[0], "y": k[1], "tipo": v["tipo"], "es_veneno": v.get("es_veneno", False), "desc": v["desc"]} for k, v in objetos_mapa.items()],
+                "eventos": eventos if eventos else ["Exploración en la Arena..."],
                 "agentes": [{**a, "armaObj": dict(a["armaObj"])} for a in agentes],
             })
             if len(restantes) <= 1:
@@ -458,7 +577,7 @@ def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict
                 MODELOS_EN_VRAM[mid] = (tok, m_inst.unload())
                 MODELOS_EN_VRAM[mid][1].eval()
 
-    ranking = sorted(agentes, key=lambda x: (x["vivo"], x["hp"], x["kills"]), reverse=True)
+    ranking = sorted(agentes, key=lambda x: (x["vivo"], x["hp"], x["kills"], x["energia"]), reverse=True)
     return {"turnos_totales": len(turnos_log), "ganador": ranking[0]["nombre"], "ranking": ranking, "turnos": turnos_log}
 
 
@@ -470,9 +589,8 @@ class EntrenarRequest(BaseModel):
 
 class ProfesorConfigReq(BaseModel):
     max_turnos_niebla: int = 30
-    turno_inicio_niebla: int = 6
-    dano_niebla: int = 22
-    frecuencia_bestias: int = 5
+    turno_inicio_niebla: int = 5
+    dano_niebla: int = 20
     cooldown_s: int = 60
     max_flops_tflops: float = 150.0
 
@@ -525,18 +643,15 @@ def entrenar_tributo(req: EntrenarRequest, x_team_token: str = Header(default="t
 
     t0 = time.time()
     modo_gpu = "ICL_ONLINE"
-    radar = dict(STATS_BASE_IGUALES)
     if os.environ.get("RUN_REAL_GPU", "0") == "1":
         with gpu_lock:
             modo_gpu = ejecutar_entrenamiento_real_gpu(x_team_token, modelo_id, cfg)
-            radar = evaluar_modelo_real_gpu(x_team_token, modelo_id, cfg, modo_gpu)
 
     ULTIMO_ENTRENAMIENTO_TS[x_team_token] = time.time()
     registro = {
         "token": x_team_token,
         "equipo": cfg.get("equipo", TOKENS_VALIDOS[x_team_token]),
         "modelo_base": modelo_id,
-        "radar_stats": radar,
         "modo_gpu": modo_gpu,
         "config_completa": cfg,
         "tiempo_gpu_s": round(time.time() - t0, 2),
@@ -550,8 +665,6 @@ def simular_gpu(req: EntrenarRequest, x_team_token: str = Header(default="token_
     cfg = req.config
     modelo_id = cfg.get("modelo_base", "Qwen/Qwen2.5-1.5B-Instruct")
     cfg_con_token = {**cfg, "token": x_team_token}
-    # Nuestro participante SIEMPRE parte de las stats base iguales o las que ya evaluó en GPU (nunca depende de semilla)
-    stats_nuestras = TRIBUTOS.get(x_team_token, {}).get("radar_stats", dict(STATS_BASE_IGUALES))
 
     nuestro = {
         "id": 1,
@@ -559,17 +672,15 @@ def simular_gpu(req: EntrenarRequest, x_team_token: str = Header(default="token_
         "modelo": modelo_id.split("/")[-1],
         "color": "#3B82F6",
         "hp": 100,
-        "hambre": 85,
-        "estamina": 85,
-        "armaObj": dict(ARMAS["PUNOS"]),
+        "energia": 100,
+        "armaObj": dict(ARMAS["DESARMADO"]),
         "kills": 0,
         "vivo": True,
         "accion": "LISTO",
-        "stats": dict(stats_nuestras),
     }
     bots = generar_bots_con_semilla(int(req.seed_rivales))
     with gpu_lock:
-        return _ejecutar_partida_online([nuestro] + bots, {1: cfg_con_token})
+        return _ejecutar_partida_online([nuestro] + bots, {1: cfg_con_token}, int(req.seed_rivales))
 
 
 @app.post("/correr_arena_pvp")
@@ -586,14 +697,12 @@ def correr_arena_pvp(seed_rivales: int = 101, clave: str = ""):
         aid = i + 1
         agentes.append({
             "id": aid, "nombre": t["equipo"], "modelo": t["modelo_base"].split("/")[-1],
-            "color": colores[i], "hp": 100, "hambre": 85, "estamina": 85,
-            "armaObj": dict(ARMAS["PUNOS"]), "kills": 0, "vivo": True, "accion": "LISTO",
-            "stats": dict(t.get("radar_stats", STATS_BASE_IGUALES)),
+            "color": colores[i], "hp": 100, "energia": 100,
+            "armaObj": dict(ARMAS["DESARMADO"]), "kills": 0, "vivo": True, "accion": "LISTO",
         })
         if "config_completa" in t:
             configs_reales[aid] = {**t["config_completa"], "token": t["token"]}
 
-    # Si faltan participantes para llegar a 12, completar con bots de la semilla
     bots_extra = generar_bots_con_semilla(seed_rivales)
     while len(agentes) < 12:
         idx = len(agentes)
@@ -604,5 +713,5 @@ def correr_arena_pvp(seed_rivales: int = 101, clave: str = ""):
         agentes.append(b)
 
     with gpu_lock:
-        ULTIMO_REPLAY_PVP = _ejecutar_partida_online(agentes, configs_reales)
+        ULTIMO_REPLAY_PVP = _ejecutar_partida_online(agentes, configs_reales, seed_rivales)
     return ULTIMO_REPLAY_PVP
