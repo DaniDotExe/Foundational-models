@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Visualizador piloto PPO</title>
+<style>
+:root{color-scheme:dark;--line:#29354a;--text:#eef5ff;--muted:#98a8c0;--a:#35fae0;--core:#fbbf24}
+*{box-sizing:border-box}
+body{margin:0;background:#080b12;font-family:Inter,system-ui,sans-serif;color:var(--text)}
+main{max-width:1350px;margin:auto;padding:22px}
+h1{font-size:clamp(28px,4vw,46px);letter-spacing:-.04em;margin:0}
+.sub{color:var(--muted)}
+code{color:var(--core)}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) 380px;gap:16px;margin-top:16px}
+.card{background:#111927;border:1px solid var(--line);border-radius:18px;padding:15px}
+.track{aspect-ratio:1.38/1;min-height:420px}
+.track canvas{width:100%;height:100%;border-radius:13px;background:#071019}
+.ctrl{display:grid;gap:10px;align-content:start}
+label{font-size:12px;color:var(--muted)}
+select,input,button{width:100%;font:inherit;background:#09101a;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}
+button{cursor:pointer;font-weight:800}
+.primary{background:var(--a);color:#06231f}
+.metric{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.m{background:#0a111b;border:1px solid var(--line);padding:10px;border-radius:11px}
+.m b{display:block;font-size:20px}
+.m span{font-size:10px;color:var(--muted)}
+.status{padding:10px;background:#0a111b;border:1px solid var(--line);border-radius:11px;font-size:13px}
+.ok{color:#77e5a4}.bad{color:#ff9aaa}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:130px 1fr 44px;align-items:center;gap:8px;font-size:12px}
+.bar .fill{height:14px;border-radius:7px;background:#243044;overflow:hidden}
+.bar .fill i{display:block;height:100%;background:var(--core);width:0;transition:width .08s linear}
+.bar.hot .name{color:var(--a);font-weight:700}
+.bar.hot .fill i{background:var(--a)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.track{min-height:320px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Prueba tu piloto PPO</h1>
+<div class="sub">Carga exactamente el <code>.npy</code> (1703 pesos) que entregarías. A la derecha ves, en vivo, la distribución π<sub>θ</sub>(a | s) sobre las siete maniobras.</div>
+<div class="grid">
+  <div class="card"><div class="track"><canvas id="cv" width="1100" height="800"></canvas></div></div>
+  <div class="card ctrl">
+    <div><label>Cargar .npy</label><input id="file" type="file" accept=".npy"></div>
+    <div><label>Pista</label><select id="track"></select></div>
+    <div><label>Prueba</label>
+      <select id="modo">
+        <option value="corta">corta: 1 vuelta o 24 s</option>
+        <option value="final">final: 5 vueltas o 150 s</option>
+      </select>
+    </div>
+    <div><label>Elección de la maniobra</label>
+      <select id="eleccion">
+        <option value="argmax">determinista (la más probable), como en el torneo</option>
+        <option value="muestrear">muestrear de π(a | s), como en el entrenamiento</option>
+      </select>
+    </div>
+    <div><label>Velocidad de reproducción</label><input id="speed" type="range" min=".5" max="6" step=".5" value="1"></div>
+    <button class="primary" id="start">Iniciar prueba</button>
+    <button id="pause">Pausar</button>
+    <div class="metric">
+      <div class="m"><b id="laps">0</b><span>vueltas</span></div>
+      <div class="m"><b id="cp">0</b><span>checkpoints</span></div>
+      <div class="m"><b id="time">0.0</b><span>segundos</span></div>
+      <div class="m"><b id="off">0.0</b><span>fuera pista</span></div>
+      <div class="m"><b id="hit">0</b><span>choques</span></div>
+      <div class="m"><b id="vmax">0.0</b><span>vel. máx.</span></div>
+      <div class="m"><b id="pen" class="bad">+0.0</b><span>castigo (s)</span></div>
+      <div class="m"><b id="clock">0.0</b><span>reloj de carrera</span></div>
+      <div class="m"><b id="pts">0</b><span>puntos</span></div>
+    </div>
+    <div><label>π<sub>θ</sub>(a | s) en este instante</label><div class="bars" id="bars"></div></div>
+    <div class="status" id="status">Carga un archivo .npy de 1703 pesos.</div>
+  </div>
+</div>
+</main>
+<script>
+// Las mismas pistas que src/carrera/pistas.py. Móviles: [ax, ay, bx, by, radio, periodo, fase].
+const TRACKS = {
+  "ovalo": {"nombre": "1 - Óvalo", "ancho": 2.35, "puntos": [[-8,0],[-6.5,-4],[-2.5,-5.6],[2.5,-5.6],[6.5,-4],[8,0],[6.5,4],[2.5,5.6],[-2.5,5.6],[-6.5,4]], "obstaculos": [], "moviles": []},
+  "curvas_largas": {"nombre": "2 - Curvas largas", "ancho": 2.25, "puntos": [[-8.3,-0.6],[-6.3,-4.4],[-1.5,-5.5],[3.6,-4.8],[7.5,-2],[8.1,2.1],[5,5.3],[0.2,5.6],[-3.9,4.4],[-7.5,2.3]], "obstaculos": [], "moviles": []},
+  "chicane": {"nombre": "3 - Chicane", "ancho": 2.1, "puntos": [[-8.2,0],[-6.4,-4.4],[-2,-5.5],[0.4,-2],[3,-5.1],[7,-3.5],[8.2,0.5],[5.8,4.8],[1.8,5.5],[-0.7,2],[-3.7,5],[-7.1,3.2]], "obstaculos": [], "moviles": []},
+  "serpiente": {"nombre": "4 - Serpiente", "ancho": 1.95, "puntos": [[-8.4,1.2],[-7,-4.6],[-3.1,-5.5],[-0.3,-2.2],[2.4,-5.3],[6.6,-4],[8.3,-0.8],[6,1.3],[8,4.3],[3.7,5.7],[0.7,2.5],[-2.2,5.4],[-6.5,4.4]], "obstaculos": [], "moviles": []},
+  "cantera": {"nombre": "5 - La cantera", "ancho": 1.9, "puntos": [[-8.5,0.8],[-7.1,-4.5],[-3,-5.6],[1.3,-5.2],[4.7,-3.7],[7.9,-1.3],[7.3,2],[4.6,4.9],[0.8,5.6],[-1.2,2.5],[-4.4,5],[-7.8,3.5]], "obstaculos": [[-4.4,-4.55,0.62],[2.8,-4.35,0.68],[6.75,0.55,0.72],[2.85,4.85,0.62],[-2.55,3.7,0.65],[-7,2.2,0.58]], "moviles": []},
+  "hora_pico": {"nombre": "6 - Hora pico", "ancho": 2.1, "puntos": [[-8.4,0],[-7.3,-4],[-3.8,-5.6],[0,-5.6],[3.8,-5.6],[7.3,-4],[8.4,0],[7.3,4],[3.8,5.6],[0,4.9],[-3.8,5.6],[-7.3,4]], "obstaculos": [],
+                "moviles": [[-1.9,-7.7,-1.9,-3.5,0.65,4,0],[1.9,-3.5,1.9,-7.7,0.6,5,0],[9.87,2.56,5.83,1.44,0.7,4.5,0.25],[2.28,3.18,1.52,7.32,0.65,5.5,0.6],[-5.83,1.44,-9.87,2.56,0.6,3.6,0.4]]}
+};
+// Las mismas maniobras que src/carrera/simulador.py: (acelerador, volante, freno).
+const ACCIONES = [
+  {nombre: "acelerar + izquierda", acel: 1, giro: -1, freno: 0},
+  {nombre: "acelerar + recto", acel: 1, giro: 0, freno: 0},
+  {nombre: "acelerar + derecha", acel: 1, giro: 1, freno: 0},
+  {nombre: "rodar + izquierda", acel: 0, giro: -1, freno: 0},
+  {nombre: "rodar + recto", acel: 0, giro: 0, freno: 0},
+  {nombre: "rodar + derecha", acel: 0, giro: 1, freno: 0},
+  {nombre: "frenar", acel: 0, giro: 0, freno: 1},
+];
+const TAU = Math.PI * 2, DT = .06, VM = 7.6, ACC = 5.2, BRAKE = 8.8, DRAG = .2, TURN = 2.2, WPR = 1.45, CARR = .28;
+const MARGEN_CONTACTO = .05, PEN_FUERA = 1, PEN_CHOQUE = 2;   // castigos de tiempo: s por s fuera, s por choque
+const NIN = 12, H = 32, NOUT = 7, NUM_PESOS = 1703, LIMITE_PESO = 50;
+const $ = id => document.getElementById(id), cv = $("cv"), ctx = cv.getContext("2d");
+let red = null, state = null, key = "ovalo", raf = 0, last = 0, acc = 0, paused = false;
+let probs = new Array(NOUT).fill(1 / NOUT), elegido = -1;
+
+for (const [k, t] of Object.entries(TRACKS)) {
+  const o = document.createElement("option"); o.value = k; o.textContent = t.nombre; $("track").appendChild(o);
+}
+const barras = ACCIONES.map(a => {
+  const d = document.createElement("div"); d.className = "bar";
+  d.innerHTML = `<span class="name">${a.nombre}</span><div class="fill"><i></i></div><span class="val">0.14</span>`;
+  $("bars").appendChild(d); return d;
+});
+
+// ---------------------------------------------------------------- geometría y sensores (idénticos al reto GA)
+function cl(x, a, b) { return Math.max(a, Math.min(b, x)); }
+function wr(a) { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }
+function ps(px, py, a, b) {
+  const x = b[0] - a[0], y = b[1] - a[1], d = x * x + y * y;
+  if (d < 1e-12) return a;
+  const t = cl(((px - a[0]) * x + (py - a[1]) * y) / d, 0, 1);
+  return [a[0] + t * x, a[1] + t * y];
+}
+function err(px, py, pts) {
+  let bd = 1e9, bs = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length], q = ps(px, py, a, b), dx = px - q[0], dy = py - q[1], d = Math.hypot(dx, dy);
+    if (d < bd) { bd = d; bs = ((b[0] - a[0]) * (py - q[1]) - (b[1] - a[1]) * (px - q[0]) >= 0 ? 1 : -1) * d; }
+  }
+  return bs;
+}
+function curve(p, i) {
+  const a = p[i % p.length], b = p[(i + 1) % p.length], c = p[(i + 2) % p.length];
+  return wr(Math.atan2(c[1] - b[1], c[0] - b[0]) - Math.atan2(b[1] - a[1], b[0] - a[0])) / Math.PI;
+}
+function obstaculosEn(t, time) {
+  return t.obstaculos.concat(t.moviles.map(([ax, ay, bx, by, r, per, fase]) => {
+    const u = .5 - .5 * Math.cos(TAU * (time / per + fase));
+    return [ax + u * (bx - ax), ay + u * (by - ay), r];
+  }));
+}
+function obs(s, t) {
+  const lista = obstaculosEn(t, s.time);
+  if (!lista.length) return [0, 0, 0];
+  let B, bd = 1e9;
+  for (const o of lista) { const d = Math.hypot(o[0] - s.x, o[1] - s.y) - o[2]; if (d < bd) { bd = d; B = o; } }
+  const r = wr(Math.atan2(B[1] - s.y, B[0] - s.x) - s.a);
+  return [cl((6 - Math.max(0, bd)) / 6, 0, 1), Math.cos(r), Math.sin(r)];
+}
+function sen(s) {
+  const t = TRACKS[key], p = t.puntos[s.next], dx = p[0] - s.x, dy = p[1] - s.y, d = Math.hypot(dx, dy);
+  const r = wr(Math.atan2(dy, dx) - s.a), e = err(s.x, s.y, t.puntos), o = obs(s, t);
+  return [1, Math.cos(r), Math.sin(r), cl(d / 12, 0, 1), cl(e / t.ancho, -2, 2), cl(Math.abs(e) / t.ancho, 0, 2),
+          cl(s.v / VM, 0, 1.5), curve(t.puntos, s.next), curve(t.puntos, s.next + 1), o[0], o[1], o[2]];
+}
+
+// ---------------------------------------------------------------- la red: 12 -> 32 (tanh) -> 32 (tanh) -> 7 -> softmax
+function construirRed(v) {
+  let o = 0; const tomar = n => { const a = v.slice(o, o + n); o += n; return a; };
+  return {W1: tomar(H * NIN), b1: tomar(H), W2: tomar(H * H), b2: tomar(H), W3: tomar(NOUT * H), b3: tomar(NOUT)};
+}
+function forward(s) {
+  const h1 = new Array(H), h2 = new Array(H), z = new Array(NOUT);
+  for (let i = 0; i < H; i++) { let a = red.b1[i]; for (let j = 0; j < NIN; j++) a += red.W1[i * NIN + j] * s[j]; h1[i] = Math.tanh(a); }
+  for (let i = 0; i < H; i++) { let a = red.b2[i]; for (let j = 0; j < H; j++) a += red.W2[i * H + j] * h1[j]; h2[i] = Math.tanh(a); }
+  for (let i = 0; i < NOUT; i++) { let a = red.b3[i]; for (let j = 0; j < H; j++) a += red.W3[i * H + j] * h2[j]; z[i] = a; }
+  const m = Math.max(...z), e = z.map(v => Math.exp(v - m)), S = e.reduce((a, b) => a + b, 0);
+  return e.map(v => v / S);
+}
+function elegir(p) {
+  if ($("eleccion").value === "argmax") { let b = 0; for (let i = 1; i < p.length; i++) if (p[i] > p[b]) b = i; return b; }
+  let u = Math.random(), c = 0;
+  for (let i = 0; i < p.length; i++) { c += p[i]; if (u < c) return i; }
+  return p.length - 1;
+}
+function limites() { return $("modo").value === "final" ? {vueltas: 5, tiempo: 150} : {vueltas: 1, tiempo: 24}; }
+
+// ---------------------------------------------------------------- simulación
+function reset() {
+  const t = TRACKS[key], a = t.puntos[0], b = t.puntos[1];
+  state = {x: a[0], y: a[1], a: Math.atan2(b[1] - a[1], b[0] - a[0]), v: 0, next: 1, cp: 0, laps: 0, time: 0, off: 0, hits: 0, vmax: 0,
+           pen: 0, contactos: []};
+  probs = new Array(NOUT).fill(1 / NOUT); elegido = -1;
+  draw(); ui();
+}
+function step() {
+  const t = TRACKS[key];
+  probs = forward(sen(state)); elegido = elegir(probs);
+  const m = ACCIONES[elegido];
+  state.v = cl(state.v + (m.acel * ACC - m.freno * BRAKE - DRAG * state.v) * DT, 0, VM);
+  state.a = wr(state.a + m.giro * TURN * (.28 + .72 * state.v / VM) * DT);
+  state.x += Math.cos(state.a) * state.v * DT; state.y += Math.sin(state.a) * state.v * DT;
+  state.vmax = Math.max(state.vmax, state.v); state.time += DT;
+  if (Math.abs(err(state.x, state.y, t.puntos)) > t.ancho) { state.off += DT; state.v *= .76; state.pen += PEN_FUERA * DT; }
+  // un choque cuenta una vez: seguir pegado al mismo obstáculo (o arrastrado por él) no vuelve a contar
+  const contactos = [];
+  obstaculosEn(t, state.time).forEach((o, i) => {
+    let dx = state.x - o[0], dy = state.y - o[1], d = Math.hypot(dx, dy); const lim = o[2] + CARR;
+    if (d < lim) {
+      if (d < 1e-9) { dx = 1; dy = 0; d = 1; }
+      state.x = o[0] + dx / d * lim; state.y = o[1] + dy / d * lim; state.v *= .24;
+      if (!state.contactos.includes(i)) { state.hits++; state.pen += PEN_CHOQUE; }
+      contactos.push(i);
+    } else if (d < lim + MARGEN_CONTACTO && state.contactos.includes(i)) contactos.push(i);
+  });
+  state.contactos = contactos;
+  const p = t.puntos[state.next];
+  if (Math.hypot(state.x - p[0], state.y - p[1]) <= WPR) { state.next = (state.next + 1) % t.puntos.length; state.cp++; if (state.next === 1) state.laps++; }
+}
+function w2c(x, y) { const s = Math.min(cv.width / 24, cv.height / 17); return [cv.width / 2 + x * s, cv.height / 2 + y * s, s]; }
+function draw() {
+  const t = TRACKS[key], p = t.puntos.map(x => w2c(...x));
+  ctx.fillStyle = "#071019"; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.lineCap = ctx.lineJoin = "round";
+  for (const [c, l] of [["#303a4c", 165], ["#111922", 125]]) {
+    ctx.beginPath(); p.forEach((x, i) => i ? ctx.lineTo(...x) : ctx.moveTo(...x)); ctx.closePath();
+    ctx.strokeStyle = c; ctx.lineWidth = l; ctx.stroke();
+  }
+  const meta = p[0]; ctx.fillStyle = "#77e5a4"; ctx.beginPath(); ctx.arc(meta[0], meta[1], 7, 0, TAU); ctx.fill();
+  ctx.setLineDash([6, 6]); ctx.strokeStyle = "#ff8f70"; ctx.lineWidth = 2;
+  for (const m of t.moviles) { const a = w2c(m[0], m[1]), b = w2c(m[2], m[3]); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  ctx.setLineDash([]);
+  obstaculosEn(t, state?.time ?? 0).forEach((o, i) => {
+    const q = w2c(o[0], o[1]); ctx.beginPath(); ctx.arc(q[0], q[1], o[2] * q[2], 0, TAU);
+    ctx.fillStyle = i < t.obstaculos.length ? "#ffc857" : "#ff8f70"; ctx.fill();
+  });
+  if (state) {
+    const q = w2c(state.x, state.y);
+    ctx.save(); ctx.translate(q[0], q[1]); ctx.rotate(state.a);
+    ctx.fillStyle = "#35fae0"; ctx.fillRect(-.55 * q[2], -.28 * q[2], 1.1 * q[2], .56 * q[2]);
+    ctx.fillStyle = "#06231f"; ctx.fillRect(.25 * q[2], -.18 * q[2], .22 * q[2], .36 * q[2]);
+    ctx.restore();
+  }
+}
+function ui() {
+  for (const [id, v] of [["laps", state?.laps ?? 0], ["cp", state?.cp ?? 0], ["time", (state?.time ?? 0).toFixed(1)],
+                         ["off", (state?.off ?? 0).toFixed(1)], ["hit", state?.hits ?? 0], ["vmax", (state?.vmax ?? 0).toFixed(1)],
+                         ["pen", "+" + (state?.pen ?? 0).toFixed(1)], ["clock", reloj().toFixed(1)], ["pts", puntos().toFixed(0)]]) $(id).textContent = v;
+  barras.forEach((b, i) => {
+    b.querySelector("i").style.width = (probs[i] * 100).toFixed(1) + "%";
+    b.querySelector(".val").textContent = probs[i].toFixed(2);
+    b.classList.toggle("hot", i === elegido);
+  });
+}
+// El reloj de carrera (tiempo + castigos) es el que agota el límite y el que resta en el puntaje.
+function reloj() { return state ? state.time + state.pen : 0; }
+function puntos() { return state ? 1000 * state.laps + 50 * state.cp - reloj() : 0; }
+function activo() { const l = limites(); return state && reloj() < l.tiempo && state.laps < l.vueltas; }
+function loop(ts) {
+  if (!last) last = ts;
+  const e = Math.min(.05, (ts - last) / 1000); last = ts;
+  if (!paused && red && activo()) { acc += e * parseFloat($("speed").value); while (acc >= DT && activo()) { step(); acc -= DT; } }
+  draw(); ui();
+  if (activo()) raf = requestAnimationFrame(loop);
+  else if (state) $("status").innerHTML = state.laps >= limites().vueltas ? '<span class="ok">Objetivo completado en ' + reloj().toFixed(1) + ' s de reloj (' + state.pen.toFixed(1) + ' s de castigo).</span>' : '<span class="bad">Tiempo agotado.</span>';
+}
+
+// ---------------------------------------------------------------- controles
+$("track").onchange = e => { key = e.target.value; reset(); };
+$("modo").onchange = () => reset();
+$("start").onclick = () => {
+  if (!red) return $("status").innerHTML = '<span class="bad">Carga primero un .npy.</span>';
+  reset(); paused = false; last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+};
+$("pause").onclick = () => { paused = !paused; $("pause").textContent = paused ? "Reanudar" : "Pausar"; if (!paused) raf = requestAnimationFrame(loop); };
+$("file").onchange = async e => {
+  try {
+    const f = e.target.files[0], pesos = parse(await f.arrayBuffer());
+    if (pesos.length !== NUM_PESOS) throw Error("Se esperaban " + NUM_PESOS + " pesos; el archivo tiene " + pesos.length + ".");
+    if (pesos.some(x => !Number.isFinite(x) || Math.abs(x) > LIMITE_PESO)) throw Error("Pesos inválidos o fuera de [-50, 50].");
+    red = construirRed(pesos);
+    $("status").innerHTML = '<span class="ok">Piloto válido: ' + f.name + '</span>';
+    reset();
+  } catch (x) { red = null; $("status").innerHTML = '<span class="bad">' + x.message + '</span>'; }
+};
+function parse(b) {
+  const u = new Uint8Array(b), M = String.fromCharCode(...u.slice(1, 6));
+  if (M !== "NUMPY") throw Error("No parece un archivo NPY.");
+  const v = u[6], off = v === 1 ? 10 : 12;
+  const h = v === 1 ? u[8] + 256 * u[9] : u[8] + 256 * u[9] + 65536 * u[10] + 16777216 * u[11];
+  const hdr = new TextDecoder("latin1").decode(u.slice(off, off + h)), d = (hdr.match(/'descr':\s*'([^']+)'/) || [])[1], p = off + h;
+  if (d === "<f8" || d === "|f8") return Array.from(new Float64Array(b.slice(p)));
+  if (d === "<f4" || d === "|f4") return Array.from(new Float32Array(b.slice(p)));
+  throw Error("Tipo NPY no soportado: " + d);
+}
+reset();
+</script>
+</body>
+</html>
