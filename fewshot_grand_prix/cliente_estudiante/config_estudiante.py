@@ -16,8 +16,8 @@ ESTRATEGIA = "ICL"
 
 # Representación de estado enviada al modelo
 CONFIG_DATOS = {
-    # Número de acciones previas incluidas en H:<historial> (1 a 4 frames)
-    "ventana_historia": 3,
+    # Número de acciones previas incluidas en H:<historial> (1 a 8 frames)
+    "ventana_historia": 5,
     # Resolución de discretización de cada rayo [0..1] -> enteros [0..precision_sensores]
     # Valores típicos: 20 (grueso), 50 (balanceado), 100 (fino)
     "precision_sensores": 50,

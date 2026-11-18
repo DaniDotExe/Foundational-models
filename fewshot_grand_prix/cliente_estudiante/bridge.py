@@ -94,6 +94,8 @@ class ServerBridge:
         jugadas_referencia: Optional[List[Dict[str, Any]]],
         config_icl: Dict[str, Any],
         config_datos: Dict[str, Any],
+        velocidad: Optional[float] = None,
+        cp_dist: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Consulta POST /decidir_accion con reintentos y mide RTT real en milisegundos."""
         est = estrategia.upper().strip()
@@ -113,6 +115,10 @@ class ServerBridge:
             "precision_sensores": int(config_datos.get("precision_sensores", 50)),
             "ventana_historia": int(config_datos.get("ventana_historia", 3)),
         }
+        if velocidad is not None:
+            payload["velocidad"] = float(velocidad)
+        if cp_dist is not None:
+            payload["cp_dist"] = float(cp_dist)
 
         t0 = time.perf_counter()
         last_err: Optional[Exception] = None

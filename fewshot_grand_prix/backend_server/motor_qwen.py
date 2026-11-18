@@ -104,11 +104,22 @@ def formatear_estado(
     historial: Sequence[int],
     precision: int = 50,
     ventana_historia: int = 3,
+    velocidad: Optional[float] = None,
+    cp_dist: Optional[float] = None,
 ) -> str:
-    """Formato compacto: S:<s1>,<s2>,<s3>,<s4>,<s5>|H:<historial>."""
-    s_disc = discretizar_sensores(sensores, precision=precision)
+    """Formato compacto: S:<s1>..,<s5>|C:<dist>|V:<vel>|H:<historial>."""
+    prec = max(5, min(500, int(precision)))
+    s_disc = discretizar_sensores(sensores, precision=prec)
     h_str = formatear_historial(historial, ventana_historia=ventana_historia)
-    return f"S:{','.join(str(x) for x in s_disc)}|H:{h_str}"
+    partes = [f"S:{','.join(str(x) for x in s_disc)}"]
+    if cp_dist is not None:
+        d_disc = int(round(max(0.0, min(1.0, float(cp_dist))) * prec))
+        partes.append(f"C:{d_disc}")
+    if velocidad is not None:
+        v_disc = int(round(max(0.0, min(1.0, float(velocidad))) * prec))
+        partes.append(f"V:{v_disc}")
+    partes.append(f"H:{h_str}")
+    return "|".join(partes)
 
 
 def formatear_ejemplo(
@@ -116,12 +127,14 @@ def formatear_ejemplo(
     precision: int = 50,
     ventana_historia: int = 3,
 ) -> str:
-    """Formato compacto de entrenamiento/ICL: S:...|H:... -> <accion>."""
+    """Formato compacto de entrenamiento/ICL: S:...|C:...|V:...|H:... -> <accion>."""
     estado_str = formatear_estado(
         muestra.get("sensores", [1.0] * 5),
         muestra.get("historial", [0]),
         precision=precision,
         ventana_historia=ventana_historia,
+        velocidad=muestra.get("velocidad"),
+        cp_dist=muestra.get("cp_dist"),
     )
     accion = int(muestra.get("accion", 0))
     if accion not in ACCIONES_VALIDAS:
@@ -173,7 +186,7 @@ def parsear_accion(texto_generado: str, estado_actual: Sequence[float]) -> int:
     match = re.search(r"[0-3]", texto_generado)
     if match:
         return int(match.group(0))
-    # Fallback seguro: si el obstáculo frontal está muy cerca, frenar suave (3); si no, recto (0)
+    # Fallback seguro: si el obstáculo frontal está muy cerca, frenar (3); si no, recto (0)
     frente = float(estado_actual[2]) if len(estado_actual) >= 3 else 1.0
     return 3 if frente < 0.22 else 0
 
@@ -445,6 +458,8 @@ class MotorQwen:
                     m.get("historial", [0]),
                     precision=precision_sensores,
                     ventana_historia=ventana_historia,
+                    velocidad=m.get("velocidad"),
+                    cp_dist=m.get("cp_dist"),
                 )
                 accion = int(m.get("accion", 0))
                 if accion not in ACCIONES_VALIDAS:
@@ -572,6 +587,8 @@ class MotorQwen:
         top_p: float = 0.9,
         precision_sensores: int = 50,
         ventana_historia: int = 3,
+        velocidad: Optional[float] = None,
+        cp_dist: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Predice la siguiente acción discreta {0,1,2,3} usando ICL o LoRA."""
         self.inicializar()
@@ -609,6 +626,8 @@ class MotorQwen:
             historial,
             precision=precision_sensores,
             ventana_historia=ventana_historia,
+            velocidad=velocidad,
+            cp_dist=cp_dist,
         )
         lineas.append(f"{query_str} ->")
         prompt = "".join(lineas)

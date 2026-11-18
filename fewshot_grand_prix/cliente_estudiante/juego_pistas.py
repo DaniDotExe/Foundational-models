@@ -154,8 +154,8 @@ def avance(progreso_anterior: float, progreso_nuevo: float, longitud: float) -> 
 # 6 Circuitos oficiales (3 Pistas A de entrenamiento + 3 Pistas B ocultas)
 # ---------------------------------------------------------------------------
 PISTAS: Dict[str, Dict[str, Any]] = {
-    "A1": {
-        "nombre": "A1 - Óvalo (Entrenamiento)",
+    "P1": {
+        "nombre": "P1 - Óvalo (Entrenamiento)",
         "tipo": "TRAIN",
         "dificultad": 1,
         "ancho_medio": 2.35,
@@ -166,8 +166,8 @@ PISTAS: Dict[str, Dict[str, Any]] = {
         "obstaculos": [],
         "obstaculos_moviles": [],
     },
-    "A2": {
-        "nombre": "A2 - Curvas Amplias (Entrenamiento)",
+    "P2": {
+        "nombre": "P2 - Curvas Amplias (Entrenamiento)",
         "tipo": "TRAIN",
         "dificultad": 2,
         "ancho_medio": 2.25,
@@ -178,8 +178,8 @@ PISTAS: Dict[str, Dict[str, Any]] = {
         "obstaculos": [],
         "obstaculos_moviles": [],
     },
-    "A3": {
-        "nombre": "A3 - Chicane Técnica (Entrenamiento)",
+    "P3": {
+        "nombre": "P3 - Chicane Técnica (Entrenamiento)",
         "tipo": "TRAIN",
         "dificultad": 3,
         "ancho_medio": 2.10,
@@ -237,7 +237,7 @@ PISTAS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-PISTAS_TRAIN = ["A1", "A2", "A3"]
+PISTAS_TRAIN = ["P1", "P2", "P3"]
 PISTAS_TEST = ["B1", "B2", "B3"]
 
 for _p in PISTAS.values():
@@ -318,10 +318,11 @@ def paso_simulacion(estado: EstadoCarro, accion: int, clave_pista: str) -> Dict[
     pista = PISTAS[clave_pista]
     puntos = pista["puntos"]
     nombre, acel, giro, freno = ACCIONES_DISCRETAS[int(accion) % len(ACCIONES_DISCRETAS)]
+    arrastre_ef = ARRASTRE
     e = estado
 
     e.velocidad = limitar(
-        e.velocidad + (acel * ACELERACION - freno * FRENO - ARRASTRE * e.velocidad) * DT,
+        e.velocidad + (acel * ACELERACION - freno * FRENO - arrastre_ef * e.velocidad) * DT,
         0.0,
         VELOCIDAD_MAX,
     )
@@ -330,6 +331,16 @@ def paso_simulacion(estado: EstadoCarro, accion: int, clave_pista: str) -> Dict[
     )
     e.x += math.cos(e.angulo) * e.velocidad * DT
     e.y += math.sin(e.angulo) * e.velocidad * DT
+
+    # Límite del recuadro negro: si choca contra el borde exterior, rebota mirando al checkpoint
+    limite_x, limite_y = 11.0, 9.9
+    if abs(e.x) >= limite_x or abs(e.y) >= limite_y:
+        e.x = limitar(e.x, -limite_x, limite_x)
+        e.y = limitar(e.y, -limite_y, limite_y)
+        tx_cp, ty_cp = puntos[e.siguiente_checkpoint]
+        e.angulo = envolver_angulo(math.atan2(ty_cp - e.y, tx_cp - e.x))
+        e.velocidad *= 0.40
+
     e.tiempo += DT
     e.pasos += 1
 
@@ -385,6 +396,7 @@ def calcular_sensores_rayos(
     puntos = pista["puntos"]
     ancho = pista["ancho_medio"]
     obstaculos = obstaculos_en(pista, estado.tiempo)
+    carro_dentro = abs(error_lateral_firmado(estado.x, estado.y, puntos)) <= ancho
 
     sensores: List[float] = []
     impactos: List[Tuple[float, float]] = []
@@ -406,7 +418,11 @@ def calcular_sensores_rayos(
                 if math.hypot(rx - ox, ry - oy) <= r + RADIO_CARRO * 0.5:
                     toco_obstaculo = True
                     break
-            if toco_obstaculo or abs(error_lateral_firmado(rx, ry, puntos)) > ancho:
+            dentro_ahora = abs(error_lateral_firmado(rx, ry, puntos)) <= ancho
+
+            # Dentro de pista: detecta borde exterior. Fuera de pista: detecta borde al volver a entrar u obstáculos.
+            toco_borde = (carro_dentro and not dentro_ahora) or (not carro_dentro and dentro_ahora)
+            if toco_obstaculo or toco_borde:
                 hit_dist = max(0.0, dist - PASO_RAYO * 0.5)
                 hit_x = estado.x + dx * hit_dist
                 hit_y = estado.y + dy * hit_dist
@@ -427,7 +443,7 @@ def calcular_progreso_pct(estado: EstadoCarro, clave_pista: str) -> float:
 
 
 def piloto_guia_local(sensores: List[float], velocidad: float) -> int:
-    """Heurística de demostración opcional (tecla P en modo grabación)."""
+    """Heurística de demostración (0=recto, 1=izq, 2=der, 3=frenar)."""
     izq, diag_izq, frente, diag_der, der = sensores
     if frente < 0.22 and velocidad > 5.0:
         return 3
@@ -462,10 +478,33 @@ def guardar_jugadas(jugadas: List[Dict[str, Any]]) -> None:
     )
 
 
+def velocidad_normalizada(velocidad: float) -> float:
+    return round(limitar(velocidad / VELOCIDAD_MAX, 0.0, 1.0), 4)
+
+
+def info_checkpoint(estado: EstadoCarro, clave_pista: str) -> float:
+    """Devuelve la distancia normalizada [0..1] al próximo checkpoint."""
+    puntos = PISTAS[clave_pista]["puntos"]
+    tx, ty = puntos[estado.siguiente_checkpoint % len(puntos)]
+    dx, dy = tx - estado.x, ty - estado.y
+    return round(limitar(math.hypot(dx, dy) / 12.0, 0.0, 1.0), 4)
+
+
+def conteo_por_pista(jugadas: List[Dict[str, Any]]) -> Dict[str, int]:
+    conteo = {k: 0 for k in PISTAS_TRAIN}
+    for j in jugadas:
+        p = str(j.get("pista", ""))
+        if p in conteo:
+            conteo[p] += 1
+        else:
+            conteo[p] = conteo.get(p, 0) + 1
+    return conteo
+
+
 def generar_jugadas_semilla(max_por_pista: int = 40) -> List[Dict[str, Any]]:
     """Genera jugadas limpias de demostración (~120 muestras) en A1, A2, A3."""
     muestras: List[Dict[str, Any]] = []
-    ventana = max(1, min(4, int(cfg.CONFIG_DATOS.get("ventana_historia", 3))))
+    ventana = max(1, min(8, int(cfg.CONFIG_DATOS.get("ventana_historia", 5))))
     for clave in PISTAS_TRAIN:
         est = estado_inicial(clave)
         hist: List[int] = [0] * ventana
@@ -478,8 +517,20 @@ def generar_jugadas_semilla(max_por_pista: int = 40) -> List[Dict[str, Any]]:
                 muestras.append({
                     "pista": clave,
                     "sensores": sensores,
+                    "velocidad": velocidad_normalizada(est.velocidad),
+                    "cp_dist": info_checkpoint(est, clave),
                     "historial": hist[-ventana:],
                     "accion": accion,
+                    "estado": {
+                        "x": round(est.x, 3),
+                        "y": round(est.y, 3),
+                        "angulo": round(est.angulo, 4),
+                        "velocidad": round(est.velocidad, 2),
+                        "tiempo": round(est.tiempo, 2),
+                        "siguiente_checkpoint": int(est.siguiente_checkpoint),
+                        "checkpoints": int(est.checkpoints),
+                        "vueltas": int(est.vueltas),
+                    },
                 })
                 capturadas += 1
             paso_simulacion(est, accion, clave)
@@ -515,7 +566,7 @@ def simular_pista_autonoma_headless(
     jugadas_ref: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
     est = estado_inicial(clave_pista)
-    ventana = max(1, min(4, int(cfg.CONFIG_DATOS.get("ventana_historia", 3))))
+    ventana = max(1, min(8, int(cfg.CONFIG_DATOS.get("ventana_historia", 5))))
     hist: List[int] = [0] * ventana
     accion_actual = 0
     frame = 0
@@ -532,6 +583,8 @@ def simular_pista_autonoma_headless(
                 jugadas_referencia=jugadas_ref,
                 config_icl=cfg.CONFIG_ICL,
                 config_datos=cfg.CONFIG_DATOS,
+                velocidad=velocidad_normalizada(est.velocidad),
+                cp_dist=info_checkpoint(est, clave_pista),
             )
             accion_actual = int(resp["accion"])
             latencias_rtt_ms.append(float(resp["rtt_ms"]))
@@ -648,7 +701,11 @@ class JuegoPygame:
         pts_screen = [(self._w2s(px, py)[0], self._w2s(px, py)[1]) for px, py in pista["puntos"]]
         ancho_px = max(12, int(pista["ancho_medio"] * 2.0 * escala))
         pg.draw.lines(self.screen, self.BORDE_PISTA, True, pts_screen, ancho_px + 12)
+        for sx, sy in pts_screen:
+            pg.draw.circle(self.screen, self.BORDE_PISTA, (sx, sy), (ancho_px + 12) // 2)
         pg.draw.lines(self.screen, self.ASFALTO, True, pts_screen, ancho_px)
+        for sx, sy in pts_screen:
+            pg.draw.circle(self.screen, self.ASFALTO, (sx, sy), ancho_px // 2)
 
         # Línea central sutil y checkpoints
         pg.draw.lines(self.screen, (45, 58, 82), True, pts_screen, 2)
@@ -673,8 +730,13 @@ class JuegoPygame:
             color = self.WARN if i < n_fijos else (255, 130, 105)
             pg.draw.circle(self.screen, color, (cx, cy), max(4, int(r * escala)))
 
-        # Rayos de los 5 sensores
+        # Rayos de los 5 sensores + rayo al próximo checkpoint
         car_x, car_y, _ = self._w2s(estado.x, estado.y)
+        cp_pt = pista["puntos"][estado.siguiente_checkpoint % len(pista["puntos"])]
+        cp_sx, cp_sy, _ = self._w2s(cp_pt[0], cp_pt[1])
+        pg.draw.line(self.screen, (56, 189, 248), (car_x, car_y), (cp_sx, cp_sy), 2)
+        pg.draw.circle(self.screen, (56, 189, 248), (cp_sx, cp_sy), 5)
+
         for val, (hx, hy) in zip(sensores, impactos):
             ix, iy, _ = self._w2s(hx, hy)
             color_rayo = self.OK if val > 0.5 else (self.WARN if val > 0.25 else self.BAD)
@@ -696,23 +758,58 @@ class JuegoPygame:
         nose_y = int(car_y + sa * (largo * 0.45))
         pg.draw.circle(self.screen, (8, 35, 31), (nose_x, nose_y), 4)
 
-    def _dibujar_panel_lateral(self, lineas: List[Tuple[str, Tuple[int, int, int]]], sensores: List[float]) -> None:
+    def _dibujar_icono_accion(self, rect: Any, accion: int) -> None:
+        """Dibuja un icono vectorial (flecha / punto / freno) para una acción del historial."""
+        pg = self.pygame
+        colores = {
+            0: self.OK,
+            1: self.CAR_COLOR,
+            2: self.ACCENT,
+            3: self.BAD,
+        }
+        col = colores.get(int(accion), self.MUTED)
+        pg.draw.rect(self.screen, (22, 31, 48), rect, border_radius=6)
+        pg.draw.rect(self.screen, col, rect, 1, border_radius=6)
+
+        cx, cy = rect.centerx, rect.centery
+        a = int(accion)
+        if a == 0:  # Arriba (recto)
+            pts = [(cx, cy - 4), (cx - 4, cy + 3), (cx + 4, cy + 3)]
+            pg.draw.polygon(self.screen, col, pts)
+        elif a == 1:  # Izquierda
+            pts = [(cx - 5, cy), (cx + 3, cy - 4), (cx + 3, cy + 4)]
+            pg.draw.polygon(self.screen, col, pts)
+        elif a == 2:  # Derecha
+            pts = [(cx + 5, cy), (cx - 3, cy - 4), (cx - 3, cy + 4)]
+            pg.draw.polygon(self.screen, col, pts)
+        else:  # 3: Frenar (cuadro rojo)
+            pg.draw.rect(self.screen, col, (cx - 3, cy - 3, 6, 6), border_radius=1)
+
+    def _dibujar_panel_lateral(
+        self,
+        lineas: List[Tuple[str, Tuple[int, int, int]]],
+        sensores: List[float],
+        velocidad_norm: Optional[float] = None,
+        historial: Optional[List[int]] = None,
+        accion_texto: Optional[str] = None,
+        cp_dist: Optional[float] = None,
+    ) -> None:
         pg = self.pygame
         x0 = self.AREA_PISTA_W
         w = self.ANCHO - x0
         pg.draw.rect(self.screen, self.PANEL_BG, (x0, 0, w, self.ALTO))
         pg.draw.line(self.screen, self.BORDE, (x0, 0), (x0, self.ALTO), 2)
 
-        y = 20
+        y = 18
         for texto, color in lineas:
             surf = self.font_body.render(texto, True, color)
             self.screen.blit(surf, (x0 + 18, y))
-            y += 24
+            y += 22
 
-        y += 12
-        hdr = self.font_h2.render("Sensores (5 Rayos)", True, self.ACCENT)
+        y += 8
+        hdr = self.font_h2.render("Variables de entrada", True, self.ACCENT)
         self.screen.blit(hdr, (x0 + 18, y))
-        y += 28
+        y += 24
         for nombre, val in zip(NOMBRES_RAYOS, sensores):
             lbl = self.font_small.render(f"{nombre:9s}: {val:.2f}", True, self.TEXTO)
             self.screen.blit(lbl, (x0 + 18, y))
@@ -721,14 +818,52 @@ class JuegoPygame:
             pg.draw.rect(self.screen, (30, 41, 59), (bar_x, y + 2, bar_w, 12), border_radius=4)
             fill_c = self.OK if val > 0.5 else (self.WARN if val > 0.25 else self.BAD)
             pg.draw.rect(self.screen, fill_c, (bar_x, y + 2, int(bar_w * val), 12), border_radius=4)
-            y += 24
+            y += 21
+
+        if cp_dist is not None:
+            cp_dist_v = limitar(float(cp_dist), 0.0, 1.0)
+            cp_color = (56, 189, 248)
+            lbl = self.font_small.render(f"{'cp_dist':9s}: {cp_dist_v:.2f}", True, cp_color)
+            self.screen.blit(lbl, (x0 + 18, y))
+            bar_x = x0 + 150
+            bar_w = w - 175
+            pg.draw.rect(self.screen, (30, 41, 59), (bar_x, y + 2, bar_w, 12), border_radius=4)
+            pg.draw.rect(self.screen, cp_color, (bar_x, y + 2, int(bar_w * cp_dist_v), 12), border_radius=4)
+            y += 21
+
+        if velocidad_norm is not None:
+            v_clamped = limitar(float(velocidad_norm), 0.0, 1.0)
+            lbl = self.font_small.render(f"{'velocidad':9s}: {v_clamped:.2f}", True, self.CAR_COLOR)
+            self.screen.blit(lbl, (x0 + 18, y))
+            bar_x = x0 + 150
+            bar_w = w - 175
+            pg.draw.rect(self.screen, (30, 41, 59), (bar_x, y + 2, bar_w, 12), border_radius=4)
+            pg.draw.rect(self.screen, self.CAR_COLOR, (bar_x, y + 2, int(bar_w * v_clamped), 12), border_radius=4)
+            y += 22
+
+        if historial is not None:
+            self.screen.blit(self.font_small.render("Historial:", True, self.MUTED), (x0 + 18, y + 1))
+            bar_x = x0 + 150
+            bar_w = w - 175
+            items_h = historial[-5:]
+            total_w = len(items_h) * 26 - 4 if items_h else 0
+            bx = bar_x + max(0, (bar_w - total_w) // 2)
+            for idx_h, act_h in enumerate(items_h):
+                box = pg.Rect(bx + idx_h * 26, y, 22, 18)
+                self._dibujar_icono_accion(box, act_h)
+            y += 30
+
+        if accion_texto is not None:
+            self.screen.blit(self.font_h2.render("Salida", True, self.WARN), (x0 + 18, y))
+            y += 22
+            self.screen.blit(self.font_small.render(f"Accion: {accion_texto}", True, self.TEXTO), (x0 + 18, y))
 
     def _pantalla_menu(self) -> Optional[int]:
         pg = self.pygame
         botones = [
-            (1, "[1] Grabar Jugadas (Pistas A1, A2, A3)", "Conduce con teclado y guarda data/mis_jugadas.json"),
+            (1, "[1] Grabar Jugadas (Pistas P1, P2, P3)", "Conduce con teclado y guarda data/mis_jugadas.json"),
             (2, "[2] Entrenar Piloto (Solo ESTRATEGIA == LORA)", "Envia tus jugadas al servidor para entrenar adaptador PEFT"),
-            (3, "[3] Modo Autonomo - Prueba (Pistas A)", "Prueba en vivo tu piloto consultando al servidor"),
+            (3, "[3] Modo Autonomo - Prueba (Pistas P)", "Prueba en vivo tu piloto consultando al servidor"),
             (4, "[4] Evaluacion Oficial (Pistas B1, B2, B3)", "Corre las 3 pistas ocultas y registra tu puntaje al ranking"),
         ]
 
@@ -797,48 +932,366 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _dibujar_boton(
+        self,
+        rect: Any,
+        texto: str,
+        bg: Tuple[int, int, int],
+        border: Tuple[int, int, int],
+        text_color: Optional[Tuple[int, int, int]] = None,
+    ) -> None:
+        pg = self.pygame
+        hover = rect.collidepoint(pg.mouse.get_pos())
+        fill = tuple(min(255, c + 18) for c in bg) if hover else bg
+        pg.draw.rect(self.screen, fill, rect, border_radius=8)
+        pg.draw.rect(self.screen, border, rect, 2, border_radius=8)
+        surf = self.font_small.render(texto, True, text_color or self.TEXTO)
+        tx = rect.x + (rect.w - surf.get_width()) // 2
+        ty = rect.y + (rect.h - surf.get_height()) // 2
+        self.screen.blit(surf, (tx, ty))
+
+    def _mostrar_controles(self) -> None:
+        """Muestra una ventana modal explicando los controles y el contexto del FM."""
+        pg = self.pygame
+        modal = pg.Rect(210, 150, 800, 440)
+        btn_cerrar = pg.Rect(525, 530, 170, 42)
+        items = [
+            ("Controles de Conduccion y Grabacion", self.ACCENT, True),
+            ("  Flechas o W / A / S / D : Conducir", self.TEXTO, False),
+            ("  Tecla R / Boton R       : Reinicia el carro al inicio (esquina sup. izq.)", self.TEXTO, False),
+            ("  Tecla ESC               : Guardar jugadas y volver al menu", self.TEXTO, False),
+            ("", self.TEXTO, False),
+            ("Botones del Panel (Etiquetador)", self.ACCENT, True),
+            ("  P1 | P2 | P3            : Selecciona entre las 3 pistas de entrenamiento", self.MUTED, False),
+            ("  - / + (Cada N frames)   : Frecuencia de captura de muestras", self.MUTED, False),
+            ("  Iniciar / Detener       : Activa o pausa la grabacion de frames", self.MUTED, False),
+            ("  Ver Frames              : Revisa frames (A/D o <-/->) y borra por pista", self.MUTED, False),
+            ("  Guardar y Salir         : Guarda mis_jugadas.json y vuelve al menu", self.MUTED, False),
+            ("", self.TEXTO, False),
+            ("Variables de Entrada y Salida", self.WARN, True),
+            ("  Entrada : 5 rayos, cp_dist, velocidad e Historial (ultimas 5)", self.MUTED, False),
+            ("  Salida  : accion (0=recto, 1=izq, 2=der, 3=frenar)", self.MUTED, False),
+        ]
+
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return
+                if event.type == pg.KEYDOWN and event.key in (pg.K_ESCAPE, pg.K_RETURN, pg.K_KP_ENTER):
+                    return
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    if btn_cerrar.collidepoint(event.pos):
+                        return
+
+            pg.draw.rect(self.screen, (10, 16, 28), modal, border_radius=14)
+            pg.draw.rect(self.screen, self.ACCENT, modal, 2, border_radius=14)
+            y = 175
+            for txt, col, is_hdr in items:
+                if txt:
+                    font = self.font_h2 if is_hdr else self.font_small
+                    self.screen.blit(font.render(txt, True, col), (240, y))
+                y += 24
+            self._dibujar_boton(btn_cerrar, "Entendido", (15, 52, 48), self.ACCENT)
+            pg.display.flip()
+            self.clock.tick(30)
+
+    def _confirmar_texto(self, titulo: str, mensaje: str, palabra_clave: str) -> bool:
+        """Diálogo de confirmación que exige escribir exactamente `palabra_clave`."""
+        pg = self.pygame
+        texto_ingresado = ""
+        modal = pg.Rect(240, 230, 740, 270)
+        caja_txt = pg.Rect(280, 365, 660, 42)
+        btn_ok = pg.Rect(580, 430, 170, 42)
+        btn_cancel = pg.Rect(770, 430, 170, 42)
+
+        while True:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return False
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        return False
+                    if event.key in (pg.K_RETURN, pg.K_KP_ENTER):
+                        if texto_ingresado.strip() == palabra_clave:
+                            return True
+                    elif event.key == pg.K_BACKSPACE:
+                        texto_ingresado = texto_ingresado[:-1]
+                    elif event.unicode and event.unicode.isprintable() and len(texto_ingresado) < 25:
+                        texto_ingresado += event.unicode
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if btn_cancel.collidepoint(pos):
+                        return False
+                    if btn_ok.collidepoint(pos) and texto_ingresado.strip() == palabra_clave:
+                        return True
+
+            pg.draw.rect(self.screen, (10, 16, 28), modal, border_radius=14)
+            pg.draw.rect(self.screen, self.BAD, modal, 2, border_radius=14)
+            self.screen.blit(self.font_h2.render(titulo, True, self.BAD), (280, 255))
+            self.screen.blit(self.font_body.render(mensaje, True, self.TEXTO), (280, 295))
+            self.screen.blit(
+                self.font_body.render(f"Escribe  {palabra_clave}  para confirmar:", True, self.WARN),
+                (280, 328),
+            )
+            pg.draw.rect(self.screen, (20, 29, 46), caja_txt, border_radius=8)
+            pg.draw.rect(self.screen, self.ACCENT, caja_txt, 2, border_radius=8)
+            self.screen.blit(self.font_h2.render(texto_ingresado + "|", True, self.TEXTO), (caja_txt.x + 12, caja_txt.y + 10))
+
+            listo = texto_ingresado.strip() == palabra_clave
+            self._dibujar_boton(btn_ok, "Confirmar", (75, 22, 34) if listo else (30, 35, 45), self.BAD if listo else self.BORDE)
+            self._dibujar_boton(btn_cancel, "Cancelar", self.PANEL_BG, self.BORDE)
+            pg.display.flip()
+            self.clock.tick(30)
+
+    def _pantalla_inspector_frames(self, jugadas: List[Dict[str, Any]], pista_inicial: str = "TODAS") -> List[Dict[str, Any]]:
+        pg = self.pygame
+        filtro = pista_inicial if pista_inicial in PISTAS_TRAIN else "TODAS"
+        idx = 0
+        x0 = self.AREA_PISTA_W + 18
+        bw = self.ANCHO - self.AREA_PISTA_W - 36
+        half_w = (bw - 10) // 2
+        tab_w = (bw - 18) // 4
+
+        while True:
+            indices_vis = [
+                i for i, j in enumerate(jugadas)
+                if filtro == "TODAS" or j.get("pista") == filtro
+            ]
+            if indices_vis:
+                idx = max(0, min(idx, len(indices_vis) - 1))
+            else:
+                idx = 0
+
+            # Pestañas de filtro agrupadas por pista
+            tabs = ["TODAS", "P1", "P2", "P3"]
+            tab_rects = [pg.Rect(x0 + t_i * (tab_w + 6), 435, tab_w, 32) for t_i in range(4)]
+
+            btn_prev = pg.Rect(x0, 480, half_w, 38)
+            btn_next = pg.Rect(x0 + half_w + 10, 480, half_w, 38)
+            btn_del_one = pg.Rect(x0, 528, half_w, 38)
+            btn_del_pista = pg.Rect(x0 + half_w + 10, 528, half_w, 38)
+            btn_clear_all = pg.Rect(x0, 576, bw, 38)
+            btn_back = pg.Rect(x0, 626, bw, 42)
+
+            pista_obj = filtro
+            if indices_vis:
+                pista_obj = str(jugadas[indices_vis[idx]].get("pista", filtro))
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return jugadas
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_ESCAPE:
+                        return jugadas
+                    if event.key in (pg.K_LEFT, pg.K_a) and indices_vis:
+                        idx = (idx - 1) % len(indices_vis)
+                    if event.key in (pg.K_RIGHT, pg.K_d) and indices_vis:
+                        idx = (idx + 1) % len(indices_vis)
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if btn_back.collidepoint(pos):
+                        return jugadas
+                    for t_name, t_rect in zip(tabs, tab_rects):
+                        if t_rect.collidepoint(pos):
+                            filtro = t_name
+                            idx = 0
+                    if btn_prev.collidepoint(pos) and indices_vis:
+                        idx = (idx - 1) % len(indices_vis)
+                    if btn_next.collidepoint(pos) and indices_vis:
+                        idx = (idx + 1) % len(indices_vis)
+                    if btn_del_one.collidepoint(pos) and indices_vis:
+                        jugadas.pop(indices_vis[idx])
+                        guardar_jugadas(jugadas)
+                    if btn_del_pista.collidepoint(pos) and indices_vis and pista_obj in PISTAS_TRAIN:
+                        n_pista = sum(1 for j in jugadas if j.get("pista") == pista_obj)
+                        clave_conf = f"borrar-{pista_obj.lower()}"
+                        if self._confirmar_texto(
+                            f"ATENCION: Borrar frames de {pista_obj}",
+                            f"Se eliminaran los {n_pista} frames grabados de {pista_obj}.",
+                            clave_conf,
+                        ):
+                            jugadas = [j for j in jugadas if j.get("pista") != pista_obj]
+                            guardar_jugadas(jugadas)
+                            idx = 0
+                    if btn_clear_all.collidepoint(pos) and jugadas:
+                        if self._confirmar_texto(
+                            "ATENCION: Se borraran TODAS las grabaciones",
+                            f"Se eliminaran los {len(jugadas)} frames de todas las pistas (P1, P2 y P3).",
+                            "borrar-todo",
+                        ):
+                            jugadas.clear()
+                            guardar_jugadas(jugadas)
+                            idx = 0
+
+            # Recalcular indices visibles tras posibles eliminaciones en este frame
+            indices_vis = [
+                i for i, j in enumerate(jugadas)
+                if filtro == "TODAS" or j.get("pista") == filtro
+            ]
+            if indices_vis:
+                idx = max(0, min(idx, len(indices_vis) - 1))
+            else:
+                idx = 0
+
+            conteo = conteo_por_pista(jugadas)
+            if not indices_vis:
+                self.screen.fill(self.BG)
+                self.screen.blit(
+                    self.font_title.render(f"Inspector de Frames ({filtro})", True, self.ACCENT),
+                    (90, 60),
+                )
+                self.screen.blit(
+                    self.font_h2.render(f"No hay frames grabados en {filtro}.", True, self.WARN),
+                    (90, 120),
+                )
+                lineas = [
+                    ("INSPECTOR POR PISTA", self.ACCENT),
+                    (f"Filtro: {filtro} (0 frames)", self.WARN),
+                    (f"P1:{conteo['P1']} | P2:{conteo['P2']} | P3:{conteo['P3']}", self.MUTED),
+                ]
+                self._dibujar_panel_lateral(lineas, [0.0] * 5, velocidad_norm=0.0)
+            else:
+                m = jugadas[indices_vis[idx]]
+                accion = int(m.get("accion", 0))
+                nom_acc = ACCIONES_DISCRETAS[accion % len(ACCIONES_DISCRETAS)][0]
+                pista_k = m.get("pista", "P1")
+                if pista_k not in PISTAS:
+                    pista_k = "P1"
+                hist = m.get("historial", [])
+                sens = m.get("sensores", [0.0] * 5)
+                est_info = m.get("estado")
+                vel_norm = m.get("velocidad")
+                if vel_norm is None and isinstance(est_info, dict) and "velocidad" in est_info:
+                    vel_norm = velocidad_normalizada(float(est_info["velocidad"]))
+
+                if isinstance(est_info, dict) and "x" in est_info and "y" in est_info:
+                    est_vis = EstadoCarro(
+                        x=float(est_info["x"]),
+                        y=float(est_info["y"]),
+                        angulo=float(est_info.get("angulo", 0.0)),
+                        velocidad=float(est_info.get("velocidad", 0.0)),
+                        tiempo=float(est_info.get("tiempo", 0.0)),
+                        siguiente_checkpoint=int(est_info.get("siguiente_checkpoint", 1)) % len(PISTAS[pista_k]["puntos"]),
+                        checkpoints=int(est_info.get("checkpoints", 0)),
+                        vueltas=int(est_info.get("vueltas", 0)),
+                    )
+                    _, impactos = calcular_sensores_rayos(est_vis, pista_k)
+                    self._dibujar_pista_y_carro(pista_k, est_vis, sens, impactos)
+                else:
+                    est_vis = estado_inicial(pista_k)
+                    self._dibujar_pista_y_carro(pista_k, est_vis, [0.0] * 5, [(est_vis.x, est_vis.y)] * 5)
+
+                vel_txt = f"{est_info['velocidad']:.2f} m/s" if isinstance(est_info, dict) and "velocidad" in est_info else "N/A"
+                cp_txt = f"CP {est_info.get('siguiente_checkpoint', '?')}" if isinstance(est_info, dict) else "CP ?"
+                lineas = [
+                    ("INSPECTOR POR PISTA", self.ACCENT),
+                    (f"Frame #{idx + 1}/{len(indices_vis)} ({filtro}) | {cp_txt}", self.OK),
+                    (f"P1:{conteo['P1']} | P2:{conteo['P2']} | P3:{conteo['P3']}", self.MUTED),
+                    (f"Vel: {vel_txt} | <- / -> o A / D", self.TEXTO),
+                ]
+                cp_d = m.get("cp_dist")
+                self._dibujar_panel_lateral(
+                    lineas,
+                    sens,
+                    velocidad_norm=vel_norm if vel_norm is not None else 0.0,
+                    historial=hist,
+                    accion_texto=f"{accion} ({nom_acc})",
+                    cp_dist=float(cp_d) if cp_d is not None else None,
+                )
+
+            for t_name, t_rect in zip(tabs, tab_rects):
+                activo = t_name == filtro
+                self._dibujar_boton(
+                    t_rect,
+                    t_name,
+                    (15, 52, 48) if activo else self.PANEL_BG,
+                    self.ACCENT if activo else self.BORDE,
+                )
+
+            self._dibujar_boton(btn_prev, "< Anterior", self.PANEL_BG, self.BORDE)
+            self._dibujar_boton(btn_next, "Siguiente >", self.PANEL_BG, self.BORDE)
+            self._dibujar_boton(btn_del_one, "Eliminar Frame", (55, 22, 32), self.BAD)
+            lbl_pista = f"Borrar {pista_obj}" if pista_obj in PISTAS_TRAIN else "Borrar Pista"
+            self._dibujar_boton(btn_del_pista, lbl_pista, (60, 28, 20), self.WARN)
+            self._dibujar_boton(btn_clear_all, "Borrar Todo", (70, 18, 28), self.BAD)
+            self._dibujar_boton(btn_back, "Volver a Grabacion", (15, 52, 48), self.ACCENT)
+            pg.display.flip()
+            self.clock.tick(30)
+
     def _modo_grabar_jugadas(self) -> None:
         pg = self.pygame
         idx_pista = 0
         clave = PISTAS_TRAIN[idx_pista]
         est = estado_inicial(clave)
         jugadas = cargar_jugadas()
-        ventana = max(1, min(4, int(cfg.CONFIG_DATOS.get("ventana_historia", 3))))
+        ventana = max(1, min(8, int(cfg.CONFIG_DATOS.get("ventana_historia", 5))))
         hist: List[int] = [0] * ventana
         frame = 0
-        autopiloto = False
+        grabando = False
+        cada_n_frames = RECORD_EVERY_N_FRAMES
+        frames_sesion = 0
+
+        x0 = self.AREA_PISTA_W + 18
+        bw = self.ANCHO - self.AREA_PISTA_W - 36
+        tab3_w = (bw - 16) // 3
+        btn_reiniciar = pg.Rect(16, 16, 40, 40)
+        btn_controles = pg.Rect(x0, 385, bw, 36)
+        pista_btns = [pg.Rect(x0 + i * (tab3_w + 8), 431, tab3_w, 34) for i in range(3)]
+        btn_freq_menos = pg.Rect(x0, 487, 56, 36)
+        btn_freq_mas = pg.Rect(x0 + bw - 56, 487, 56, 36)
+        btn_rec = pg.Rect(x0, 533, bw, 42)
+        btn_ver_frames = pg.Rect(x0, 587, bw, 62)
+        btn_guardar_salir = pg.Rect(x0, 661, bw, 42)
 
         while True:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
+                    guardar_jugadas(jugadas)
                     return
                 if event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
                         guardar_jugadas(jugadas)
                         self.estado_menu_msg = f"Jugadas guardadas en data/mis_jugadas.json ({len(jugadas)} muestras)."
                         return
-                    if event.key in (pg.K_n, pg.K_TAB):
-                        idx_pista = (idx_pista + 1) % len(PISTAS_TRAIN)
-                        clave = PISTAS_TRAIN[idx_pista]
-                        est = estado_inicial(clave)
-                        hist = [0] * ventana
                     if event.key == pg.K_r:
                         est = estado_inicial(clave)
                         hist = [0] * ventana
-                    if event.key == pg.K_p:
-                        autopiloto = not autopiloto
-                    if event.key == pg.K_c:
-                        jugadas = []
+                if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    if btn_rec.collidepoint(pos):
+                        grabando = not grabando
+                    elif btn_freq_menos.collidepoint(pos):
+                        cada_n_frames = max(1, cada_n_frames - 1)
+                    elif btn_freq_mas.collidepoint(pos):
+                        cada_n_frames = min(30, cada_n_frames + 1)
+                    elif any(r.collidepoint(pos) for r in pista_btns):
+                        for i, r in enumerate(pista_btns):
+                            if r.collidepoint(pos):
+                                idx_pista = i
+                                clave = PISTAS_TRAIN[idx_pista]
+                                est = estado_inicial(clave)
+                                hist = [0] * ventana
+                                break
+                    elif btn_reiniciar.collidepoint(pos):
+                        est = estado_inicial(clave)
+                        hist = [0] * ventana
+                    elif btn_controles.collidepoint(pos):
+                        grabando = False
+                        self._mostrar_controles()
+                    elif btn_ver_frames.collidepoint(pos):
+                        grabando = False
                         guardar_jugadas(jugadas)
+                        jugadas = self._pantalla_inspector_frames(jugadas, pista_inicial=clave)
+                    elif btn_guardar_salir.collidepoint(pos):
+                        guardar_jugadas(jugadas)
+                        self.estado_menu_msg = f"Grabacion guardada ({len(jugadas)} muestras totales, +{frames_sesion} nuevas)."
+                        return
 
             sensores, impactos = calcular_sensores_rayos(est, clave)
             keys = pg.key.get_pressed()
             conduciendo = False
 
-            if autopiloto:
-                accion = piloto_guia_local(sensores, est.velocidad)
-                conduciendo = True
-            elif keys[pg.K_DOWN] or keys[pg.K_s] or keys[pg.K_SPACE]:
+            if keys[pg.K_DOWN] or keys[pg.K_s]:
                 accion = 3
                 conduciendo = True
             elif keys[pg.K_LEFT] or keys[pg.K_a]:
@@ -851,43 +1304,79 @@ class JuegoPygame:
                 accion = 0
                 conduciendo = True
             else:
-                accion = 0
+                accion = 3
 
-            if conduciendo and frame % RECORD_EVERY_N_FRAMES == 0:
+            if grabando and (conduciendo or est.velocidad > 0.05) and frame % cada_n_frames == 0:
                 jugadas.append({
                     "pista": clave,
                     "sensores": sensores,
+                    "velocidad": velocidad_normalizada(est.velocidad),
+                    "cp_dist": info_checkpoint(est, clave),
                     "historial": hist[-ventana:],
                     "accion": accion,
+                    "estado": {
+                        "x": round(est.x, 3),
+                        "y": round(est.y, 3),
+                        "angulo": round(est.angulo, 4),
+                        "velocidad": round(est.velocidad, 2),
+                        "tiempo": round(est.tiempo, 2),
+                        "siguiente_checkpoint": int(est.siguiente_checkpoint),
+                        "checkpoints": int(est.checkpoints),
+                        "vueltas": int(est.vueltas),
+                    },
                 })
+                frames_sesion += 1
 
-            if conduciendo or est.velocidad > 0.05:
+            if conduciendo or est.velocidad > 0.02:
                 paso_simulacion(est, accion, clave)
                 hist.append(accion)
             frame += 1
 
             self._dibujar_pista_y_carro(clave, est, sensores, impactos)
+            self._dibujar_boton(btn_reiniciar, "R", self.PANEL_BG, self.BORDE)
+            conteo = conteo_por_pista(jugadas)
+            accion_txt = ACCIONES_DISCRETAS[accion][0]
             lineas = [
                 ("MODO [1]: GRABAR JUGADAS", self.ACCENT),
                 (f"Pista: {PISTAS[clave]['nombre']}", self.TEXTO),
-                (f"Muestras guardadas: {len(jugadas)}", self.OK),
-                (f"Cada N frames: {RECORD_EVERY_N_FRAMES}", self.MUTED),
-                (f"Velocidad: {est.velocidad:.2f} m/s", self.TEXTO),
-                (f"Progreso: {calcular_progreso_pct(est, clave):.1f}%", self.TEXTO),
-                (f"Vueltas: {est.vueltas} | CP: {est.checkpoints}", self.TEXTO),
-                (f"Accion actual: {ACCIONES_DISCRETAS[accion][0]}", self.WARN),
-                (f"Guia auto [P]: {'ON' if autopiloto else 'OFF'}", self.OK if autopiloto else self.MUTED),
-                ("", self.TEXTO),
-                ("Controles:", self.ACCENT),
-                ("  Flechas / WASD : Conducir", self.MUTED),
-                ("  Espacio / S    : Frenar", self.MUTED),
-                ("  N / TAB        : Siguiente A", self.MUTED),
-                ("  R              : Reiniciar", self.MUTED),
-                ("  C              : Limpiar JSON", self.MUTED),
-                ("  P              : Guia auto", self.MUTED),
-                ("  ESC            : Guardar y salir", self.MUTED),
             ]
-            self._dibujar_panel_lateral(lineas, sensores)
+            self._dibujar_panel_lateral(
+                lineas,
+                sensores,
+                velocidad_norm=velocidad_normalizada(est.velocidad),
+                historial=hist[-ventana:],
+                accion_texto=accion_txt,
+                cp_dist=info_checkpoint(est, clave),
+            )
+
+            # Botones interactivos en el panel derecho
+            self._dibujar_boton(btn_controles, "Instrucciones (Controles)", (24, 38, 62), self.ACCENT)
+            for p_name, p_rect in zip(PISTAS_TRAIN, pista_btns):
+                activa = p_name == clave
+                self._dibujar_boton(
+                    p_rect,
+                    p_name,
+                    (15, 52, 48) if activa else self.PANEL_BG,
+                    self.ACCENT if activa else self.BORDE,
+                )
+
+            self._dibujar_boton(btn_freq_menos, "-", self.PANEL_BG, self.BORDE)
+            freq_txt = self.font_small.render(f"Cada {cada_n_frames} frames", True, self.TEXTO)
+            self.screen.blit(freq_txt, (x0 + (bw - freq_txt.get_width()) // 2, 496))
+            self._dibujar_boton(btn_freq_mas, "+", self.PANEL_BG, self.BORDE)
+
+            if grabando:
+                self._dibujar_boton(btn_rec, f"(+{frames_sesion}) DETENER GRABACION", (75, 22, 34), self.BAD)
+            else:
+                self._dibujar_boton(btn_rec, f"(+{frames_sesion}) INICIAR GRABACION", (16, 66, 42), self.OK)
+
+            self._dibujar_boton(btn_ver_frames, "", (24, 38, 62), self.ACCENT)
+            l1 = self.font_body.render(f"Ver Frames: {len(jugadas)}", True, self.TEXTO)
+            l2 = self.font_small.render(f"P1: {conteo['P1']}  |  P2: {conteo['P2']}  |  P3: {conteo['P3']}", True, self.ACCENT)
+            self.screen.blit(l1, (btn_ver_frames.x + (btn_ver_frames.w - l1.get_width()) // 2, btn_ver_frames.y + 10))
+            self.screen.blit(l2, (btn_ver_frames.x + (btn_ver_frames.w - l2.get_width()) // 2, btn_ver_frames.y + 35))
+            self._dibujar_boton(btn_guardar_salir, "Guardar y Salir", (15, 52, 48), self.ACCENT)
+
             pg.display.flip()
             self.clock.tick(30)
 
@@ -918,7 +1407,7 @@ class JuegoPygame:
     ) -> Optional[Dict[str, Any]]:
         pg = self.pygame
         est = estado_inicial(clave_pista)
-        ventana = max(1, min(4, int(cfg.CONFIG_DATOS.get("ventana_historia", 3))))
+        ventana = max(1, min(8, int(cfg.CONFIG_DATOS.get("ventana_historia", 5))))
         hist: List[int] = [0] * ventana
         accion_actual = 0
         frame = 0
@@ -945,6 +1434,8 @@ class JuegoPygame:
                     jugadas_referencia=jugadas_ref,
                     config_icl=cfg.CONFIG_ICL,
                     config_datos=cfg.CONFIG_DATOS,
+                    velocidad=velocidad_normalizada(est.velocidad),
+                    cp_dist=info_checkpoint(est, clave_pista),
                 )
                 accion_actual = int(resp["accion"])
                 ultimo_rtt_ms = float(resp["rtt_ms"])
@@ -974,7 +1465,14 @@ class JuegoPygame:
                 ("", self.TEXTO),
                 ("ESC: Abortar y volver al menu", self.MUTED),
             ]
-            self._dibujar_panel_lateral(lineas, sensores)
+            self._dibujar_panel_lateral(
+                lineas,
+                sensores,
+                velocidad_norm=velocidad_normalizada(est.velocidad),
+                historial=hist[-ventana:],
+                accion_texto=ACCIONES_DISCRETAS[accion_actual][0],
+                cp_dist=info_checkpoint(est, clave_pista),
+            )
             pg.display.flip()
             self.clock.tick(30)
 
