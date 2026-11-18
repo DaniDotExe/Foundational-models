@@ -67,6 +67,7 @@ class JugadaEjemplo(BaseModel):
     pista: Optional[str] = None
     velocidad: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_dist: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    cp_ang: Optional[float] = Field(default=None, ge=-1.0, le=1.0)
 
 
 class EntrenarLoraRequest(BaseModel):
@@ -82,6 +83,7 @@ class EntrenarLoraRequest(BaseModel):
     ventana_historia: int = Field(default=3, ge=1, le=8)
     velocidad: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_dist: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    cp_ang: Optional[float] = Field(default=None, ge=-1.0, le=1.0)
 
 
 class DecidirAccionRequest(BaseModel):
@@ -99,6 +101,7 @@ class DecidirAccionRequest(BaseModel):
     ventana_historia: int = Field(default=3, ge=1, le=8)
     velocidad: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     cp_dist: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    cp_ang: Optional[float] = Field(default=None, ge=-1.0, le=1.0)
 
 
 class ResultadoPistaB(BaseModel):
@@ -231,6 +234,7 @@ def decidir_accion(req: DecidirAccionRequest) -> Dict[str, Any]:
             ventana_historia=req.ventana_historia,
             velocidad=req.velocidad,
             cp_dist=req.cp_dist,
+            cp_ang=req.cp_ang,
         )
         return {
             "accion": resultado["accion"],

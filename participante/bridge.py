@@ -96,6 +96,7 @@ class ServerBridge:
         config_datos: Dict[str, Any],
         velocidad: Optional[float] = None,
         cp_dist: Optional[float] = None,
+        cp_ang: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Consulta POST /decidir_accion con reintentos y mide RTT real en milisegundos."""
         est = estrategia.upper().strip()
@@ -119,6 +120,8 @@ class ServerBridge:
             payload["velocidad"] = float(velocidad)
         if cp_dist is not None:
             payload["cp_dist"] = float(cp_dist)
+        if cp_ang is not None:
+            payload["cp_ang"] = float(cp_ang)
 
         t0 = time.perf_counter()
         last_err: Optional[Exception] = None

@@ -106,15 +106,20 @@ def formatear_estado(
     ventana_historia: int = 3,
     velocidad: Optional[float] = None,
     cp_dist: Optional[float] = None,
+    cp_ang: Optional[float] = None,
 ) -> str:
-    """Formato compacto: S:<s1>..,<s5>|C:<dist>|V:<vel>|H:<historial>."""
+    """Formato compacto: S:<s1>..,<s5>|C:<dist>,<ang>|V:<vel>|H:<historial>."""
     prec = max(5, min(500, int(precision)))
     s_disc = discretizar_sensores(sensores, precision=prec)
     h_str = formatear_historial(historial, ventana_historia=ventana_historia)
     partes = [f"S:{','.join(str(x) for x in s_disc)}"]
     if cp_dist is not None:
         d_disc = int(round(max(0.0, min(1.0, float(cp_dist))) * prec))
-        partes.append(f"C:{d_disc}")
+        if cp_ang is not None:
+            a_disc = int(round(max(-1.0, min(1.0, float(cp_ang))) * prec))
+            partes.append(f"C:{d_disc},{a_disc}")
+        else:
+            partes.append(f"C:{d_disc}")
     if velocidad is not None:
         v_disc = int(round(max(0.0, min(1.0, float(velocidad))) * prec))
         partes.append(f"V:{v_disc}")
@@ -135,6 +140,7 @@ def formatear_ejemplo(
         ventana_historia=ventana_historia,
         velocidad=muestra.get("velocidad"),
         cp_dist=muestra.get("cp_dist"),
+        cp_ang=muestra.get("cp_ang"),
     )
     accion = int(muestra.get("accion", 0))
     if accion not in ACCIONES_VALIDAS:
@@ -148,8 +154,10 @@ def seleccionar_ejemplos_icl(
     k_shots: int,
     seleccion: str = "knn",
     pesos_sensores: Optional[Sequence[float]] = None,
+    cp_dist: Optional[float] = None,
+    cp_ang: Optional[float] = None,
 ) -> List[Dict[str, Any]]:
-    """Selecciona `k_shots` jugadas usando KNN ponderado o muestreo aleatorio."""
+    """Selecciona `k_shots` jugadas usando KNN ponderado (rayos + checkpoint) o muestreo aleatorio."""
     if not jugadas_referencia or k_shots <= 0:
         return []
 
@@ -159,7 +167,7 @@ def seleccionar_ejemplos_icl(
     if modo == "random":
         return random.sample(jugadas_referencia, k)
 
-    # KNN ponderado sobre los 5 rayos de distancia normalizados
+    # KNN ponderado sobre los 5 rayos de distancia normalizados + dirección al checkpoint
     if pesos_sensores is not None and len(pesos_sensores) == 5:
         pesos = np.array([max(0.0, float(w)) for w in pesos_sensores], dtype=np.float64)
     else:
@@ -172,6 +180,12 @@ def seleccionar_ejemplos_icl(
         r = np.array([max(0.0, min(1.0, float(x))) for x in s_ref], dtype=np.float64)
         diff = q - r
         dist = float(np.sum(pesos * (diff * diff)))
+        if cp_ang is not None and jugada.get("cp_ang") is not None:
+            ang_diff = float(cp_ang) - float(jugada["cp_ang"])
+            dist += 4.0 * (ang_diff * ang_diff)
+        if cp_dist is not None and jugada.get("cp_dist") is not None:
+            d_diff = float(cp_dist) - float(jugada["cp_dist"])
+            dist += 0.5 * (d_diff * d_diff)
         distancias.append((dist, idx))
 
     distancias.sort(key=lambda item: item[0])
@@ -205,6 +219,7 @@ class MotorQwen:
         self.device: str = "cpu"
         self.dtype: Any = None
         self.loaded_adapters: set[str] = set()
+        self.action_token_ids: List[int] = []
         self._initialized: bool = False
 
     def inicializar(self) -> None:
@@ -257,16 +272,22 @@ class MotorQwen:
                 self.model_id,
                 torch_dtype=self.dtype,
                 attn_implementation="sdpa",
+                low_cpu_mem_usage=True,
             )
         except (TypeError, ValueError) as exc:
             logger.warning("attn_implementation='sdpa' no soportado (%s); cargando implementación estándar.", exc)
             self.base_model = AutoModelForCausalLM.from_pretrained(
                 self.model_id,
                 torch_dtype=self.dtype,
+                low_cpu_mem_usage=True,
             )
 
         self.base_model.to(self.device)
         self.base_model.eval()
+        self.action_token_ids = [
+            int(self.tokenizer.encode(str(a), add_special_tokens=False)[0])
+            for a in range(4)
+        ]
         logger.info("Modelo %s cargado correctamente en %s.", self.model_id, self.device)
 
     def info_salud(self) -> Dict[str, Any]:
@@ -450,31 +471,50 @@ class MotorQwen:
             if not trainable_params:
                 raise RuntimeError(f"No se encontraron parámetros entrenables para el adaptador '{sid}'.")
 
-            # Preparar pares tokenizados con máscara -100 sobre el prompt
-            encoded_samples: List[tuple[List[int], List[int]]] = []
+            # Balancear clases minoritarias y romper confusión causal del historial H
+            por_accion: Dict[int, List[Dict[str, Any]]] = {a: [] for a in ACCIONES_VALIDAS}
             for m in muestras:
-                estado_str = formatear_estado(
-                    m.get("sensores", [1.0] * 5),
-                    m.get("historial", [0]),
-                    precision=precision_sensores,
-                    ventana_historia=ventana_historia,
-                    velocidad=m.get("velocidad"),
-                    cp_dist=m.get("cp_dist"),
-                )
+                acc = int(m.get("accion", 0))
+                if acc not in ACCIONES_VALIDAS:
+                    acc = 0
+                por_accion[acc].append(m)
+
+            max_clase = max((len(v) for v in por_accion.values()), default=1)
+            min_target = max(6, int(round(0.35 * max_clase)))
+            muestras_balanceadas: List[Dict[str, Any]] = []
+            for acc, lista in por_accion.items():
+                if not lista:
+                    continue
+                if len(lista) < min_target:
+                    reps = (min_target + len(lista) - 1) // len(lista)
+                    muestras_balanceadas.extend((lista * reps)[:min_target])
+                else:
+                    muestras_balanceadas.extend(lista)
+
+            # Preparar pares tokenizados supervisando EXCLUSIVAMENTE la clasificación entre las 4 acciones {0,1,2,3}
+            # en el último token e inyectando historiales contrafactuales (H=[0..0], H=[2..2]) para que el modelo atienda a S y C
+            encoded_samples: List[tuple[List[int], int]] = []
+            vent = max(1, min(8, int(ventana_historia)))
+            historiales_cf = [[0] * vent, [2] * vent]
+
+            for m in muestras_balanceadas:
                 accion = int(m.get("accion", 0))
                 if accion not in ACCIONES_VALIDAS:
                     accion = 0
-                prompt = f"{SYSTEM_HEADER}{estado_str} ->"
-                full_text = f"{prompt} {accion}"
-
-                prompt_ids = self.tokenizer(prompt, add_special_tokens=False).input_ids
-                full_ids = self.tokenizer(full_text, add_special_tokens=False).input_ids
-
-                if len(full_ids) <= len(prompt_ids):
-                    labels = [-100] * (len(full_ids) - 1) + [full_ids[-1]]
-                else:
-                    labels = [-100] * len(prompt_ids) + full_ids[len(prompt_ids):]
-                encoded_samples.append((full_ids, labels))
+                variantes_h = [m.get("historial", [0])] + historiales_cf
+                for h_var in variantes_h:
+                    estado_str = formatear_estado(
+                        m.get("sensores", [1.0] * 5),
+                        h_var,
+                        precision=precision_sensores,
+                        ventana_historia=ventana_historia,
+                        velocidad=m.get("velocidad"),
+                        cp_dist=m.get("cp_dist"),
+                        cp_ang=m.get("cp_ang"),
+                    )
+                    prompt = f"{SYSTEM_HEADER}{estado_str} -> "
+                    prompt_ids = self.tokenizer(prompt, add_special_tokens=False).input_ids
+                    encoded_samples.append((prompt_ids, accion))
 
             pad_id = int(self.tokenizer.pad_token_id)
             optimizer = torch.optim.AdamW(trainable_params, lr=float(learning_rate))
@@ -493,11 +533,11 @@ class MotorQwen:
                     attn_mask_b = []
                     labels_b = []
 
-                    for ids, lbls in batch:
+                    for ids, acc_target in batch:
                         pad_n = max_len - len(ids)
                         input_ids_b.append([pad_id] * pad_n + ids)
                         attn_mask_b.append([0] * pad_n + [1] * len(ids))
-                        labels_b.append([-100] * pad_n + lbls)
+                        labels_b.append(acc_target)
 
                     input_tensor = torch.tensor(input_ids_b, dtype=torch.long, device=self.device)
                     mask_tensor = torch.tensor(attn_mask_b, dtype=torch.long, device=self.device)
@@ -507,15 +547,22 @@ class MotorQwen:
                     outputs = self.peft_model(
                         input_ids=input_tensor,
                         attention_mask=mask_tensor,
-                        labels=label_tensor,
+                        use_cache=False,
+                        logits_to_keep=1,
                     )
-                    loss = outputs.loss
+                    logits_last = outputs.logits[:, -1, :]
+                    action_logits = logits_last[:, self.action_token_ids].float()
+                    loss = torch.nn.functional.cross_entropy(action_logits, label_tensor)
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(trainable_params, 1.0)
                     optimizer.step()
                     epoch_losses.append(float(loss.detach().cpu().item()))
 
                 historial_loss.append(round(float(np.mean(epoch_losses)), 4))
+
+            del optimizer
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
 
             self.peft_model.eval()
             for p in trainable_params:
@@ -589,6 +636,7 @@ class MotorQwen:
         ventana_historia: int = 3,
         velocidad: Optional[float] = None,
         cp_dist: Optional[float] = None,
+        cp_ang: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Predice la siguiente acción discreta {0,1,2,3} usando ICL o LoRA."""
         self.inicializar()
@@ -608,6 +656,8 @@ class MotorQwen:
                 k_shots=k_shots,
                 seleccion=seleccion,
                 pesos_sensores=pesos_sensores,
+                cp_dist=cp_dist,
+                cp_ang=cp_ang,
             )
 
         lineas = [SYSTEM_HEADER]
@@ -628,8 +678,9 @@ class MotorQwen:
             ventana_historia=ventana_historia,
             velocidad=velocidad,
             cp_dist=cp_dist,
+            cp_ang=cp_ang,
         )
-        lineas.append(f"{query_str} ->")
+        lineas.append(f"{query_str} -> ")
         prompt = "".join(lineas)
 
         if self.mock_mode:
@@ -655,32 +706,38 @@ class MotorQwen:
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
             prompt_tokens = int(inputs["input_ids"].shape[1])
 
-            gen_kwargs: Dict[str, Any] = {
-                "max_new_tokens": 2,
-                "do_sample": float(temperature) > 0.0,
-                "pad_token_id": self.tokenizer.pad_token_id,
-            }
-            if float(temperature) > 0.0:
-                gen_kwargs["temperature"] = float(temperature)
-                gen_kwargs["top_p"] = float(top_p)
-
             with torch.inference_mode():
                 if modo == "ICL":
                     if self.peft_model is not None:
                         with self.peft_model.disable_adapter():
-                            out_ids = self.peft_model.generate(**inputs, **gen_kwargs)
+                            outputs = self.peft_model(**inputs, use_cache=False, logits_to_keep=1)
                     else:
-                        out_ids = self.base_model.generate(**inputs, **gen_kwargs)
+                        outputs = self.base_model(**inputs, use_cache=False, logits_to_keep=1)
                 else:
                     self._asegurar_adaptador_cargado(sid)
-                    out_ids = self.peft_model.generate(**inputs, **gen_kwargs)
+                    outputs = self.peft_model(**inputs, use_cache=False, logits_to_keep=1)
 
-            new_tokens = out_ids[0][prompt_tokens:]
-            texto_generado = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+                logits_last = outputs.logits[0, -1, :]
+                action_logits = logits_last[self.action_token_ids].float()
+
+                if float(temperature) > 0.0:
+                    probs = torch.softmax(action_logits / float(temperature), dim=-1)
+                    if 0.0 < float(top_p) < 1.0:
+                        sorted_probs, sorted_idx = torch.sort(probs, descending=True)
+                        cum_probs = torch.cumsum(sorted_probs, dim=-1)
+                        mask = (cum_probs - sorted_probs) > float(top_p)
+                        sorted_probs[mask] = 0.0
+                        sorted_probs = sorted_probs / sorted_probs.sum()
+                        sampled_pos = int(torch.multinomial(sorted_probs, num_samples=1).item())
+                        accion = int(sorted_idx[sampled_pos].item())
+                    else:
+                        accion = int(torch.multinomial(probs, num_samples=1).item())
+                else:
+                    accion = int(torch.argmax(action_logits).item())
+
             if self.device == "cuda":
                 torch.cuda.synchronize()
 
-        accion = parsear_accion(texto_generado, estado_actual)
         latencia_gpu_ms = round((time.perf_counter() - t0) * 1000.0, 3)
         return {
             "accion": accion,

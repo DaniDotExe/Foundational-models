@@ -22,7 +22,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dotenv import load_dotenv
 
@@ -39,6 +39,7 @@ DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 JUGADAS_PATH = DATA_DIR / "mis_jugadas.json"
 RECORD_EVERY_N_FRAMES = max(1, int(os.getenv("RECORD_EVERY_N_FRAMES", "6")))
+DECIDE_EVERY_N_FRAMES = max(1, int(os.getenv("DECIDE_EVERY_N_FRAMES", "1")))
 
 # ---------------------------------------------------------------------------
 # Constantes físicas extraídas de RL_cars/src/carrera/simulador.py
@@ -96,6 +97,24 @@ def proyeccion_en_segmento(
         return ax, ay, 0.0
     t = limitar(((px - ax) * x + (py - ay) * y) / den, 0.0, 1.0)
     return ax + t * x, ay + t * y, t
+
+
+def punto_mas_cercano_pista(
+    px: float, py: float, puntos: List[Tuple[float, float]]
+) -> Tuple[float, float, float]:
+    """Devuelve (qx, qy, distancia) del punto más cercano sobre la línea central."""
+    mejor_d = float("inf")
+    mejor_qx, mejor_qy = px, py
+    n = len(puntos)
+    for i in range(n):
+        ax, ay = puntos[i]
+        bx, by = puntos[(i + 1) % n]
+        qx, qy, _ = proyeccion_en_segmento(px, py, ax, ay, bx, by)
+        d = math.hypot(px - qx, py - qy)
+        if d < mejor_d:
+            mejor_d = d
+            mejor_qx, mejor_qy = qx, qy
+    return mejor_qx, mejor_qy, mejor_d
 
 
 def error_lateral_firmado(px: float, py: float, puntos: List[Tuple[float, float]]) -> float:
@@ -334,14 +353,12 @@ def paso_simulacion(estado: EstadoCarro, accion: int, clave_pista: str) -> Dict[
     e.x += math.cos(e.angulo) * e.velocidad * DT
     e.y += math.sin(e.angulo) * e.velocidad * DT
 
-    # Límite del recuadro negro: si choca contra el borde exterior, rebota mirando al checkpoint
+    # Paredes sólidas en los bordes del mapa (sin voltear la dirección)
     limite_x, limite_y = 11.0, 9.9
     if abs(e.x) >= limite_x or abs(e.y) >= limite_y:
         e.x = limitar(e.x, -limite_x, limite_x)
         e.y = limitar(e.y, -limite_y, limite_y)
-        tx_cp, ty_cp = puntos[e.siguiente_checkpoint]
-        e.angulo = envolver_angulo(math.atan2(ty_cp - e.y, tx_cp - e.x))
-        e.velocidad *= 0.40
+        e.velocidad *= 0.65
 
     e.tiempo += DT
     e.pasos += 1
@@ -484,12 +501,14 @@ def velocidad_normalizada(velocidad: float) -> float:
     return round(limitar(velocidad / VELOCIDAD_MAX, 0.0, 1.0), 4)
 
 
-def info_checkpoint(estado: EstadoCarro, clave_pista: str) -> float:
-    """Devuelve la distancia normalizada [0..1] al próximo checkpoint."""
+def info_checkpoint(estado: EstadoCarro, clave_pista: str) -> Tuple[float, float]:
+    """Devuelve (distancia_norm [0..1], angulo_relativo_norm [-1..1]) al próximo checkpoint."""
     puntos = PISTAS[clave_pista]["puntos"]
     tx, ty = puntos[estado.siguiente_checkpoint % len(puntos)]
     dx, dy = tx - estado.x, ty - estado.y
-    return round(limitar(math.hypot(dx, dy) / 12.0, 0.0, 1.0), 4)
+    dist_norm = round(limitar(math.hypot(dx, dy) / 12.0, 0.0, 1.0), 4)
+    ang_rel = envolver_angulo(math.atan2(dy, dx) - estado.angulo) / math.pi
+    return dist_norm, round(limitar(ang_rel, -1.0, 1.0), 4)
 
 
 def conteo_por_pista(jugadas: List[Dict[str, Any]]) -> Dict[str, int]:
@@ -516,11 +535,13 @@ def generar_jugadas_semilla(max_por_pista: int = 40) -> List[Dict[str, Any]]:
             sensores, _ = calcular_sensores_rayos(est, clave)
             accion = piloto_guia_local(sensores, est.velocidad)
             if frame % RECORD_EVERY_N_FRAMES == 0:
+                cp_dist, cp_ang = info_checkpoint(est, clave)
                 muestras.append({
                     "pista": clave,
                     "sensores": sensores,
                     "velocidad": velocidad_normalizada(est.velocidad),
-                    "cp_dist": info_checkpoint(est, clave),
+                    "cp_dist": cp_dist,
+                    "cp_ang": cp_ang,
                     "historial": hist[-ventana:],
                     "accion": accion,
                     "estado": {
@@ -576,8 +597,9 @@ def simular_pista_autonoma_headless(
     latencias_gpu_ms: List[float] = []
 
     while est.tiempo_carrera < TIEMPO_LIMITE_PRUEBA and est.vueltas < VUELTAS_OBJETIVO:
-        if frame % RECORD_EVERY_N_FRAMES == 0:
+        if frame % DECIDE_EVERY_N_FRAMES == 0:
             sensores, _ = calcular_sensores_rayos(est, clave_pista)
+            cp_dist, cp_ang = info_checkpoint(est, clave_pista)
             resp = bridge.decidir_accion(
                 estrategia=cfg.ESTRATEGIA,
                 estado_actual=sensores,
@@ -586,7 +608,8 @@ def simular_pista_autonoma_headless(
                 config_icl=cfg.CONFIG_ICL,
                 config_datos=cfg.CONFIG_DATOS,
                 velocidad=velocidad_normalizada(est.velocidad),
-                cp_dist=info_checkpoint(est, clave_pista),
+                cp_dist=cp_dist,
+                cp_ang=cp_ang,
             )
             accion_actual = int(resp["accion"])
             latencias_rtt_ms.append(float(resp["rtt_ms"]))
@@ -794,7 +817,7 @@ class JuegoPygame:
         velocidad_norm: Optional[float] = None,
         historial: Optional[List[int]] = None,
         accion_texto: Optional[str] = None,
-        cp_dist: Optional[float] = None,
+        cp_dist: Optional[Union[float, Tuple[float, float]]] = None,
     ) -> None:
         pg = self.pygame
         x0 = self.AREA_PISTA_W
@@ -823,7 +846,12 @@ class JuegoPygame:
             y += 21
 
         if cp_dist is not None:
-            cp_dist_v = limitar(float(cp_dist), 0.0, 1.0)
+            if isinstance(cp_dist, (tuple, list)):
+                cp_dist_v = limitar(float(cp_dist[0]), 0.0, 1.0)
+                cp_ang_v: Optional[float] = limitar(float(cp_dist[1]), -1.0, 1.0)
+            else:
+                cp_dist_v = limitar(float(cp_dist), 0.0, 1.0)
+                cp_ang_v = None
             cp_color = (56, 189, 248)
             lbl = self.font_small.render(f"{'cp_dist':9s}: {cp_dist_v:.2f}", True, cp_color)
             self.screen.blit(lbl, (x0 + 18, y))
@@ -831,7 +859,19 @@ class JuegoPygame:
             bar_w = w - 175
             pg.draw.rect(self.screen, (30, 41, 59), (bar_x, y + 2, bar_w, 12), border_radius=4)
             pg.draw.rect(self.screen, cp_color, (bar_x, y + 2, int(bar_w * cp_dist_v), 12), border_radius=4)
-            y += 21
+            y += 20
+
+            if cp_ang_v is not None:
+                lbl_ang = self.font_small.render(f"{'cp_ang':9s}: {cp_ang_v:+.2f}", True, cp_color)
+                self.screen.blit(lbl_ang, (x0 + 18, y))
+                pg.draw.rect(self.screen, (30, 41, 59), (bar_x, y + 2, bar_w, 12), border_radius=4)
+                mid_x = bar_x + bar_w // 2
+                dx_bar = int((bar_w // 2) * cp_ang_v)
+                if dx_bar >= 0:
+                    pg.draw.rect(self.screen, cp_color, (mid_x, y + 2, max(2, dx_bar), 12), border_radius=3)
+                else:
+                    pg.draw.rect(self.screen, cp_color, (mid_x + dx_bar, y + 2, max(2, -dx_bar), 12), border_radius=3)
+                y += 20
 
         if velocidad_norm is not None:
             v_clamped = limitar(float(velocidad_norm), 0.0, 1.0)
@@ -1598,13 +1638,19 @@ class JuegoPygame:
                     (f"Vel: {vel_txt} | <- / -> o A / D", self.TEXTO),
                 ]
                 cp_d = m.get("cp_dist")
+                cp_a = m.get("cp_ang")
+                cp_val: Optional[Union[float, Tuple[float, float]]] = (
+                    (float(cp_d), float(cp_a))
+                    if (cp_d is not None and cp_a is not None)
+                    else (float(cp_d) if cp_d is not None else None)
+                )
                 self._dibujar_panel_lateral(
                     lineas,
                     sens,
                     velocidad_norm=vel_norm if vel_norm is not None else 0.0,
                     historial=hist,
                     accion_texto=f"{accion} ({nom_acc})",
-                    cp_dist=float(cp_d) if cp_d is not None else None,
+                    cp_dist=cp_val,
                 )
 
             for t_name, t_rect in zip(tabs, tab_rects):
@@ -1724,11 +1770,13 @@ class JuegoPygame:
                 accion = 3
 
             if grabando and (conduciendo or est.velocidad > 0.05) and frame % cada_n_frames == 0:
+                cp_dist, cp_ang = info_checkpoint(est, clave)
                 jugadas.append({
                     "pista": clave,
                     "sensores": sensores,
                     "velocidad": velocidad_normalizada(est.velocidad),
-                    "cp_dist": info_checkpoint(est, clave),
+                    "cp_dist": cp_dist,
+                    "cp_ang": cp_ang,
                     "historial": hist[-ventana:],
                     "accion": accion,
                     "estado": {
@@ -1843,7 +1891,8 @@ class JuegoPygame:
             sensores, impactos = calcular_sensores_rayos(est, clave_pista)
 
             # Sincronización física: espera la respuesta HTTP en cada paso de consulta
-            if frame % RECORD_EVERY_N_FRAMES == 0:
+            if frame % DECIDE_EVERY_N_FRAMES == 0:
+                cp_dist, cp_ang = info_checkpoint(est, clave_pista)
                 resp = self.bridge.decidir_accion(
                     estrategia=cfg.ESTRATEGIA,
                     estado_actual=sensores,
@@ -1852,7 +1901,8 @@ class JuegoPygame:
                     config_icl=cfg.CONFIG_ICL,
                     config_datos=cfg.CONFIG_DATOS,
                     velocidad=velocidad_normalizada(est.velocidad),
-                    cp_dist=info_checkpoint(est, clave_pista),
+                    cp_dist=cp_dist,
+                    cp_ang=cp_ang,
                 )
                 accion_actual = int(resp["accion"])
                 ultimo_rtt_ms = float(resp["rtt_ms"])

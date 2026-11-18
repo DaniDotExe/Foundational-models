@@ -27,7 +27,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0957
   },
   {
     "pista": "P1",
@@ -57,7 +58,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0929
   },
   {
     "pista": "P1",
@@ -69,7 +71,7 @@
       0.1625
     ],
     "velocidad": 0.8294,
-    "cp_dist": 0.2681,
+    "cp_dist": 0.2682,
     "historial": [
       2,
       2,
@@ -87,7 +89,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.047
   },
   {
     "pista": "P1",
@@ -99,7 +102,7 @@
       0.1625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.4355,
+    "cp_dist": 0.4356,
     "historial": [
       0,
       2,
@@ -117,7 +120,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0316
   },
   {
     "pista": "P1",
@@ -147,7 +151,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0034
   },
   {
     "pista": "P1",
@@ -177,7 +182,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.006
   },
   {
     "pista": "P1",
@@ -207,7 +213,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1025
   },
   {
     "pista": "P2",
@@ -219,7 +226,7 @@
       0.3875
     ],
     "velocidad": 0.0411,
-    "cp_dist": 0.3563,
+    "cp_dist": 0.3562,
     "historial": [
       0,
       0,
@@ -237,7 +244,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0
   },
   {
     "pista": "P2",
@@ -267,7 +275,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0788
   },
   {
     "pista": "P2",
@@ -279,7 +288,7 @@
       0.2375
     ],
     "velocidad": 0.4969,
-    "cp_dist": 0.2269,
+    "cp_dist": 0.227,
     "historial": [
       0,
       0,
@@ -297,7 +306,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.1107
   },
   {
     "pista": "P2",
@@ -327,7 +337,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0497
   },
   {
     "pista": "P2",
@@ -357,7 +368,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0428
   },
   {
     "pista": "P2",
@@ -387,7 +399,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1165
   },
   {
     "pista": "P2",
@@ -417,7 +430,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0025
   },
   {
     "pista": "P2",
@@ -429,7 +443,7 @@
       0.2125
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.372,
+    "cp_dist": 0.3719,
     "historial": [
       2,
       2,
@@ -447,7 +461,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0014
   },
   {
     "pista": "P2",
@@ -459,7 +474,7 @@
       0.2125
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.4296,
+    "cp_dist": 0.4295,
     "historial": [
       0,
       2,
@@ -477,7 +492,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1092
   },
   {
     "pista": "P2",
@@ -507,7 +523,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.116
   },
   {
     "pista": "P2",
@@ -537,7 +554,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 5,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1586
   },
   {
     "pista": "P2",
@@ -567,7 +585,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2899
   },
   {
     "pista": "P2",
@@ -597,7 +616,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1857
   },
   {
     "pista": "P2",
@@ -627,7 +647,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 7,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0682
   },
   {
     "pista": "P2",
@@ -657,7 +678,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 7,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1209
   },
   {
     "pista": "P2",
@@ -687,7 +709,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0918
   },
   {
     "pista": "P2",
@@ -717,7 +740,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 9,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0052
   },
   {
     "pista": "P2",
@@ -747,7 +771,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 10,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.2011
   },
   {
     "pista": "P2",
@@ -777,7 +802,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 10,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0058
   },
   {
     "pista": "P3",
@@ -807,7 +833,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0
   },
   {
     "pista": "P3",
@@ -837,7 +864,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0669
   },
   {
     "pista": "P3",
@@ -867,7 +895,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0994
   },
   {
     "pista": "P3",
@@ -897,7 +926,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0876
   },
   {
     "pista": "P3",
@@ -909,7 +939,7 @@
       0.2125
     ],
     "velocidad": 0.5226,
-    "cp_dist": 0.2402,
+    "cp_dist": 0.2403,
     "historial": [
       3,
       3,
@@ -927,7 +957,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0524
   },
   {
     "pista": "P3",
@@ -957,7 +988,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2142
   },
   {
     "pista": "P3",
@@ -987,7 +1019,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2699
   },
   {
     "pista": "P3",
@@ -1017,7 +1050,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1568
   },
   {
     "pista": "P3",
@@ -1047,7 +1081,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2819
   },
   {
     "pista": "P3",
@@ -1077,7 +1112,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 5,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2829
   },
   {
     "pista": "P3",
@@ -1107,7 +1143,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 5,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1212
   },
   {
     "pista": "P3",
@@ -1137,7 +1174,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0188
   },
   {
     "pista": "P3",
@@ -1167,7 +1205,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.042
   },
   {
     "pista": "P3",
@@ -1179,7 +1218,7 @@
       0.1625
     ],
     "velocidad": 0.9893,
-    "cp_dist": 0.3383,
+    "cp_dist": 0.3384,
     "historial": [
       0,
       0,
@@ -1197,7 +1236,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 7,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1006
   },
   {
     "pista": "P3",
@@ -1227,7 +1267,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1894
   },
   {
     "pista": "P3",
@@ -1257,7 +1298,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2473
   },
   {
     "pista": "P3",
@@ -1287,7 +1329,8 @@
       "siguiente_checkpoint": 10,
       "checkpoints": 9,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0145
   },
   {
     "pista": "P3",
@@ -1317,7 +1360,8 @@
       "siguiente_checkpoint": 11,
       "checkpoints": 10,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.3345
   },
   {
     "pista": "P3",
@@ -1347,7 +1391,8 @@
       "siguiente_checkpoint": 11,
       "checkpoints": 10,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.2978
   },
   {
     "pista": "P3",
@@ -1359,7 +1404,7 @@
       0.4875
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.4001,
+    "cp_dist": 0.4002,
     "historial": [
       2,
       2,
@@ -1377,7 +1422,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 11,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1975
   },
   {
     "pista": "P3",
@@ -1407,7 +1453,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.082
   },
   {
     "pista": "P3",
@@ -1437,7 +1484,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0012
   },
   {
     "pista": "P3",
@@ -1467,7 +1515,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0018
   },
   {
     "pista": "P1",
@@ -1497,7 +1546,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0
   },
   {
     "pista": "P1",
@@ -1527,7 +1577,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0195
   },
   {
     "pista": "P1",
@@ -1557,7 +1608,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0813
   },
   {
     "pista": "P1",
@@ -1569,7 +1621,7 @@
       0.2375
     ],
     "velocidad": 0.6682,
-    "cp_dist": 0.4168,
+    "cp_dist": 0.4169,
     "historial": [
       0,
       0,
@@ -1587,7 +1639,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0864
   },
   {
     "pista": "P1",
@@ -1617,7 +1670,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0375
   },
   {
     "pista": "P1",
@@ -1647,7 +1701,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0747
   },
   {
     "pista": "P1",
@@ -1677,7 +1732,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0428
   },
   {
     "pista": "P1",
@@ -1689,7 +1745,7 @@
       0.2625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.315,
+    "cp_dist": 0.3151,
     "historial": [
       0,
       0,
@@ -1707,7 +1763,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0266
   },
   {
     "pista": "P1",
@@ -1719,7 +1776,7 @@
       0.1875
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.38,
+    "cp_dist": 0.3799,
     "historial": [
       2,
       2,
@@ -1737,7 +1794,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0002
   },
   {
     "pista": "P1",
@@ -1767,7 +1825,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 5,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0455
   },
   {
     "pista": "P1",
@@ -1797,7 +1856,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1046
   },
   {
     "pista": "P1",
@@ -1827,7 +1887,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1614
   },
   {
     "pista": "P1",
@@ -1857,7 +1918,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 7,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1955
   },
   {
     "pista": "P1",
@@ -1887,7 +1949,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1207
   },
   {
     "pista": "P1",
@@ -1899,7 +1962,7 @@
       0.3625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.3562,
+    "cp_dist": 0.3563,
     "historial": [
       0,
       2,
@@ -1917,7 +1980,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0157
   },
   {
     "pista": "P1",
@@ -1947,7 +2011,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 9,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1606
   },
   {
     "pista": "P1",
@@ -1977,7 +2042,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 9,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0784
   },
   {
     "pista": "P1",
@@ -2007,7 +2073,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 10,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.1442
   },
   {
     "pista": "P1",
@@ -2037,7 +2104,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 11,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1287
   },
   {
     "pista": "P1",
@@ -2067,7 +2135,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.122
   },
   {
     "pista": "P1",
@@ -2079,7 +2148,7 @@
       0.2625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.2641,
+    "cp_dist": 0.2642,
     "historial": [
       2,
       2,
@@ -2097,7 +2166,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.0738
   },
   {
     "pista": "P1",
@@ -2127,7 +2197,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 13,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.0405
   },
   {
     "pista": "P1",
@@ -2157,7 +2228,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 14,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1933
   },
   {
     "pista": "P1",
@@ -2187,7 +2259,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 14,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0715
   },
   {
     "pista": "P1",
@@ -2217,7 +2290,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 15,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1845
   },
   {
     "pista": "P1",
@@ -2247,7 +2321,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 16,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.2143
   },
   {
     "pista": "P1",
@@ -2277,7 +2352,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 16,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1529
   },
   {
     "pista": "P1",
@@ -2307,7 +2383,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 17,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.052
   },
   {
     "pista": "P1",
@@ -2337,7 +2414,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 17,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.0959
   },
   {
     "pista": "P1",
@@ -2367,7 +2445,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 18,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0028
   },
   {
     "pista": "P1",
@@ -2379,7 +2458,7 @@
       0.2375
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.4479,
+    "cp_dist": 0.448,
     "historial": [
       0,
       0,
@@ -2397,7 +2476,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 19,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.2012
   },
   {
     "pista": "P1",
@@ -2427,7 +2507,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 19,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.001
   },
   {
     "pista": "P1",
@@ -2457,7 +2538,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 20,
       "vueltas": 2
-    }
+    },
+    "cp_ang": -0.0226
   },
   {
     "pista": "P1",
@@ -2487,7 +2569,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 21,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1649
   },
   {
     "pista": "P1",
@@ -2517,7 +2600,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 22,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1093
   },
   {
     "pista": "P1",
@@ -2547,7 +2631,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 22,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0821
   },
   {
     "pista": "P1",
@@ -2577,7 +2662,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 23,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0827
   },
   {
     "pista": "P1",
@@ -2607,7 +2693,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 23,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0528
   },
   {
     "pista": "P1",
@@ -2637,7 +2724,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 24,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1297
   },
   {
     "pista": "P1",
@@ -2667,7 +2755,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 25,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.2037
   },
   {
     "pista": "P1",
@@ -2679,7 +2768,7 @@
       0.2875
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.2575,
+    "cp_dist": 0.2576,
     "historial": [
       2,
       2,
@@ -2697,7 +2786,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 25,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0004
   },
   {
     "pista": "P1",
@@ -2727,7 +2817,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 26,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1357
   },
   {
     "pista": "P1",
@@ -2757,7 +2848,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 27,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1298
   },
   {
     "pista": "P1",
@@ -2787,7 +2879,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 27,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1666
   },
   {
     "pista": "P1",
@@ -2817,7 +2910,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 28,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1123
   },
   {
     "pista": "P1",
@@ -2847,7 +2941,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 28,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.2002
   },
   {
     "pista": "P1",
@@ -2877,7 +2972,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 29,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.2205
   },
   {
     "pista": "P1",
@@ -2907,7 +3003,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 29,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0783
   },
   {
     "pista": "P1",
@@ -2937,7 +3034,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 30,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.0941
   },
   {
     "pista": "P2",
@@ -2949,7 +3047,7 @@
       0.3625
     ],
     "velocidad": 0.1217,
-    "cp_dist": 0.3486,
+    "cp_dist": 0.3485,
     "historial": [
       0,
       0,
@@ -2967,7 +3065,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0
   },
   {
     "pista": "P2",
@@ -2997,7 +3096,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 0,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.0855
   },
   {
     "pista": "P2",
@@ -3027,7 +3127,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1005
   },
   {
     "pista": "P2",
@@ -3057,7 +3158,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 1,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0212
   },
   {
     "pista": "P2",
@@ -3087,7 +3189,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1241
   },
   {
     "pista": "P2",
@@ -3099,7 +3202,7 @@
       0.2625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.3644,
+    "cp_dist": 0.3645,
     "historial": [
       2,
       0,
@@ -3117,7 +3220,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 2,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0702
   },
   {
     "pista": "P2",
@@ -3147,7 +3251,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0625
   },
   {
     "pista": "P2",
@@ -3177,7 +3282,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 3,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.064
   },
   {
     "pista": "P2",
@@ -3189,7 +3295,7 @@
       0.1875
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.3461,
+    "cp_dist": 0.346,
     "historial": [
       0,
       0,
@@ -3207,7 +3313,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 4,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0817
   },
   {
     "pista": "P2",
@@ -3237,7 +3344,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 5,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.307
   },
   {
     "pista": "P2",
@@ -3267,7 +3375,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 5,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1737
   },
   {
     "pista": "P2",
@@ -3297,7 +3406,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0889
   },
   {
     "pista": "P2",
@@ -3327,7 +3437,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 6,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.1665
   },
   {
     "pista": "P2",
@@ -3357,7 +3468,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 7,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.138
   },
   {
     "pista": "P2",
@@ -3387,7 +3499,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": 0.0157
   },
   {
     "pista": "P2",
@@ -3399,7 +3512,7 @@
       0.3125
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.3292,
+    "cp_dist": 0.3293,
     "historial": [
       0,
       0,
@@ -3417,7 +3530,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 8,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.143
   },
   {
     "pista": "P2",
@@ -3447,7 +3561,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 9,
       "vueltas": 0
-    }
+    },
+    "cp_ang": -0.1253
   },
   {
     "pista": "P2",
@@ -3477,7 +3592,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 10,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1939
   },
   {
     "pista": "P2",
@@ -3507,7 +3623,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 11,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.3332
   },
   {
     "pista": "P2",
@@ -3537,7 +3654,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 11,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1975
   },
   {
     "pista": "P2",
@@ -3567,7 +3685,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0938
   },
   {
     "pista": "P2",
@@ -3597,7 +3716,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 12,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1547
   },
   {
     "pista": "P2",
@@ -3609,7 +3729,7 @@
       0.4625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.5527,
+    "cp_dist": 0.5528,
     "historial": [
       0,
       0,
@@ -3627,7 +3747,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 13,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1299
   },
   {
     "pista": "P2",
@@ -3657,7 +3778,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 13,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.0872
   },
   {
     "pista": "P2",
@@ -3687,7 +3809,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 14,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0538
   },
   {
     "pista": "P2",
@@ -3717,7 +3840,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 15,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.2022
   },
   {
     "pista": "P2",
@@ -3747,7 +3871,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 15,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.0018
   },
   {
     "pista": "P2",
@@ -3777,7 +3902,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 16,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0521
   },
   {
     "pista": "P2",
@@ -3807,7 +3933,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 17,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.0115
   },
   {
     "pista": "P2",
@@ -3837,7 +3964,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 17,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.1301
   },
   {
     "pista": "P2",
@@ -3867,7 +3995,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 18,
       "vueltas": 1
-    }
+    },
+    "cp_ang": -0.0285
   },
   {
     "pista": "P2",
@@ -3897,7 +4026,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 19,
       "vueltas": 1
-    }
+    },
+    "cp_ang": 0.1433
   },
   {
     "pista": "P2",
@@ -3927,7 +4057,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 20,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.191
   },
   {
     "pista": "P2",
@@ -3957,7 +4088,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 21,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1945
   },
   {
     "pista": "P2",
@@ -3987,7 +4119,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 21,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0216
   },
   {
     "pista": "P2",
@@ -4017,7 +4150,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 22,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1193
   },
   {
     "pista": "P2",
@@ -4029,7 +4163,7 @@
       0.2625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.2943,
+    "cp_dist": 0.2944,
     "historial": [
       2,
       2,
@@ -4047,7 +4181,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 22,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0042
   },
   {
     "pista": "P2",
@@ -4077,7 +4212,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 23,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1505
   },
   {
     "pista": "P2",
@@ -4107,7 +4243,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 23,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0543
   },
   {
     "pista": "P2",
@@ -4137,7 +4274,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 24,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0624
   },
   {
     "pista": "P2",
@@ -4167,7 +4305,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 25,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0156
   },
   {
     "pista": "P2",
@@ -4197,7 +4336,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 25,
       "vueltas": 2
-    }
+    },
+    "cp_ang": -0.2047
   },
   {
     "pista": "P2",
@@ -4227,7 +4367,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 26,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.1741
   },
   {
     "pista": "P2",
@@ -4257,7 +4398,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 27,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.2511
   },
   {
     "pista": "P2",
@@ -4269,7 +4411,7 @@
       0.4125
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.2656,
+    "cp_dist": 0.2657,
     "historial": [
       2,
       2,
@@ -4287,7 +4429,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 27,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0855
   },
   {
     "pista": "P2",
@@ -4317,7 +4460,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 28,
       "vueltas": 2
-    }
+    },
+    "cp_ang": -0.0263
   },
   {
     "pista": "P2",
@@ -4347,7 +4491,8 @@
       "siguiente_checkpoint": 0,
       "checkpoints": 29,
       "vueltas": 2
-    }
+    },
+    "cp_ang": 0.0606
   },
   {
     "pista": "P2",
@@ -4359,7 +4504,7 @@
       0.1125
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.4128,
+    "cp_dist": 0.4127,
     "historial": [
       2,
       2,
@@ -4377,7 +4522,8 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 30,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.024
   },
   {
     "pista": "P2",
@@ -4407,7 +4553,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 31,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.1601
   },
   {
     "pista": "P2",
@@ -4419,7 +4566,7 @@
       0.2625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.261,
+    "cp_dist": 0.2609,
     "historial": [
       0,
       0,
@@ -4437,7 +4584,8 @@
       "siguiente_checkpoint": 2,
       "checkpoints": 31,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.1355
   },
   {
     "pista": "P2",
@@ -4467,7 +4615,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 32,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.0245
   },
   {
     "pista": "P2",
@@ -4497,7 +4646,8 @@
       "siguiente_checkpoint": 3,
       "checkpoints": 32,
       "vueltas": 3
-    }
+    },
+    "cp_ang": -0.1098
   },
   {
     "pista": "P2",
@@ -4527,7 +4677,8 @@
       "siguiente_checkpoint": 4,
       "checkpoints": 33,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.0497
   },
   {
     "pista": "P2",
@@ -4539,7 +4690,7 @@
       0.2375
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.4487,
+    "cp_dist": 0.4486,
     "historial": [
       0,
       0,
@@ -4557,7 +4708,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 34,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.1533
   },
   {
     "pista": "P2",
@@ -4587,7 +4739,8 @@
       "siguiente_checkpoint": 5,
       "checkpoints": 34,
       "vueltas": 3
-    }
+    },
+    "cp_ang": -0.0926
   },
   {
     "pista": "P2",
@@ -4617,7 +4770,8 @@
       "siguiente_checkpoint": 6,
       "checkpoints": 35,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.2027
   },
   {
     "pista": "P2",
@@ -4647,7 +4801,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 36,
       "vueltas": 3
-    }
+    },
+    "cp_ang": 0.1934
   },
   {
     "pista": "P2",
@@ -4677,7 +4832,8 @@
       "siguiente_checkpoint": 7,
       "checkpoints": 36,
       "vueltas": 3
-    }
+    },
+    "cp_ang": -0.0214
   },
   {
     "pista": "P2",
@@ -4707,7 +4863,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 37,
       "vueltas": 3
-    }
+    },
+    "cp_ang": -0.1279
   },
   {
     "pista": "P2",
@@ -4737,7 +4894,8 @@
       "siguiente_checkpoint": 8,
       "checkpoints": 37,
       "vueltas": 3
-    }
+    },
+    "cp_ang": -0.2645
   },
   {
     "pista": "P2",
@@ -4749,7 +4907,7 @@
       0.0625
     ],
     "velocidad": 1.0,
-    "cp_dist": 0.2895,
+    "cp_dist": 0.2894,
     "historial": [
       0,
       0,
@@ -4767,7 +4925,8 @@
       "siguiente_checkpoint": 9,
       "checkpoints": 38,
       "vueltas": 3
-    }
+    },
+    "cp_ang": -0.1397
   },
   {
     "pista": "P2",
@@ -4797,6 +4956,2022 @@
       "siguiente_checkpoint": 1,
       "checkpoints": 40,
       "vueltas": 4
+    },
+    "cp_ang": 0.3769
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2875,
+      0.3375,
+      0.7375,
+      1.0,
+      0.3125
+    ],
+    "velocidad": 0.2004,
+    "cp_dist": 0.3334,
+    "cp_ang": 0.0809,
+    "historial": [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -7.949,
+      "y": -0.271,
+      "angulo": -1.4544,
+      "velocidad": 1.52,
+      "tiempo": 0.3,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 0,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2625,
+      0.3125,
+      0.6375,
+      1.0,
+      0.3375
+    ],
+    "velocidad": 0.4254,
+    "cp_dist": 0.2606,
+    "cp_ang": 0.1042,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -7.843,
+      "y": -1.176,
+      "angulo": -1.4544,
+      "velocidad": 3.23,
+      "tiempo": 0.66,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 0,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2625,
+      0.3875,
+      0.6375,
+      1.0,
+      0.3125
+    ],
+    "velocidad": 0.6348,
+    "cp_dist": 0.4724,
+    "cp_ang": 0.1737,
+    "historial": [
+      2,
+      2,
+      2,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -7.286,
+      "y": -2.563,
+      "angulo": -1.1111,
+      "velocidad": 4.82,
+      "tiempo": 1.02,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2875,
+      0.2625,
+      0.3875,
+      1.0,
+      0.4375
+    ],
+    "velocidad": 0.8294,
+    "cp_dist": 0.3382,
+    "cp_ang": 0.2581,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -6.377,
+      "y": -4.4,
+      "angulo": -1.1111,
+      "velocidad": 6.3,
+      "tiempo": 1.38,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.1375,
+      0.1125,
+      0.1625,
+      0.7625,
+      0.7875
+    ],
+    "velocidad": 0.471,
+    "cp_dist": 0.2584,
+    "cp_ang": 0.3978,
+    "historial": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "accion": 3,
+    "estado": {
+      "x": -5.57,
+      "y": -6.029,
+      "angulo": -1.1111,
+      "velocidad": 3.58,
+      "tiempo": 1.74,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.0625,
+      0.0625,
+      0.0875,
+      0.5375,
+      0.9375
+    ],
+    "velocidad": 0.0336,
+    "cp_dist": 0.2474,
+    "cp_ang": 0.4576,
+    "historial": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "accion": 3,
+    "estado": {
+      "x": -5.312,
+      "y": -6.552,
+      "angulo": -1.1111,
+      "velocidad": 0.26,
+      "tiempo": 2.1,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.0625,
+      0.0625,
+      0.0875,
+      0.5375,
+      0.9375
+    ],
+    "velocidad": 0.0411,
+    "cp_dist": 0.2472,
+    "cp_ang": 0.4596,
+    "historial": [
+      3,
+      3,
+      3,
+      3,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -5.303,
+      "y": -6.569,
+      "angulo": -1.1111,
+      "velocidad": 0.31,
+      "tiempo": 2.22,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.0375,
+      0.0125,
+      0.0375,
+      0.4125,
+      1.0
+    ],
+    "velocidad": 0.0575,
+    "cp_dist": 0.2452,
+    "cp_ang": 0.4964,
+    "historial": [
+      0,
+      0,
+      0,
+      3,
+      3
+    ],
+    "accion": 3,
+    "estado": {
+      "x": -5.151,
+      "y": -6.875,
+      "angulo": -1.1111,
+      "velocidad": 0.44,
+      "tiempo": 2.58,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.0125,
+      0.0125,
+      0.0375,
+      0.6375,
+      0.8375
+    ],
+    "velocidad": 0.1217,
+    "cp_dist": 0.2443,
+    "cp_ang": 0.4657,
+    "historial": [
+      3,
+      3,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -5.092,
+      "y": -6.97,
+      "angulo": -0.977,
+      "velocidad": 0.92,
+      "tiempo": 2.82,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      1.0,
+      1.0,
+      1.0,
+      0.0375,
+      0.0125
+    ],
+    "velocidad": 0.0731,
+    "cp_dist": 0.2362,
+    "cp_ang": 0.4498,
+    "historial": [
+      3,
+      3,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -4.736,
+      "y": -7.343,
+      "angulo": -0.7511,
+      "velocidad": 0.56,
+      "tiempo": 3.36,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      1.0,
+      1.0,
+      1.0,
+      0.0375,
+      0.0125
+    ],
+    "velocidad": 0.0854,
+    "cp_dist": 0.2292,
+    "cp_ang": 0.4169,
+    "historial": [
+      3,
+      0,
+      0,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -4.413,
+      "y": -7.576,
+      "angulo": -0.5081,
+      "velocidad": 0.65,
+      "tiempo": 3.96,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      1.0,
+      1.0,
+      1.0,
+      0.0375,
+      0.0375
+    ],
+    "velocidad": 0.0546,
+    "cp_dist": 0.2261,
+    "cp_ang": 0.3877,
+    "historial": [
+      2,
+      3,
+      3,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -4.304,
+      "y": -7.626,
+      "angulo": -0.3746,
+      "velocidad": 0.42,
+      "tiempo": 4.26,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      1.0,
+      1.0,
+      1.0,
+      0.0375,
+      0.0125
+    ],
+    "velocidad": 0.0312,
+    "cp_dist": 0.222,
+    "cp_ang": 0.3578,
+    "historial": [
+      2,
+      2,
+      3,
+      3,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -4.189,
+      "y": -7.661,
+      "angulo": -0.2401,
+      "velocidad": 0.24,
+      "tiempo": 4.56,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      1.0,
+      1.0,
+      0.0625,
+      0.0125,
+      0.0125
+    ],
+    "velocidad": 0.0,
+    "cp_dist": 0.5684,
+    "cp_ang": 0.1159,
+    "historial": [
+      2,
+      2,
+      2,
+      3,
+      3
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -3.995,
+      "y": -7.683,
+      "angulo": -0.0538,
+      "velocidad": 0.0,
+      "tiempo": 4.92,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 2,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      1.0,
+      1.0,
+      0.0125,
+      0.0125,
+      0.0125
+    ],
+    "velocidad": 0.1028,
+    "cp_dist": 0.5467,
+    "cp_ang": 0.03,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -3.733,
+      "y": -7.649,
+      "angulo": 0.2232,
+      "velocidad": 0.78,
+      "tiempo": 5.28,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 2,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.0875,
+      0.3625,
+      1.0,
+      0.5375,
+      1.0
+    ],
+    "velocidad": 0.3347,
+    "cp_dist": 0.493,
+    "cp_ang": -0.0887,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -3.146,
+      "y": -7.365,
+      "angulo": 0.5815,
+      "velocidad": 2.54,
+      "tiempo": 5.64,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 2,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      1.0,
+      0.4625,
+      0.4875,
+      1.0
+    ],
+    "velocidad": 0.5503,
+    "cp_dist": 0.4091,
+    "cp_ang": -0.287,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -2.343,
+      "y": -6.406,
+      "angulo": 1.0665,
+      "velocidad": 4.18,
+      "tiempo": 6.0,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 2,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2875,
+      0.4375,
+      0.9625,
+      0.3875,
+      0.4125
+    ],
+    "velocidad": 0.0411,
+    "cp_dist": 0.3544,
+    "cp_ang": -0.0131,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -7.993,
+      "y": -0.017,
+      "angulo": -1.1712,
+      "velocidad": 0.31,
+      "tiempo": 0.06,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 0,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3375,
+      0.6625,
+      1.0,
+      0.3125,
+      1.0
+    ],
+    "velocidad": 0.2772,
+    "cp_dist": 0.315,
+    "cp_ang": -0.1268,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -7.71,
+      "y": -0.419,
+      "angulo": -0.8466,
+      "velocidad": 2.11,
+      "tiempo": 0.42,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 0,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      0.6125,
+      1.0,
+      0.2625,
+      0.2625
+    ],
+    "velocidad": 0.4969,
+    "cp_dist": 0.2324,
+    "cp_ang": -0.1763,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -6.973,
+      "y": -1.252,
+      "angulo": -0.8466,
+      "velocidad": 3.78,
+      "tiempo": 0.78,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 0,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4875,
+      0.5375,
+      1.0,
+      0.2125,
+      0.1625
+    ],
+    "velocidad": 0.7012,
+    "cp_dist": 0.3795,
+    "cp_ang": -0.0024,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -5.83,
+      "y": -2.494,
+      "angulo": -0.743,
+      "velocidad": 5.33,
+      "tiempo": 1.14,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 1,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.5625,
+      1.0,
+      0.2125,
+      0.1375
+    ],
+    "velocidad": 0.8913,
+    "cp_dist": 0.5599,
+    "cp_ang": 0.0735,
+    "historial": [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -3.927,
+      "y": -3.643,
+      "angulo": -0.5266,
+      "velocidad": 6.77,
+      "tiempo": 1.5,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 2,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.6375,
+      1.0,
+      0.1875,
+      0.1375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3413,
+    "cp_ang": -0.1038,
+    "historial": [
+      2,
+      2,
+      2,
+      0,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -1.373,
+      "y": -4.268,
+      "angulo": -0.0049,
+      "velocidad": 7.6,
+      "tiempo": 1.86,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 2,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5625,
+      0.7375,
+      1.0,
+      0.0625,
+      0.0375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4358,
+    "cp_ang": -0.1052,
+    "historial": [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 1.283,
+      "y": -3.627,
+      "angulo": 0.2591,
+      "velocidad": 7.6,
+      "tiempo": 2.22,
+      "siguiente_checkpoint": 4,
+      "checkpoints": 3,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5375,
+      0.6375,
+      0.7875,
+      0.0875,
+      0.0625
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2323,
+    "cp_ang": -0.2084,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 3.928,
+      "y": -2.926,
+      "angulo": 0.2591,
+      "velocidad": 7.6,
+      "tiempo": 2.58,
+      "siguiente_checkpoint": 4,
+      "checkpoints": 3,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.4125,
+      0.5875,
+      1.0,
+      0.2375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4914,
+    "cp_ang": 0.2876,
+    "historial": [
+      0,
+      0,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 6.429,
+      "y": -1.896,
+      "angulo": 0.6551,
+      "velocidad": 7.6,
+      "tiempo": 2.94,
+      "siguiente_checkpoint": 6,
+      "checkpoints": 5,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3375,
+      0.3375,
+      0.6375,
+      1.0,
+      0.3125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3056,
+    "cp_ang": 0.1361,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 7.598,
+      "y": 0.501,
+      "angulo": 1.4471,
+      "velocidad": 7.6,
+      "tiempo": 3.3,
+      "siguiente_checkpoint": 6,
+      "checkpoints": 5,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3375,
+      0.4125,
+      0.7875,
+      1.0,
+      0.2875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4118,
+    "cp_ang": 0.1122,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 6.712,
+      "y": 3.017,
+      "angulo": 2.2391,
+      "velocidad": 7.6,
+      "tiempo": 3.66,
+      "siguiente_checkpoint": 7,
+      "checkpoints": 6,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      0.6125,
+      1.0,
+      0.2375,
+      0.2125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.5793,
+    "cp_ang": -0.0315,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 4.3,
+      "y": 4.154,
+      "angulo": 3.0311,
+      "velocidad": 7.6,
+      "tiempo": 4.02,
+      "siguiente_checkpoint": 8,
+      "checkpoints": 7,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4875,
+      0.6875,
+      1.0,
+      0.1375,
+      0.1125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3612,
+    "cp_ang": -0.1197,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 1.565,
+      "y": 4.096,
+      "angulo": -3.1201,
+      "velocidad": 7.6,
+      "tiempo": 4.38,
+      "siguiente_checkpoint": 8,
+      "checkpoints": 7,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4875,
+      0.5875,
+      0.9875,
+      0.1375,
+      0.0875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4441,
+    "cp_ang": -0.0046,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -1.171,
+      "y": 4.037,
+      "angulo": -3.1201,
+      "velocidad": 7.6,
+      "tiempo": 4.74,
+      "siguiente_checkpoint": 9,
+      "checkpoints": 8,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4375,
+      0.5625,
+      0.7625,
+      1.0,
+      0.1375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4669,
+    "cp_ang": 0.1464,
+    "historial": [
+      0,
+      0,
+      0,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -3.882,
+      "y": 3.8,
+      "angulo": -2.8561,
+      "velocidad": 7.6,
+      "tiempo": 5.1,
+      "siguiente_checkpoint": 0,
+      "checkpoints": 9,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.5875,
+      0.8375,
+      0.2125,
+      0.1375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2447,
+    "cp_ang": -0.1064,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -5.838,
+      "y": 1.987,
+      "angulo": -2.0641,
+      "velocidad": 7.6,
+      "tiempo": 5.46,
+      "siguiente_checkpoint": 0,
+      "checkpoints": 9,
+      "vueltas": 0
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5125,
+      0.6625,
+      0.9125,
+      0.1125,
+      0.0875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2809,
+    "cp_ang": -0.1499,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -5.922,
+      "y": -0.679,
+      "angulo": -1.2721,
+      "velocidad": 7.6,
+      "tiempo": 5.82,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 10,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5625,
+      0.6875,
+      1.0,
+      0.0375,
+      0.0125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2819,
+    "cp_ang": -0.1921,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -4.083,
+      "y": -2.611,
+      "angulo": -0.4801,
+      "velocidad": 7.6,
+      "tiempo": 6.18,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 11,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5375,
+      0.5375,
+      0.9125,
+      0.2625,
+      0.0875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.375,
+    "cp_ang": 0.0276,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -1.657,
+      "y": -3.875,
+      "angulo": -0.4801,
+      "velocidad": 7.6,
+      "tiempo": 6.54,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 12,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      0.4375,
+      0.7875,
+      1.0,
+      0.2125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4789,
+    "cp_ang": 0.1228,
+    "historial": [
+      0,
+      0,
+      0,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 0.835,
+      "y": -4.97,
+      "angulo": -0.2161,
+      "velocidad": 7.6,
+      "tiempo": 6.9,
+      "siguiente_checkpoint": 4,
+      "checkpoints": 13,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4125,
+      0.6375,
+      1.0,
+      0.2375,
+      0.1875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2579,
+    "cp_ang": -0.1502,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 3.422,
+      "y": -4.321,
+      "angulo": 0.5759,
+      "velocidad": 7.6,
+      "tiempo": 7.26,
+      "siguiente_checkpoint": 4,
+      "checkpoints": 13,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5375,
+      0.5625,
+      0.8125,
+      0.1875,
+      0.0875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2976,
+    "cp_ang": -0.0415,
+    "historial": [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 5.29,
+      "y": -2.327,
+      "angulo": 0.8399,
+      "velocidad": 7.6,
+      "tiempo": 7.62,
+      "siguiente_checkpoint": 5,
+      "checkpoints": 14,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4375,
+      0.4375,
+      0.6875,
+      1.0,
+      0.1875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3422,
+    "cp_ang": 0.1311,
+    "historial": [
+      0,
+      0,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 6.816,
+      "y": -0.094,
+      "angulo": 1.2359,
+      "velocidad": 7.6,
+      "tiempo": 7.98,
+      "siguiente_checkpoint": 6,
+      "checkpoints": 15,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3625,
+      0.4625,
+      0.6875,
+      1.0,
+      0.2375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4176,
+    "cp_ang": 0.1464,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 6.478,
+      "y": 2.551,
+      "angulo": 2.0279,
+      "velocidad": 7.6,
+      "tiempo": 8.34,
+      "siguiente_checkpoint": 7,
+      "checkpoints": 16,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3625,
+      0.5375,
+      1.0,
+      0.2875,
+      0.2125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.5838,
+    "cp_ang": 0.0369,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 4.358,
+      "y": 4.169,
+      "angulo": 2.8199,
+      "velocidad": 7.6,
+      "tiempo": 8.7,
+      "siguiente_checkpoint": 8,
+      "checkpoints": 17,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      0.4125,
+      0.8625,
+      0.4875,
+      0.2375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3583,
+    "cp_ang": 0.0604,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 1.762,
+      "y": 5.034,
+      "angulo": 2.8199,
+      "velocidad": 7.6,
+      "tiempo": 9.06,
+      "siguiente_checkpoint": 8,
+      "checkpoints": 17,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3375,
+      0.4375,
+      0.9125,
+      0.5375,
+      0.2625
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4731,
+    "cp_ang": 0.0891,
+    "historial": [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -0.962,
+      "y": 5.252,
+      "angulo": 3.0839,
+      "velocidad": 7.6,
+      "tiempo": 9.42,
+      "siguiente_checkpoint": 9,
+      "checkpoints": 18,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3625,
+      0.5125,
+      0.7875,
+      1.0,
+      0.2125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2468,
+    "cp_ang": -0.0516,
+    "historial": [
+      2,
+      2,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -3.584,
+      "y": 4.519,
+      "angulo": -2.8033,
+      "velocidad": 7.6,
+      "tiempo": 9.78,
+      "siguiente_checkpoint": 9,
+      "checkpoints": 18,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      0.3625,
+      0.6375,
+      1.0,
+      0.2625
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3287,
+    "cp_ang": 0.1471,
+    "historial": [
+      0,
+      0,
+      0,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -6.087,
+      "y": 3.449,
+      "angulo": -2.5393,
+      "velocidad": 7.6,
+      "tiempo": 10.14,
+      "siguiente_checkpoint": 0,
+      "checkpoints": 19,
+      "vueltas": 1
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2875,
+      0.3125,
+      0.4875,
+      1.0,
+      0.3375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.45,
+    "cp_ang": 0.2541,
+    "historial": [
+      2,
+      2,
+      0,
+      0,
+      0
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -7.709,
+      "y": 1.263,
+      "angulo": -2.1433,
+      "velocidad": 7.6,
+      "tiempo": 10.5,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 20,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2375,
+      0.2875,
+      0.6375,
+      1.0,
+      0.3625
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2511,
+    "cp_ang": 0.0963,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -8.003,
+      "y": -1.388,
+      "angulo": -1.3513,
+      "velocidad": 7.6,
+      "tiempo": 10.86,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 20,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3625,
+      0.4125,
+      0.8625,
+      0.5125,
+      0.2875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3657,
+    "cp_ang": 0.0619,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -6.358,
+      "y": -3.508,
+      "angulo": -0.6913,
+      "velocidad": 7.6,
+      "tiempo": 11.22,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 21,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.2875,
+      0.4375,
+      1.0,
+      0.4375,
+      0.2875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.5499,
+    "cp_ang": 0.0623,
+    "historial": [
+      0,
+      0,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -4.066,
+      "y": -4.944,
+      "angulo": -0.2953,
+      "velocidad": 7.6,
+      "tiempo": 11.58,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 22,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3875,
+      0.6875,
+      1.0,
+      0.2375,
+      0.2125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3261,
+    "cp_ang": -0.1305,
+    "historial": [
+      2,
+      0,
+      0,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -1.352,
+      "y": -4.91,
+      "angulo": 0.2327,
+      "velocidad": 7.6,
+      "tiempo": 11.94,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 22,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5375,
+      0.7625,
+      1.0,
+      0.0875,
+      0.0875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4413,
+    "cp_ang": -0.12,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 1.204,
+      "y": -3.934,
+      "angulo": 0.3647,
+      "velocidad": 7.6,
+      "tiempo": 12.3,
+      "siguiente_checkpoint": 4,
+      "checkpoints": 23,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5375,
+      0.6625,
+      0.8875,
+      0.0625,
+      0.0375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2442,
+    "cp_ang": -0.2318,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 3.761,
+      "y": -2.958,
+      "angulo": 0.3647,
+      "velocidad": 7.6,
+      "tiempo": 12.66,
+      "siguiente_checkpoint": 4,
+      "checkpoints": 23,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5125,
+      0.4375,
+      0.6125,
+      1.0,
+      0.2125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4857,
+    "cp_ang": 0.2854,
+    "historial": [
+      0,
+      0,
+      0,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 6.234,
+      "y": -1.822,
+      "angulo": 0.6287,
+      "velocidad": 7.6,
+      "tiempo": 13.02,
+      "siguiente_checkpoint": 6,
+      "checkpoints": 25,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3625,
+      0.3375,
+      0.6375,
+      1.0,
+      0.2875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2991,
+    "cp_ang": 0.1345,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 7.466,
+      "y": 0.543,
+      "angulo": 1.4207,
+      "velocidad": 7.6,
+      "tiempo": 13.38,
+      "siguiente_checkpoint": 6,
+      "checkpoints": 25,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3375,
+      0.4125,
+      0.7375,
+      1.0,
+      0.2875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4044,
+    "cp_ang": 0.122,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 6.648,
+      "y": 3.082,
+      "angulo": 2.2127,
+      "velocidad": 7.6,
+      "tiempo": 13.74,
+      "siguiente_checkpoint": 7,
+      "checkpoints": 26,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3375,
+      0.4625,
+      1.0,
+      0.4125,
+      0.2375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.5761,
+    "cp_ang": 0.0746,
+    "historial": [
+      2,
+      2,
+      2,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": 4.318,
+      "y": 4.455,
+      "angulo": 2.7407,
+      "velocidad": 7.6,
+      "tiempo": 14.1,
+      "siguiente_checkpoint": 8,
+      "checkpoints": 27,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3125,
+      0.3625,
+      0.8375,
+      0.5875,
+      0.2875
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3568,
+    "cp_ang": 0.0756,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": 1.779,
+      "y": 5.465,
+      "angulo": 2.8727,
+      "velocidad": 7.6,
+      "tiempo": 14.46,
+      "siguiente_checkpoint": 8,
+      "checkpoints": 27,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.3625,
+      0.5375,
+      1.0,
+      0.2625,
+      0.2375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.4757,
+    "cp_ang": -0.0195,
+    "historial": [
+      2,
+      2,
+      2,
+      0,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -0.903,
+      "y": 5.122,
+      "angulo": -2.8825,
+      "velocidad": 7.6,
+      "tiempo": 14.82,
+      "siguiente_checkpoint": 9,
+      "checkpoints": 28,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.6875,
+      1.0,
+      0.1625,
+      0.1375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2647,
+    "cp_ang": -0.2155,
+    "historial": [
+      0,
+      2,
+      2,
+      2,
+      0
+    ],
+    "accion": 0,
+    "estado": {
+      "x": -3.325,
+      "y": 3.931,
+      "angulo": -2.4865,
+      "velocidad": 7.6,
+      "tiempo": 15.18,
+      "siguiente_checkpoint": 9,
+      "checkpoints": 28,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.5375,
+      0.5125,
+      0.7125,
+      1.0,
+      0.1125
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.2814,
+    "cp_ang": 0.0254,
+    "historial": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -5.494,
+      "y": 2.264,
+      "angulo": -2.4865,
+      "velocidad": 7.6,
+      "tiempo": 15.54,
+      "siguiente_checkpoint": 0,
+      "checkpoints": 29,
+      "vueltas": 2
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.4625,
+      0.7625,
+      1.0,
+      0.1625
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3225,
+    "cp_ang": 0.0528,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -6.663,
+      "y": -0.133,
+      "angulo": -1.6945,
+      "velocidad": 7.6,
+      "tiempo": 15.9,
+      "siguiente_checkpoint": 1,
+      "checkpoints": 30,
+      "vueltas": 3
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4625,
+      0.5125,
+      0.8375,
+      0.3875,
+      0.1625
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.3676,
+    "cp_ang": 0.054,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -5.778,
+      "y": -2.649,
+      "angulo": -0.9025,
+      "velocidad": 7.6,
+      "tiempo": 16.26,
+      "siguiente_checkpoint": 2,
+      "checkpoints": 31,
+      "vueltas": 3
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.4875,
+      0.6625,
+      1.0,
+      0.1375,
+      0.1375
+    ],
+    "velocidad": 1.0,
+    "cp_dist": 0.5116,
+    "cp_ang": -0.0603,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -3.366,
+      "y": -3.786,
+      "angulo": -0.1105,
+      "velocidad": 7.6,
+      "tiempo": 16.62,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 32,
+      "vueltas": 3
+    }
+  },
+  {
+    "pista": "P1",
+    "sensores": [
+      0.0625,
+      0.3125,
+      0.9125,
+      0.7875,
+      0.7875
+    ],
+    "velocidad": 0.6019,
+    "cp_dist": 0.3621,
+    "cp_ang": -0.4209,
+    "historial": [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    "accion": 2,
+    "estado": {
+      "x": -0.931,
+      "y": -2.933,
+      "angulo": 0.6617,
+      "velocidad": 4.57,
+      "tiempo": 16.98,
+      "siguiente_checkpoint": 3,
+      "checkpoints": 32,
+      "vueltas": 3
     }
   }
 ]

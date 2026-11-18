@@ -26,11 +26,11 @@ CONFIG_DATOS = {
 # Hiperparámetros para modo In-Context Learning (ESTRATEGIA == "ICL")
 CONFIG_ICL = {
     # Cantidad de ejemplos en el prompt (1 a 30)
-    "k_shots": 10,
+    "k_shots": 12,
     # Método de selección de ejemplos: "knn" (vecinos más cercanos) o "random"
     "seleccion": "knn",
     # Pesos para [izq, diag_izq, frente, diag_der, der] al calcular distancia KNN
-    "pesos_sensores": [1.0, 1.5, 2.5, 1.5, 1.0],
+    "pesos_sensores": [1.0, 2.0, 3.0, 2.0, 1.0],
     # Creatividad de muestreo (0.0 = determinista / greedy; >0.0 activa muestreo)
     "temperature": 0.0,
     "top_p": 0.9,
@@ -39,17 +39,15 @@ CONFIG_ICL = {
 # Hiperparámetros para modo PEFT/LoRA (ESTRATEGIA == "LORA")
 CONFIG_LORA = {
     # Máximo de jugadas tomadas de data/mis_jugadas.json para entrenar
-    "num_ejemplos": 150,
+    "num_ejemplos": 200,
     # Rango de las matrices LoRA: 2, 4, 8, 16, 32 (máx 32 según servidor)
-    "lora_r": 8,
+    "lora_r": 16,
     # Escala de adaptación (regla clásica: 2 * lora_r)
-    "lora_alpha": 16,
-    # Capas del Transformer a adaptar:
-    # Solo atención: ["q_proj", "v_proj"]
-    # Atención + MLP: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
-    "target_modules": ["q_proj", "v_proj"],
+    "lora_alpha": 32,
+    # Capas del Transformer a adaptar (Atención + MLP para mejor convergencia)
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
     # Épocas de entrenamiento (1 a 15 según servidor)
-    "epochs": 5,
+    "epochs": 8,
     # Tasa de aprendizaje AdamW
-    "learning_rate": 5e-4,
+    "learning_rate": 3e-4,
 }
