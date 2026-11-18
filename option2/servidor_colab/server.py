@@ -284,9 +284,26 @@ def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict
     objetos_mapa[(zona_x, zona_y)] = {"tipo": "ARMA", "arma": dict(ARMAS["ESPADA"]), "desc": "Espada (30 daño)"}
     objetos_mapa[(max(0, zona_x - 1), zona_y)] = {"tipo": "BOTIQUIN", "desc": "Botiquín médico (+30 Vida)"}
 
-    # Spawns siempre aleatorios en las 144 casillas
-    todas = [(x, y) for x in range(12) for y in range(12)]
-    for idx, pos in enumerate(rng.sample(todas, len(agentes))):
+    # Spawns aleatorios en las 144 casillas, dentro de la zona segura inicial y separados entre sí (dist >= 3)
+    radio_seguro = 6
+    candidatas = [
+        (x, y) for x in range(12) for y in range(12)
+        if max(abs(x - zona_x), abs(y - zona_y)) <= radio_seguro
+    ]
+    rng.shuffle(candidatas)
+    elegidas: List[Tuple[int, int]] = []
+    for pos in candidatas:
+        if all(max(abs(pos[0] - p[0]), abs(pos[1] - p[1])) >= 3 for p in elegidas):
+            elegidas.append(pos)
+            if len(elegidas) == len(agentes):
+                break
+    # Si faltan casillas por densidad, completar con las restantes dentro de zona segura
+    for pos in candidatas:
+        if len(elegidas) == len(agentes):
+            break
+        if pos not in elegidas:
+            elegidas.append(pos)
+    for idx, pos in enumerate(elegidas):
         agentes[idx]["x"], agentes[idx]["y"] = pos
 
     modelos_activos = {}
@@ -304,7 +321,6 @@ def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict
                 modelos_activos[aid] = (base_m, tok, base_m, mid, False)
 
     turnos_log = []
-    radio_seguro = 6
 
     try:
         for turno in range(1, max_turnos + 1):
@@ -645,7 +661,12 @@ def entrenar_tributo(req: EntrenarRequest, x_team_token: str = Header(default="t
     modo_gpu = "ICL_ONLINE"
     if os.environ.get("RUN_REAL_GPU", "0") == "1":
         with gpu_lock:
-            modo_gpu = ejecutar_entrenamiento_real_gpu(x_team_token, modelo_id, cfg)
+            try:
+                modo_gpu = ejecutar_entrenamiento_real_gpu(x_team_token, modelo_id, cfg)
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error GPU ({type(e).__name__}): {e}")
 
     ULTIMO_ENTRENAMIENTO_TS[x_team_token] = time.time()
     registro = {

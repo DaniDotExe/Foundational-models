@@ -619,15 +619,16 @@ function calcularTodo() {
   if (estado.adaptacion === "FULL") viaServer = "FULL_FT";
 
   if (viaServer === "ICL") {
-    const tokPrompt = 45 + tokEstrategia + kUsados * (70 + (cot ? 65 : 0));
-    const tokOut = cot ? 135 : 20;
-    flopsTotales = 4 * (2.0 * infoM.n * 22 * (tokPrompt + tokOut) * (cot ? 2.1 : 1.0));
+    const tokPrompt = 45 + tokEstrategia + kUsados * (70 + (cot ? 55 : 0));
+    const tokOut = cot ? 120 : 18;
+    // 1 modelo unificado evaluado en ~25 decisiones de la Arena
+    flopsTotales = 2.0 * infoM.n * 25 * (tokPrompt + tokOut) * (cot ? 1.8 : 1.0);
   } else if (viaServer === "LORA_LIGERO") {
-    const tokD = (kUsados * 85 + tokEstrategia) * 3 * 3.5;
-    flopsTotales = 4 * (4.1 * infoM.n * tokD) + 4 * (2.0 * infoM.n * 22 * (50 + (cot ? 120 : 20)));
+    const tokD = (Math.max(1, kUsados) * 85 + tokEstrategia) * 3 * 2.5;
+    flopsTotales = 4.1 * infoM.n * tokD + 2.0 * infoM.n * 25 * (50 + (cot ? 100 : 18));
   } else {
-    const tokD = (kUsados * 85 + tokEstrategia) * 4 * 4.0;
-    flopsTotales = 4 * (6.0 * infoM.n * tokD) + 4 * (2.0 * infoM.n * 22 * (50 + (cot ? 120 : 20)));
+    const tokD = (Math.max(1, kUsados) * 85 + tokEstrategia) * 3 * 3.0;
+    flopsTotales = 6.0 * infoM.n * tokD + 2.0 * infoM.n * 25 * (50 + (cot ? 100 : 18));
   }
 
   const tflops = flopsTotales / 1e12;
@@ -635,13 +636,21 @@ function calcularTodo() {
   const pct = Math.min(100, Math.round((flopsTotales / MAX_FLOPS) * 100));
   const valido = flopsTotales <= MAX_FLOPS && costoDatasetPts <= 100;
 
-  document.getElementById("lblFlopsMeter").textContent = `${tflops.toFixed(1)} / ${maxTflops} TFLOPs`;
+  document.getElementById("lblFlopsMeter").textContent = `${tflops.toFixed(1)} / ${maxTflops} TFLOPs (${pct}%)`;
   const fill = document.getElementById("barFlopsFill");
   fill.style.width = `${pct}%`;
   fill.classList.toggle("over", !valido);
+  fill.style.background = !valido ? "var(--bad)" : (pct >= 80 ? "var(--amber)" : "var(--ok)");
 
   const btnEnt = document.getElementById("btnEntrenarGpu");
   if (btnEnt) btnEnt.disabled = !valido;
+  const msgEl = document.getElementById("serverStatusMsg");
+  if (msgEl && !valido) {
+    msgEl.style.color = "var(--bad)";
+    msgEl.textContent = costoDatasetPts > 100
+      ? `Dataset lleno (${costoDatasetPts}/100 pts). Borra algún ejemplo.`
+      : `Excedes el límite (${tflops.toFixed(1)} / ${maxTflops} TFLOPs).`;
+  }
 
   return { equipo, modeloId: estado.modelo, estrategia: estrategia.trim(), viaServer, cot, kUsados, activos, valido };
 }
@@ -837,17 +846,19 @@ function _payloadActual(cfg) {
 async function enviarAGpuServidor() {
   const cfg = calcularTodo();
   const msg = document.getElementById("serverStatusMsg");
-  if (!cfg.valido) { msg.style.color = "var(--bad)"; msg.textContent = "Excedes el límite de 150 TFLOPs."; return; }
+  if (!cfg.valido) { msg.style.color = "var(--bad)"; msg.textContent = "Excedes el límite de FLOPs o Dataset."; return; }
   msg.style.color = "var(--amber)"; msg.textContent = "Entrenando / registrando en GPU...";
   try {
     const resp = await fetch("/entrenar_tributo", {
       method: "POST", headers: { "Content-Type": "application/json", "X-Team-Token": tokenUsuario },
       body: JSON.stringify(_payloadActual(cfg))
     });
-    const data = await resp.json();
-    if (!resp.ok) { msg.style.color = "var(--bad)"; msg.textContent = data.detail || "Error"; return; }
+    const rawText = await resp.text();
+    let data = {};
+    try { data = JSON.parse(rawText); } catch (e) { data = { detail: rawText }; }
+    if (!resp.ok) { msg.style.color = "var(--bad)"; msg.textContent = `Error ${resp.status}: ${data.detail || rawText}`; return; }
     msg.style.color = "var(--ok)"; msg.textContent = `✅ Registrado en ${data.tributo.tiempo_gpu_s}s (${data.tributo.modo_gpu}).`;
-  } catch (e) { msg.style.color = "var(--muted)"; msg.textContent = "Abre desde la URL de Colab/GCP."; }
+  } catch (e) { msg.style.color = "var(--bad)"; msg.textContent = `Error de red: ${e.message}`; }
 }
 
 async function correrSimulacionOnline() {
@@ -859,12 +870,16 @@ async function correrSimulacionOnline() {
       method: "POST", headers: { "Content-Type": "application/json", "X-Team-Token": tokenUsuario },
       body: JSON.stringify(_payloadActual(cfg))
     });
-    if (!resp.ok) return;
-    const replay = await resp.json();
+    const rawText = await resp.text();
+    if (!resp.ok) {
+      document.getElementById("lblTurnoInfo").textContent = `Error ${resp.status}: ${rawText.slice(0, 120)}`;
+      return;
+    }
+    const replay = JSON.parse(rawText);
     partidaTurnos = replay.turnos;
     document.getElementById("arenaModeTag").textContent = `VISTA DEL MODELO (VISIÓN 2 CASILLAS · SEMILLA BOTS: ${document.getElementById("inpSeedRivales").value})`;
     irTurno(0);
-  } catch (e) { document.getElementById("lblTurnoInfo").textContent = "Sin conexión al servidor Colab/GCP."; }
+  } catch (e) { document.getElementById("lblTurnoInfo").textContent = `Sin conexión: ${e.message}`; }
 }
 
 async function cargarConfigProfesor() {
