@@ -2972,6 +2972,13 @@ class JuegoPygame:
             estrategia_snap = str(cfg.ESTRATEGIA)
             icl_snap = copy.deepcopy(cfg.CONFIG_ICL)
             datos_snap = copy.deepcopy(cfg.CONFIG_DATOS)
+            adapter_snap = self.lora_activo
+            if estrategia_snap == "LORA_ICL":
+                estrategia_lbl = f"LORA ({adapter_snap or 'default'}) + ICL (k={icl_snap.get('k_shots', 4)})"
+            elif estrategia_snap == "LORA":
+                estrategia_lbl = f"LORA ({adapter_snap or 'default'})"
+            else:
+                estrategia_lbl = f"ICL (k={icl_snap.get('k_shots', 4)})"
             ventana = max(1, min(8, int(datos_snap.get("ventana_historia", 5))))
 
             def _worker_cola() -> None:
@@ -2986,7 +2993,7 @@ class JuegoPygame:
                         self._bg_active_frames = 0
                         self._bg_active_pista_pct = 0.0
                         self._bg_active_rtt = 0.0
-                        self._bg_active_estrategia = estrategia_snap
+                        self._bg_active_estrategia = estrategia_lbl
 
                     est = estado_inicial(clave_pista)
                     hist: List[int] = [0] * ventana
@@ -3016,7 +3023,7 @@ class JuegoPygame:
                                 velocidad=velocidad_normalizada(est.velocidad),
                                 cp_dist=cp_dist_ang[0],
                                 cp_ang=cp_dist_ang[1],
-                                adapter_name=self.lora_activo,
+                                adapter_name=adapter_snap,
                             )
                             accion_actual = int(resp["accion"])
                             ultimo_rtt_ms = float(resp["rtt_ms"])
@@ -3066,7 +3073,7 @@ class JuegoPygame:
                             self._bg_results[clave_pista] = {
                                 "frames": frames_grabados,
                                 "resumen": resumen,
-                                "estrategia": estrategia_snap,
+                                "estrategia": estrategia_lbl,
                             }
 
                 with self._bg_lock:
@@ -3078,15 +3085,25 @@ class JuegoPygame:
     def _modo_prueba_a(self) -> None:
         pg = self.pygame
         jugadas_ref = cargar_jugadas()
-        if cfg.ESTRATEGIA.upper().strip() == "ICL" and not jugadas_ref:
-            self.estado_menu_msg = "Error: graba jugadas en [1] antes de correr ICL."
+        if cfg.ESTRATEGIA.upper().strip() in {"ICL", "LORA_ICL"} and not jugadas_ref:
+            self.estado_menu_msg = f"Error: graba jugadas en [G] antes de correr {cfg.ESTRATEGIA}."
             return
 
-        btn_p1 = pg.Rect(90, 145, 140, 40)
-        btn_p2 = pg.Rect(245, 145, 140, 40)
-        btn_p3 = pg.Rect(400, 145, 140, 40)
-        btn_todas = pg.Rect(560, 145, 180, 40)
-        btn_cancelar_todo = pg.Rect(self.ANCHO - 260, 145, 170, 40)
+        usa_lora = cfg.ESTRATEGIA.upper().strip() in {"LORA", "LORA_ICL"}
+        if usa_lora:
+            self.loras_disponibles = self.bridge.listar_adaptadores()
+            if self.loras_disponibles and self.lora_activo not in self.loras_disponibles:
+                self.lora_activo = self.loras_disponibles[-1]
+
+        btns_lora_sim = [
+            pg.Rect(250 + i * 200, 108, 185, 30)
+            for i in range(len(self.loras_disponibles[:3]))
+        ]
+        btn_p1 = pg.Rect(90, 152, 140, 40)
+        btn_p2 = pg.Rect(245, 152, 140, 40)
+        btn_p3 = pg.Rect(400, 152, 140, 40)
+        btn_todas = pg.Rect(560, 152, 180, 40)
+        btn_cancelar_todo = pg.Rect(self.ANCHO - 260, 152, 170, 40)
         btn_volver = pg.Rect(self.ANCHO - 270, 675, 180, 44)
 
         while True:
@@ -3132,6 +3149,11 @@ class JuegoPygame:
                         self._encolar_pistas_autonomas(list(PISTAS_TRAIN), jugadas_ref)
                     elif (act or cola) and btn_cancelar_todo.collidepoint(mx, my):
                         self._cancelar_cola_autonoma()
+                    elif usa_lora and any(b.collidepoint(mx, my) for b in btns_lora_sim):
+                        for idx_l, b_l in enumerate(btns_lora_sim):
+                            if b_l.collidepoint(mx, my):
+                                self.lora_activo = self.loras_disponibles[idx_l]
+                                break
                     else:
                         for clave, (accion_btn, rect_btn) in btns_accion_fila.items():
                             if rect_btn.collidepoint(mx, my):
@@ -3161,8 +3183,20 @@ class JuegoPygame:
                     True,
                     self.MUTED,
                 ),
-                (90, 86),
+                (90, 78),
             )
+            if usa_lora:
+                self.screen.blit(self.font_body.render("Modelo LoRA a usar:", True, self.TEXTO), (90, 113))
+                sufijo_icl = " + ICL" if cfg.ESTRATEGIA == "LORA_ICL" else ""
+                for idx_l, b_l in enumerate(btns_lora_sim):
+                    nm_l = self.loras_disponibles[idx_l]
+                    activo_l = (nm_l == self.lora_activo)
+                    self._dibujar_boton(
+                        b_l,
+                        f"{'● ' if activo_l else ''}{nm_l}{sufijo_icl}",
+                        (35, 36, 78) if activo_l else self.PANEL_BG,
+                        (129, 140, 248) if activo_l else self.BORDE,
+                    )
 
             self._dibujar_boton(btn_p1, "+ Simular P1", (24, 38, 62), self.ACCENT)
             self._dibujar_boton(btn_p2, "+ Simular P2", (24, 38, 62), self.ACCENT)

@@ -11,43 +11,43 @@ Edita este archivo para experimentar comparando:
    - Reto: calidad de los datos grabados, riesgo de sobreajuste con pocas muestras o muchas épocas.
 """
 
-# Estrategia activa: "ICL" o "LORA"
+# Estrategia activa: "ICL", "LORA" o "LORA_ICL"
 ESTRATEGIA = "ICL"
 
-# Representación de estado enviada al modelo
+# Representación de estado enviada al modelo (baseline inicial medio-bajo para experimentar)
 CONFIG_DATOS = {
     # Número de acciones previas incluidas en H:<historial> (1 a 8 frames)
-    "ventana_historia": 5,
+    "ventana_historia": 2,
     # Resolución de discretización de cada rayo [0..1] -> enteros [0..precision_sensores]
     # Valores típicos: 20 (grueso), 50 (balanceado), 100 (fino)
-    "precision_sensores": 50,
+    "precision_sensores": 20,
 }
 
-# Hiperparámetros para modo In-Context Learning (ESTRATEGIA == "ICL")
+# Hiperparámetros para modo In-Context Learning (ESTRATEGIA in {"ICL", "LORA_ICL"})
 CONFIG_ICL = {
     # Cantidad de ejemplos en el prompt (1 a 30)
-    "k_shots": 12,
+    "k_shots": 4,
     # Método de selección de ejemplos: "knn" (vecinos más cercanos) o "random"
-    "seleccion": "knn",
+    "seleccion": "random",
     # Pesos para [izq, diag_izq, frente, diag_der, der] al calcular distancia KNN
-    "pesos_sensores": [1.0, 2.0, 3.0, 2.0, 1.0],
+    "pesos_sensores": [1.0, 1.0, 1.0, 1.0, 1.0],
     # Creatividad de muestreo (0.0 = determinista / greedy; >0.0 activa muestreo)
-    "temperature": 0.0,
+    "temperature": 0.2,
     "top_p": 0.9,
 }
 
-# Hiperparámetros para modo PEFT/LoRA (ESTRATEGIA == "LORA")
+# Hiperparámetros para modo PEFT/LoRA (ESTRATEGIA in {"LORA", "LORA_ICL"})
 CONFIG_LORA = {
-    # Máximo de jugadas tomadas de data/mis_jugadas.json para entrenar
-    "num_ejemplos": 200,
+    # Máximo de jugadas tomadas de data/mis_jugadas.json para entrenar (máx 300)
+    "num_ejemplos": 60,
     # Rango de las matrices LoRA: 2, 4, 8, 16, 32 (máx 32 según servidor)
-    "lora_r": 16,
+    "lora_r": 4,
     # Escala de adaptación (regla clásica: 2 * lora_r)
-    "lora_alpha": 32,
-    # Capas del Transformer a adaptar (Atención + MLP para mejor convergencia)
-    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    "lora_alpha": 8,
+    # Capas del Transformer a adaptar (Solo Atención por defecto; prueba agregar MLP)
+    "target_modules": ["q_proj", "v_proj"],
     # Épocas de entrenamiento (1 a 15 según servidor)
-    "epochs": 8,
+    "epochs": 3,
     # Tasa de aprendizaje AdamW
-    "learning_rate": 3e-4,
+    "learning_rate": 5e-4,
 }
