@@ -200,8 +200,21 @@
       <input type="text" id="welcomeNombre" placeholder="Ej. Sofía / Participante 03" />
     </div>
     <div style="margin-bottom:16px;">
-      <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Token asignado (token_estudiante_01..12)</label>
-      <input type="text" id="welcomeToken" value="token_estudiante_01" />
+      <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;">Equipo asignado</label>
+      <select id="welcomeToken" style="width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:9px 11px;border-radius:9px;font-family:var(--mono);font-size:12px;">
+        <option value="token_estudiante_01">Equipo 01 (token_estudiante_01)</option>
+        <option value="token_estudiante_02">Equipo 02 (token_estudiante_02)</option>
+        <option value="token_estudiante_03">Equipo 03 (token_estudiante_03)</option>
+        <option value="token_estudiante_04">Equipo 04 (token_estudiante_04)</option>
+        <option value="token_estudiante_05">Equipo 05 (token_estudiante_05)</option>
+        <option value="token_estudiante_06">Equipo 06 (token_estudiante_06)</option>
+        <option value="token_estudiante_07">Equipo 07 (token_estudiante_07)</option>
+        <option value="token_estudiante_08">Equipo 08 (token_estudiante_08)</option>
+        <option value="token_estudiante_09">Equipo 09 (token_estudiante_09)</option>
+        <option value="token_estudiante_10">Equipo 10 (token_estudiante_10)</option>
+        <option value="token_estudiante_11">Equipo 11 (token_estudiante_11)</option>
+        <option value="token_estudiante_12">Equipo 12 (token_estudiante_12)</option>
+      </select>
     </div>
     <button type="button" class="btn btn-primary btn-block" onclick="guardarIdentidadInicial()">Entrar →</button>
   </div>
@@ -443,6 +456,10 @@ let textoEventoMioActual = "";
 let miDataset = [];
 try {
   miDataset = JSON.parse(localStorage.getItem("hg_fm_dataset") || "[]");
+  // Limpiar datasets de versiones anteriores (formato viejo o más de 10 ejemplos bloqueaban el entrenamiento)
+  if (!Array.isArray(miDataset)) miDataset = [];
+  miDataset = miDataset.filter(e => e && e.escena && e.comentario && e.etiqueta).slice(-10);
+  localStorage.setItem("hg_fm_dataset", JSON.stringify(miDataset));
   nombreUsuario = localStorage.getItem("hg_fm_nombre") || "";
   tokenUsuario = localStorage.getItem("hg_fm_token") || "token_estudiante_01";
 } catch (e) {}
@@ -645,11 +662,15 @@ function calcularTodo() {
   const btnEnt = document.getElementById("btnEntrenarGpu");
   if (btnEnt) btnEnt.disabled = !valido;
   const msgEl = document.getElementById("serverStatusMsg");
-  if (msgEl && !valido) {
-    msgEl.style.color = "var(--bad)";
-    msgEl.textContent = costoDatasetPts > 100
-      ? `Dataset lleno (${costoDatasetPts}/100 pts). Borra algún ejemplo.`
-      : `Excedes el límite (${tflops.toFixed(1)} / ${maxTflops} TFLOPs).`;
+  if (msgEl) {
+    if (!valido) {
+      msgEl.style.color = "var(--bad)";
+      msgEl.textContent = costoDatasetPts > 100
+        ? `Dataset lleno (${costoDatasetPts}/100 pts). Borra algún ejemplo.`
+        : `Excedes el límite (${tflops.toFixed(1)} / ${maxTflops} TFLOPs).`;
+    } else if (msgEl.textContent.startsWith("Dataset lleno") || msgEl.textContent.startsWith("Excedes")) {
+      msgEl.textContent = "";
+    }
   }
 
   return { equipo, modeloId: estado.modelo, estrategia: estrategia.trim(), viaServer, cot, kUsados, activos, valido };

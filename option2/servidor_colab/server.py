@@ -70,7 +70,9 @@ def obtener_modelo_gpu(model_id: str):
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
     dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-    mdl = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype, device_map="auto")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # Sin device_map="auto": evita hooks de accelerate que rompen LoRA / Full-FT al entrenar
+    mdl = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype).to(device)
     mdl.eval()
     MODELOS_EN_VRAM[model_id] = (tok, mdl)
     return tok, mdl
@@ -134,7 +136,12 @@ def ejecutar_entrenamiento_real_gpu(token: str, model_id: str, cfg: Dict[str, An
     if usa_full:
         if model_id != "Qwen/Qwen2.5-0.5B-Instruct":
             raise HTTPException(status_code=400, detail="FULL_FT solo está permitido en el modelo Pequeño (0.5B).")
-        mdl_ft = copy.deepcopy(base_mdl)
+        # Cargar una copia limpia (deepcopy de un modelo con device_map/hooks de accelerate puede fallar)
+        from transformers import AutoModelForCausalLM
+        mdl_ft = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=base_mdl.dtype).to(device)
+        mdl_ft.config.use_cache = False
+        for p in mdl_ft.parameters():
+            p.requires_grad = True
         mdl_ft.train()
         opt = torch.optim.AdamW(mdl_ft.parameters(), lr=5e-5)
         try:
@@ -150,6 +157,9 @@ def ejecutar_entrenamiento_real_gpu(token: str, model_id: str, cfg: Dict[str, An
                 torch.cuda.empty_cache()
         return "FULL_FT_GUARDADO"
 
+    if hasattr(base_mdl, "peft_config"):
+        delattr(base_mdl, "peft_config")
+    base_mdl.config.use_cache = False
     lora_cfg = LoraConfig(r=8, lora_alpha=16, target_modules=["q_proj", "v_proj"], lora_dropout=0.05, task_type="CAUSAL_LM")
     peft_mdl = get_peft_model(base_mdl, lora_cfg)
     peft_mdl.train()
@@ -162,8 +172,12 @@ def ejecutar_entrenamiento_real_gpu(token: str, model_id: str, cfg: Dict[str, An
             opt.step()
         peft_mdl.save_pretrained(SAVE_DIR / f"{token}_lora")
     finally:
-        MODELOS_EN_VRAM[model_id] = (tok, peft_mdl.unload())
-        MODELOS_EN_VRAM[model_id][1].eval()
+        clean_mdl = peft_mdl.unload()
+        if hasattr(clean_mdl, "peft_config"):
+            delattr(clean_mdl, "peft_config")
+        clean_mdl.config.use_cache = True
+        clean_mdl.eval()
+        MODELOS_EN_VRAM[model_id] = (tok, clean_mdl)
         del opt
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -284,27 +298,17 @@ def _ejecutar_partida_online(agentes: List[Dict[str, Any]], configs_por_id: Dict
     objetos_mapa[(zona_x, zona_y)] = {"tipo": "ARMA", "arma": dict(ARMAS["ESPADA"]), "desc": "Espada (30 daño)"}
     objetos_mapa[(max(0, zona_x - 1), zona_y)] = {"tipo": "BOTIQUIN", "desc": "Botiquín médico (+30 Vida)"}
 
-    # Spawns aleatorios en las 144 casillas, dentro de la zona segura inicial y separados entre sí (dist >= 3)
+    # Spawns aleatorios distribuidos en 12 sectores distintos de TODO el mapa 12x12 (imposible que salgan todos en la mitad)
     radio_seguro = 6
-    candidatas = [
-        (x, y) for x in range(12) for y in range(12)
-        if max(abs(x - zona_x), abs(y - zona_y)) <= radio_seguro
+    sectores = [
+        (cx * 4, cx * 4 + 3, cy * 3, cy * 3 + 2)
+        for cx in range(3) for cy in range(4)
     ]
-    rng.shuffle(candidatas)
-    elegidas: List[Tuple[int, int]] = []
-    for pos in candidatas:
-        if all(max(abs(pos[0] - p[0]), abs(pos[1] - p[1])) >= 3 for p in elegidas):
-            elegidas.append(pos)
-            if len(elegidas) == len(agentes):
-                break
-    # Si faltan casillas por densidad, completar con las restantes dentro de zona segura
-    for pos in candidatas:
-        if len(elegidas) == len(agentes):
-            break
-        if pos not in elegidas:
-            elegidas.append(pos)
-    for idx, pos in enumerate(elegidas):
-        agentes[idx]["x"], agentes[idx]["y"] = pos
+    rng.shuffle(sectores)
+    for idx, a in enumerate(agentes):
+        x0, x1, y0, y1 = sectores[idx % len(sectores)]
+        a["x"] = rng.randint(x0, x1)
+        a["y"] = rng.randint(y0, y1)
 
     modelos_activos = {}
     if usar_gpu_real:
