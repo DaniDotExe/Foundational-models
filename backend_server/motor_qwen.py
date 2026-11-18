@@ -564,7 +564,9 @@ class MotorQwen:
 
             pad_id = int(self.tokenizer.pad_token_id)
             optimizer = torch.optim.AdamW(trainable_params, lr=float(learning_rate))
-            batch_size = min(64, len(encoded_samples))
+            batch_size = min(16, len(encoded_samples))
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
 
             historial_loss: List[float] = []
 
