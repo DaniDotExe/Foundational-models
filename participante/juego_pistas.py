@@ -26,6 +26,7 @@ import sys
 import threading
 import time
 from typing import Any, Dict, List, Optional, Tuple, Union
+import zipfile
 
 from dotenv import load_dotenv
 
@@ -1173,6 +1174,48 @@ class JuegoPygame:
             pg.display.flip()
             self.clock.tick(30)
 
+    def _exportar_entrega_zip(self, estrategia_sel: str) -> None:
+        """Exporta en 1 solo .zip: manifest.json (config), mis_jugadas.json (datos) y adaptador LoRA."""
+        entregas_dir = BASE_DIR / "entregas"
+        entregas_dir.mkdir(parents=True, exist_ok=True)
+        jugadas = cargar_jugadas()
+        if not jugadas:
+            self.estado_menu_msg = "Error al exportar: no hay jugadas en data/mis_jugadas.json."
+            return
+
+        usa_lora = estrategia_sel in {"LORA", "LORA_ICL"}
+        adapter_files: Dict[str, bytes] = {}
+        if usa_lora:
+            if not self.lora_activo:
+                self.estado_menu_msg = "Error al exportar: primero entrena/elige un modelo LoRA."
+                return
+            try:
+                adapter_files = self.bridge.descargar_adaptador(self.lora_activo)
+            except Exception as exc:
+                self.estado_menu_msg = f"Error descargando LoRA para exportar: {exc}"
+                return
+
+        manifest = {
+            "student_id": self.bridge.student_id,
+            "student_name": self.bridge.student_name,
+            "estrategia": estrategia_sel,
+            "adapter_name": self.lora_activo if usa_lora else None,
+            "CONFIG_DATOS": dict(cfg.CONFIG_DATOS),
+            "CONFIG_ICL": dict(cfg.CONFIG_ICL),
+            "CONFIG_LORA": dict(cfg.CONFIG_LORA),
+            "num_jugadas": len(jugadas),
+            "exported_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        zip_name = f"{self.bridge.student_id}_{estrategia_sel.lower()}.zip"
+        zip_path = entregas_dir / zip_name
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False))
+            zf.writestr("mis_jugadas.json", json.dumps(jugadas, ensure_ascii=False))
+            for fname, raw in adapter_files.items():
+                zf.writestr(f"adapter/{fname}", raw)
+
+        self.estado_menu_msg = f"Exportado OK -> participante/entregas/{zip_name}"
+
     def _pantalla_estrategia(self, estrategia_sel: str) -> None:
         """Pantalla dedicada para configurar, entrenar/elegir LoRA y lanzar simulaciones de la estrategia."""
         pg = self.pygame
@@ -1389,6 +1432,7 @@ class JuegoPygame:
             ]
 
             # Botones de acción abajo
+            btn_exportar = pg.Rect(self.ANCHO - 310, 488, 220, 36)
             btn_entrenar = pg.Rect(90, 555, 250, 46)
             btn_simular = pg.Rect(360 if usa_lora else 90, 555, 280, 46)
             btn_evaluar = pg.Rect(660 if usa_lora else 390, 555, 290, 46)
@@ -1486,6 +1530,8 @@ class JuegoPygame:
                         cfg.CONFIG_LORA["target_modules"] = mods_attn if len(cur) > 2 else mods_full
                     elif usa_lora and btn_entrenar.collidepoint(pos):
                         _iniciar_entrenamiento_bg()
+                    elif btn_exportar.collidepoint(pos):
+                        self._exportar_entrega_zip(estrategia_sel)
                     elif btn_simular.collidepoint(pos):
                         if usa_lora and not self.loras_disponibles:
                             self.estado_menu_msg = "Primero entrena al menos 1 modelo LoRA antes de simular."
@@ -1606,6 +1652,7 @@ class JuegoPygame:
                     (129, 140, 248),
                 )
 
+            self._dibujar_boton(btn_exportar, "Exportar Entrega (.zip)", (24, 38, 62), self.ACCENT)
             self._dibujar_boton(btn_simular, "Simular Prueba (P1-P3)", (15, 52, 48), self.ACCENT)
             self._dibujar_boton(btn_evaluar, "Evaluacion Oficial (B1-B3)", (52, 36, 16), self.WARN)
             self._dibujar_boton(btn_volver, "Volver al Menu", self.PANEL_BG, self.BORDE)

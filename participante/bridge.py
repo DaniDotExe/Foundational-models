@@ -5,6 +5,7 @@ para la evaluación oficial penalizada.
 """
 from __future__ import annotations
 
+import base64
 import os
 import re
 import time
@@ -79,6 +80,16 @@ class ServerBridge:
             return False
         resp.raise_for_status()
         return bool(resp.json().get("eliminado", False))
+
+    def descargar_adaptador(self, adapter_name: str) -> Dict[str, bytes]:
+        """Descarga los archivos del adaptador LoRA desde el servidor para exportar."""
+        resp = self.session.get(
+            f"{self.server_url}/adaptadores/{self.student_id}/{adapter_name}/exportar",
+            timeout=max(30.0, self.timeout_sec * 4.0),
+        )
+        resp.raise_for_status()
+        files_b64 = resp.json().get("files", {})
+        return {fname: base64.b64decode(b64) for fname, b64 in files_b64.items()}
 
     def cancelar_entrenamiento_lora(self) -> None:
         """Solicita cancelar el entrenamiento LoRA activo en el servidor."""

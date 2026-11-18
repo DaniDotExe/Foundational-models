@@ -10,6 +10,7 @@ Expone:
 """
 from __future__ import annotations
 
+import base64
 import html
 import json
 import logging
@@ -306,6 +307,26 @@ def eliminar_adaptador_estudiante(student_id: str, adapter_name: str) -> Dict[st
         sid = sanitizar_student_id(student_id)
         ok = motor_global.eliminar_adaptador(sid, adapter_name)
         return {"student_id": sid, "adapter_name": adapter_name, "eliminado": ok}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/adaptadores/{student_id}/{adapter_name}/exportar")
+def exportar_adaptador_estudiante(student_id: str, adapter_name: str) -> Dict[str, Any]:
+    """Exporta los archivos del adaptador LoRA en base64 para empaquetar en un solo .zip."""
+    try:
+        sid = sanitizar_student_id(student_id)
+        akey = motor_global._adapter_key(sid, adapter_name)
+        ruta = motor_global._resolver_dir_carga_peft(motor_global._ruta_adaptador(akey), akey)
+        if not (ruta / "adapter_config.json").exists():
+            raise HTTPException(status_code=404, detail=f"No existe el adaptador '{adapter_name}' para '{sid}'.")
+        archivos: Dict[str, str] = {}
+        for p in ruta.iterdir():
+            if p.is_file():
+                archivos[p.name] = base64.b64encode(p.read_bytes()).decode("ascii")
+        return {"student_id": sid, "adapter_name": adapter_name, "files": archivos}
+    except HTTPException:
+        raise
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
