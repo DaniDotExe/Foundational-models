@@ -69,49 +69,88 @@ S:<s1>,<s2>,<s3>,<s4>,<s5>|C:<cp_dist>|V:<vel>|H:<historial> -> <accion>
 
 ---
 
-## 4. Ejecución Local (Windows / RTX 3060)
+## 4. Cómo Correr la App Paso a Paso (Local en Windows / RTX 3060)
 
-### Paso A: Levantar el Backend (`grand_prix/backend_server/`)
+La aplicación funciona en **2 ventanas de terminal (`cmd.exe`) abiertas al mismo tiempo**:
+- **Terminal 1:** corre el **Backend** (carga `Qwen/Qwen2.5-1.5B-Instruct` en tu GPU).
+- **Terminal 2:** corre el **Cliente Simulador** (ventana de Pygame donde grabas jugadas y pones a correr el carro).
+
+### Paso 0 (Una sola vez): Instalar librerías
+
+Si usas **Conda** (recomendado en Windows):
+```bat
+conda create -n grandprix python=3.11 -y
+conda activate grandprix
+pip install -r "grand_prix\backend_server\requirements.txt"
+pip install -r "grand_prix\cliente_estudiante\requirements.txt"
+```
+> *Nota:* si tu entorno usa **Python 3.14** y `pip install pygame` falla al compilar, instala **`pip install pygame-ce`** (es 100% compatible con `import pygame`).
+
+---
+
+### Paso 1 — Terminal 1: Arrancar el Backend (Servidor GPU)
+
+Abre la **primera ventana de `cmd.exe`** y ejecuta:
 
 ```bat
 cd /d "grand_prix\backend_server"
-pip install -r requirements.txt
 copy .env.example .env
-uvicorn server:app --host 0.0.0.0 --port 8000
+python -m uvicorn server:app --host 0.0.0.0 --port 8000
 ```
 
-*(Si usas un entorno Conda específico en Windows como `grandprix`, ejecuta directamente `"C:\Users\<usuario>\miniconda3\envs\grandprix\python.exe" -m uvicorn server:app --host 0.0.0.0 --port 8000`).*
+*(Si `conda activate` no te funciona en `cmd`, llama directo al `python.exe` de tu entorno, por ejemplo:)*
+```bat
+cd /d "d:\Software\Foundational models\grand_prix\backend_server"
+"C:\Users\%USERNAME%\miniconda3\envs\grandprix\python.exe" -m uvicorn server:app --host 0.0.0.0 --port 8000
+```
 
-- Salud del servidor y GPU: `http://127.0.0.1:8000/health`
-- Tabla de posiciones en vivo (auto-refresco cada 5 s): `http://127.0.0.1:8000/ranking`
+1. La **primera vez** descargará `Qwen/Qwen2.5-1.5B-Instruct` (~3 GB) a tu caché local y lo cargará en la GPU.
+2. Sabrás que está listo cuando veas en la terminal: `Application startup complete.`
+3. **Deja esta terminal abierta** y verifica en tu navegador:
+   - Estado de la GPU: `http://127.0.0.1:8000/health`
+   - Ranking en vivo (se actualiza cada 5 s): `http://127.0.0.1:8000/ranking`
 
-> **Modo simulado en CPU sin descargar Qwen (opcional):** establece `MOCK_LLM=1` (`set MOCK_LLM=1` en CMD o `$env:MOCK_LLM="1"` en PowerShell).
+> **¿Solo quieres probar sin GPU o sin descargar Qwen?**
+> Antes de correr `uvicorn`, escribe `set MOCK_LLM=1` en `cmd` (o `$env:MOCK_LLM="1"` en PowerShell).
 
-### Paso B: Ejecutar el Cliente del Estudiante (`grand_prix/cliente_estudiante/`)
+---
+
+### Paso 2 — Terminal 2: Abrir el Simulador (Cliente Pygame)
+
+Sin cerrar la Terminal 1, abre una **segunda ventana de `cmd.exe`** y ejecuta:
 
 ```bat
 cd /d "grand_prix\cliente_estudiante"
-pip install -r requirements.txt
 copy .env.example .env
 python juego_pistas.py
 ```
 
-#### Flujo en el Simulador
-1. Edita `grand_prix/cliente_estudiante/.env` con tu `STUDENT_ID` y `STUDENT_NAME`.
-2. **`[1]` Grabar Jugadas (`P1`, `P2`, `P3`):**
-   - Selecciona la pista con los botones **`P1` | `P2` | `P3`**, ajusta la frecuencia (`Cada N frames`), pulsa **`INICIAR GRABACION`** y conduce con **Flechas** o **`W/A/S/D`** (`R` reinicia al inicio).
-   - Pulsa **`Ver Frames`** para inspeccionar visualmente cada muestra (`A/D` o `←/→`), eliminar frames individuales, borrar por pista (`borrar-p1`, `borrar-p2`, `borrar-p3`) o reiniciar todo (`borrar-todo`).
-   - Pulsa **`Guardar y Salir`** (o `ESC`) para guardar en `data/mis_jugadas.json`.
-3. Edita `grand_prix/cliente_estudiante/config_estudiante.py` para configurar `ICL` o `LORA`.
-4. Si usas `LORA`, ejecuta **`[2]` Entrenar Piloto**.
-5. Prueba en **`[3]` Modo Autónomo - Prueba (`P1`, `P2`, `P3`)**.
-6. Compite en **`[4]` Evaluación Oficial (`B1`, `B2`, `B3`)** para enviar tu puntaje a `/ranking`.
+*(O con ruta directa al `python.exe` de tu entorno Conda:)*
+```bat
+cd /d "d:\Software\Foundational models\grand_prix\cliente_estudiante"
+"C:\Users\%USERNAME%\miniconda3\envs\grandprix\python.exe" juego_pistas.py
+```
 
-#### Comandos CLI sin ventana gráfica
-```bash
-python juego_pistas.py --generar-semilla      # Regenera 120 jugadas semilla en P1/P2/P3
-python juego_pistas.py --modo 2 --headless    # Entrenar LoRA desde consola
-python juego_pistas.py --modo 4 --headless    # Evaluación oficial B1/B2/B3
+---
+
+### Paso 3 — Qué hacer dentro de la App
+
+1. *(Opcional)* Edita `grand_prix\cliente_estudiante\.env` para poner tu `STUDENT_ID` y `STUDENT_NAME`.
+2. **`[1]` Grabar Jugadas (`P1`, `P2`, `P3`):**
+   - Elige la pista arriba con los botones **`P1` | `P2` | `P3`**, ajusta **`Cada N frames`** y pulsa **`INICIAR GRABACION`**.
+   - Conduce con **Flechas** o **`W / A / S / D`** (`R` reinicia el carro al inicio).
+   - Pulsa **`Ver Frames`** para revisar tus muestras (`A / D` o `← / →`), borrar frames sueltos o borrar una pista (`borrar-p1`, `borrar-p2`, `borrar-p3`) / todo (`borrar-todo`).
+   - Pulsa **`Guardar y Salir`** (o `ESC`) para guardar en `data/mis_jugadas.json` *(ya incluye 120 ejemplos semilla si quieres probar directo)*.
+3. Edita `grand_prix\cliente_estudiante\config_estudiante.py` para elegir `ESTRATEGIA = "ICL"` o `"LORA"` y ajustar hiperparámetros.
+4. Si elegiste `"LORA"`, ejecuta **`[2]` Entrenar Piloto** en el menú.
+5. Ejecuta **`[3]` Modo Autónomo - Prueba (`P1`, `P2`, `P3`)** para ver tu piloto en las pistas de entrenamiento.
+6. Ejecuta **`[4]` Evaluación Oficial (`B1`, `B2`, `B3`)** para competir en las pistas ocultas y ver tu puntaje en `http://127.0.0.1:8000/ranking`.
+
+#### Comandos CLI sin ventana gráfica (opcional)
+```bat
+python juego_pistas.py --generar-semilla      :: Regenera 120 jugadas semilla en P1/P2/P3
+python juego_pistas.py --modo 2 --headless    :: Entrenar LoRA desde consola
+python juego_pistas.py --modo 4 --headless    :: Evaluación oficial B1/B2/B3
 ```
 
 ---
