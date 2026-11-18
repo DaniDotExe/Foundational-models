@@ -3393,21 +3393,20 @@ class JuegoPygame:
         frame_idx = 0
         estados_leg: List[Dict[str, Any]] = []
 
-        def _iniciar_pista(clave: str) -> None:
-            nonlocal frame_idx, estados_leg
-            frame_idx = 0
-            estados_leg = []
+        def _iniciar_pista(clave: str) -> Tuple[int, List[Dict[str, Any]]]:
+            nuevos: List[Dict[str, Any]] = []
             for idx_e, item in enumerate(datos.get(clave, [])):
                 est_c = estado_inicial(clave)
-                estados_leg.append({
+                nuevos.append({
                     "nombre": f"{item.get('student_name', '?')} ({item.get('estrategia', '-')})",
                     "color": paleta[idx_e % len(paleta)],
                     "tray": item.get("trayectoria", []),
                     "est": est_c,
                     "choques_pvp": 0,
                 })
+            return 0, nuevos
 
-        _iniciar_pista(pista_sel)
+        frame_idx, estados_leg = _iniciar_pista(pista_sel)
 
         try:
             return self._loop_carrera_todos(
@@ -3448,35 +3447,45 @@ class JuegoPygame:
                     if event.key == pg.K_SPACE:
                         pausado = not pausado
                     elif event.key == pg.K_r:
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif event.key == pg.K_m:
                         modo_legendario = not modo_legendario
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif event.key == pg.K_1:
                         pista_sel = "B1"
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif event.key == pg.K_2:
                         pista_sel = "B2"
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif event.key == pg.K_3:
                         pista_sel = "B3"
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                 if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
                     if btn_b1.collidepoint(pos):
                         pista_sel = "B1"
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif btn_b2.collidepoint(pos):
                         pista_sel = "B2"
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif btn_b3.collidepoint(pos):
                         pista_sel = "B3"
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif btn_modo.collidepoint(pos):
                         modo_legendario = not modo_legendario
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif btn_reset.collidepoint(pos):
-                        _iniciar_pista(pista_sel)
+                        frame_idx, estados_leg = _iniciar_pista(pista_sel)
+                        pausado = False
                     elif btn_volver.collidepoint(pos):
                         return
 
@@ -3498,17 +3507,16 @@ class JuegoPygame:
                 osx, osy, _ = self._w2s(ox, oy)
                 pg.draw.circle(self.screen, self.BAD, (osx, osy), max(4, int(rad * escala_ref)))
 
-            # Avanzar física si está en Modo Legendario
+            # Avanzar física (en Legendario con colisiones entre carros; en Fantasma sin colisiones para medir progreso)
             max_frames = max((len(c["tray"]) for c in estados_leg), default=0)
             if not pausado and frame_idx < max_frames:
+                for c in estados_leg:
+                    tray = c["tray"]
+                    est_c = c["est"]
+                    if est_c.vueltas < VUELTAS_OBJETIVO and tray and frame_idx < len(tray):
+                        acc = int(tray[frame_idx][3]) if len(tray[frame_idx]) >= 4 else 0
+                        paso_simulacion(est_c, acc, pista_sel)
                 if modo_legendario:
-                    for c in estados_leg:
-                        tray = c["tray"]
-                        est_c = c["est"]
-                        if est_c.vueltas < VUELTAS_OBJETIVO and tray:
-                            f_use = min(frame_idx, len(tray) - 1)
-                            acc = int(tray[f_use][3]) if len(tray[f_use]) >= 4 else 0
-                            paso_simulacion(est_c, acc, pista_sel)
                     # Colisiones elásticas entre carros (hitbox activo)
                     n_c = len(estados_leg)
                     for i in range(n_c):
@@ -3580,11 +3588,18 @@ class JuegoPygame:
                     (x0 + 18, 220),
                 )
             else:
-                y_l = 210
-                for c in estados_leg[:14]:
+                self.screen.blit(self.font_h2.render("Leaderboard en vivo", True, self.TEXTO), (x0 + 18, 206))
+                ranking_vivo = sorted(
+                    estados_leg,
+                    key=lambda c: (-calcular_progreso_pct(c["est"], pista_sel), c["est"].tiempo_carrera),
+                )
+                y_l = 236
+                for pos_v, c in enumerate(ranking_vivo[:14], start=1):
+                    pct_v = calcular_progreso_pct(c["est"], pista_sel)
                     extra = f" | PvP:{c['choques_pvp']}" if modo_legendario else ""
+                    linea_lb = f"#{pos_v} {c['nombre'][:15]} {pct_v:.1f}%{extra}"
                     self.screen.blit(
-                        self.font_small.render(f"{c['nombre'][:18]}{extra}", True, c["color"]),
+                        self.font_small.render(linea_lb, True, c["color"]),
                         (x0 + 18, y_l),
                     )
                     y_l += 24
