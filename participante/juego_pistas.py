@@ -710,8 +710,9 @@ class JuegoPygame:
         self.estado_menu_msg = "Listo. Selecciona un modo (1-4)."
         self.salud_servidor: Optional[Dict[str, Any]] = None
         self._bg_lock = threading.Lock()
-        self._bg_queue: List[str] = []
+        self._bg_queue: List[Dict[str, Any]] = []
         self._bg_active_track: Optional[str] = None
+        self._bg_active_key: Optional[Tuple[str, str]] = None
         self._bg_active_pct: float = 0.0
         self._bg_active_frames: int = 0
         self._bg_active_pista_pct: float = 0.0
@@ -719,7 +720,7 @@ class JuegoPygame:
         self._bg_active_estrategia: str = ""
         self._bg_cancel_event = threading.Event()
         self._bg_thread: Optional[threading.Thread] = None
-        self._bg_results: Dict[str, Dict[str, Any]] = {}
+        self._bg_results: Dict[Tuple[str, str], Dict[str, Any]] = {}
         self.loras_disponibles: List[str] = self.bridge.listar_adaptadores()
         self.lora_activo: Optional[str] = self.loras_disponibles[-1] if self.loras_disponibles else None
         self._train_lock = threading.Lock()
@@ -1879,8 +1880,8 @@ class JuegoPygame:
             with self._bg_lock:
                 bg_act = self._bg_active_track
                 bg_pct = self._bg_active_pct
-                bg_q = list(self._bg_queue)
-                bg_done = sorted(self._bg_results.keys())
+                bg_q = [str(item.get("pista", "")) for item in self._bg_queue]
+                bg_done = [f"{mk}:{pk}" for mk, pk in sorted(self._bg_results.keys())]
 
             if bg_act or bg_q:
                 cola_txt = f"Cola [3]: Simulando {bg_act} ({bg_pct:.0f}%)" + (f" | Siguientes: {','.join(bg_q)}" if bg_q else "")
@@ -1888,8 +1889,9 @@ class JuegoPygame:
                 self._dibujar_boton(btn_cola_abrir, "Ver Cola [3]", (24, 38, 62), self.ACCENT)
                 self._dibujar_boton(btn_cola_cancel, "Cancelar Cola", (56, 20, 26), self.BAD)
             elif bg_done:
+                resumen_done = ", ".join(bg_done[-4:])
                 self.screen.blit(
-                    self.font_small.render(f"Replays listos en [3]: {', '.join(bg_done)}", True, self.OK),
+                    self.font_small.render(f"Replays listos en [3] ({len(bg_done)}): {resumen_done}", True, self.OK),
                     (90, 632),
                 )
                 self._dibujar_boton(btn_cola_abrir, "Ver Replays [3]", (15, 52, 48), self.OK)
@@ -3007,42 +3009,69 @@ class JuegoPygame:
         with self._bg_lock:
             self._bg_queue.clear()
 
+    def _modelo_key_actual(self) -> str:
+        est = cfg.ESTRATEGIA.upper().strip()
+        if est == "ICL":
+            return "ICL"
+        return f"{est}::{self.lora_activo or 'default'}"
+
     def _encolar_pistas_autonomas(self, pistas: List[str], jugadas_ref: List[Dict[str, Any]]) -> None:
+        mkey = self._modelo_key_actual()
+        estrategia_snap = str(cfg.ESTRATEGIA)
+        icl_snap = copy.deepcopy(cfg.CONFIG_ICL)
+        datos_snap = copy.deepcopy(cfg.CONFIG_DATOS)
+        adapter_snap = self.lora_activo
+        if estrategia_snap == "LORA_ICL":
+            estrategia_lbl = f"LORA ({adapter_snap or 'default'}) + ICL (k={icl_snap.get('k_shots', 4)})"
+        elif estrategia_snap == "LORA":
+            estrategia_lbl = f"LORA ({adapter_snap or 'default'})"
+        else:
+            estrategia_lbl = f"ICL (k={icl_snap.get('k_shots', 4)})"
+
         with self._bg_lock:
+            en_cola_keys = {(item["mkey"], item["pista"]) for item in self._bg_queue}
             for p in pistas:
-                if p != self._bg_active_track and p not in self._bg_queue:
-                    self._bg_results.pop(p, None)
-                    self._bg_queue.append(p)
+                k_pair = (mkey, p)
+                if k_pair != self._bg_active_key and k_pair not in en_cola_keys:
+                    self._bg_results.pop(k_pair, None)
+                    self._bg_queue.append({
+                        "mkey": mkey,
+                        "pista": p,
+                        "estrategia": estrategia_snap,
+                        "icl": icl_snap,
+                        "datos": datos_snap,
+                        "adapter": adapter_snap,
+                        "lbl": estrategia_lbl,
+                    })
             ya_corriendo = self._bg_thread is not None and self._bg_thread.is_alive()
 
         if not ya_corriendo:
             self._bg_cancel_event.clear()
-            estrategia_snap = str(cfg.ESTRATEGIA)
-            icl_snap = copy.deepcopy(cfg.CONFIG_ICL)
-            datos_snap = copy.deepcopy(cfg.CONFIG_DATOS)
-            adapter_snap = self.lora_activo
-            if estrategia_snap == "LORA_ICL":
-                estrategia_lbl = f"LORA ({adapter_snap or 'default'}) + ICL (k={icl_snap.get('k_shots', 4)})"
-            elif estrategia_snap == "LORA":
-                estrategia_lbl = f"LORA ({adapter_snap or 'default'})"
-            else:
-                estrategia_lbl = f"ICL (k={icl_snap.get('k_shots', 4)})"
-            ventana = max(1, min(8, int(datos_snap.get("ventana_historia", 5))))
 
             def _worker_cola() -> None:
                 while not self._bg_cancel_event.is_set():
                     with self._bg_lock:
                         if not self._bg_queue:
                             self._bg_active_track = None
+                            self._bg_active_key = None
                             return
-                        clave_pista = self._bg_queue.pop(0)
+                        job = self._bg_queue.pop(0)
+                        clave_pista = job["pista"]
+                        job_mkey = job["mkey"]
+                        job_est = job["estrategia"]
+                        job_icl = job["icl"]
+                        job_datos = job["datos"]
+                        job_adapter = job["adapter"]
+                        job_lbl = job["lbl"]
                         self._bg_active_track = clave_pista
+                        self._bg_active_key = (job_mkey, clave_pista)
                         self._bg_active_pct = 0.0
                         self._bg_active_frames = 0
                         self._bg_active_pista_pct = 0.0
                         self._bg_active_rtt = 0.0
-                        self._bg_active_estrategia = estrategia_lbl
+                        self._bg_active_estrategia = job_lbl
 
+                    ventana = max(1, min(8, int(job_datos.get("ventana_historia", 5))))
                     est = estado_inicial(clave_pista)
                     hist: List[int] = [0] * ventana
                     latencias_rtt_ms: List[float] = []
@@ -3062,16 +3091,16 @@ class JuegoPygame:
                         cp_dist_ang = info_checkpoint(est, clave_pista)
                         if frame % DECIDE_EVERY_N_FRAMES == 0:
                             resp = self.bridge.decidir_accion(
-                                estrategia=estrategia_snap,
+                                estrategia=job_est,
                                 estado_actual=sensores,
                                 historial=hist[-ventana:],
                                 jugadas_referencia=jugadas_ref,
-                                config_icl=icl_snap,
-                                config_datos=datos_snap,
+                                config_icl=job_icl,
+                                config_datos=job_datos,
                                 velocidad=velocidad_normalizada(est.velocidad),
                                 cp_dist=cp_dist_ang[0],
                                 cp_ang=cp_dist_ang[1],
-                                adapter_name=adapter_snap,
+                                adapter_name=job_adapter,
                             )
                             accion_actual = int(resp["accion"])
                             ultimo_rtt_ms = float(resp["rtt_ms"])
@@ -3118,14 +3147,15 @@ class JuegoPygame:
                             "tiempo_fuera_s": round(est.tiempo_fuera, 3),
                         }
                         with self._bg_lock:
-                            self._bg_results[clave_pista] = {
+                            self._bg_results[(job_mkey, clave_pista)] = {
                                 "frames": frames_grabados,
                                 "resumen": resumen,
-                                "estrategia": estrategia_lbl,
+                                "estrategia": job_lbl,
                             }
 
                 with self._bg_lock:
                     self._bg_active_track = None
+                    self._bg_active_key = None
 
             self._bg_thread = threading.Thread(target=_worker_cola, daemon=True)
             self._bg_thread.start()
@@ -3155,25 +3185,28 @@ class JuegoPygame:
         btn_volver = pg.Rect(self.ANCHO - 270, 675, 180, 44)
 
         while True:
+            mkey_actual = self._modelo_key_actual()
             with self._bg_lock:
-                act = self._bg_active_track
+                act_key = self._bg_active_key
                 act_pct = self._bg_active_pct
                 act_frames = self._bg_active_frames
                 act_pista_pct = self._bg_active_pista_pct
                 act_rtt = self._bg_active_rtt
                 act_est = self._bg_active_estrategia
-                cola = list(self._bg_queue)
+                cola_items = list(self._bg_queue)
                 resultados = dict(self._bg_results)
 
+            cola_del_modelo = [item["pista"] for item in cola_items if item["mkey"] == mkey_actual]
             btns_accion_fila: Dict[str, Tuple[str, Any]] = {}
             for idx_p, clave in enumerate(PISTAS_TRAIN):
                 y_card = 225 + idx_p * 135
                 btn_row = pg.Rect(self.ANCHO - 290, y_card + 36, 175, 40)
-                if act == clave:
+                k_pair = (mkey_actual, clave)
+                if act_key == k_pair:
                     btns_accion_fila[clave] = ("cancelar", btn_row)
-                elif clave in cola:
+                elif clave in cola_del_modelo:
                     btns_accion_fila[clave] = ("quitar", btn_row)
-                elif clave in resultados:
+                elif k_pair in resultados:
                     btns_accion_fila[clave] = ("replay", btn_row)
                 else:
                     btns_accion_fila[clave] = ("encolar", btn_row)
@@ -3195,7 +3228,7 @@ class JuegoPygame:
                         self._encolar_pistas_autonomas(["P3"], jugadas_ref)
                     elif btn_todas.collidepoint(mx, my):
                         self._encolar_pistas_autonomas(list(PISTAS_TRAIN), jugadas_ref)
-                    elif (act or cola) and btn_cancelar_todo.collidepoint(mx, my):
+                    elif (act_key or cola_items) and btn_cancelar_todo.collidepoint(mx, my):
                         self._cancelar_cola_autonoma()
                     elif usa_lora and any(b.collidepoint(mx, my) for b in btns_lora_sim):
                         for idx_l, b_l in enumerate(btns_lora_sim):
@@ -3205,14 +3238,17 @@ class JuegoPygame:
                     else:
                         for clave, (accion_btn, rect_btn) in btns_accion_fila.items():
                             if rect_btn.collidepoint(mx, my):
+                                k_pair = (mkey_actual, clave)
                                 if accion_btn == "cancelar":
                                     self._cancelar_cola_autonoma()
                                 elif accion_btn == "quitar":
                                     with self._bg_lock:
-                                        if clave in self._bg_queue:
-                                            self._bg_queue.remove(clave)
+                                        self._bg_queue = [
+                                            it for it in self._bg_queue
+                                            if not (it["mkey"] == mkey_actual and it["pista"] == clave)
+                                        ]
                                 elif accion_btn == "replay":
-                                    res_info = resultados[clave]
+                                    res_info = resultados[k_pair]
                                     self._reproducir_frames_autonomo(
                                         clave,
                                         res_info["frames"],
@@ -3227,7 +3263,7 @@ class JuegoPygame:
             self.screen.blit(self.font_title.render("Modo [3]: Simulacion Autonoma en Cola", True, self.ACCENT), (90, 42))
             self.screen.blit(
                 self.font_body.render(
-                    f"Estrategia actual: {cfg.ESTRATEGIA} | Elige pista para simular en segundo plano y puedes volver al menu.",
+                    f"Estrategia actual: {cfg.ESTRATEGIA} | Cada modelo guarda sus propias simulaciones.",
                     True,
                     self.MUTED,
                 ),
@@ -3250,20 +3286,21 @@ class JuegoPygame:
             self._dibujar_boton(btn_p2, "+ Simular P2", (24, 38, 62), self.ACCENT)
             self._dibujar_boton(btn_p3, "+ Simular P3", (24, 38, 62), self.ACCENT)
             self._dibujar_boton(btn_todas, "+ Simular Todas", (15, 52, 48), self.OK)
-            if act or cola:
+            if act_key or cola_items:
                 self._dibujar_boton(btn_cancelar_todo, "Cancelar Todo", (56, 20, 26), self.BAD)
 
             for idx_p, clave in enumerate(PISTAS_TRAIN):
                 y_card = 225 + idx_p * 135
                 card = pg.Rect(90, y_card, self.ANCHO - 180, 114)
+                k_pair = (mkey_actual, clave)
                 pg.draw.rect(self.screen, self.PANEL_BG, card, border_radius=12)
-                pg.draw.rect(self.screen, self.ACCENT if act == clave else self.BORDE, card, 2, border_radius=12)
+                pg.draw.rect(self.screen, self.ACCENT if act_key == k_pair else self.BORDE, card, 2, border_radius=12)
 
                 nombre_p = PISTAS[clave]["nombre"]
                 self.screen.blit(self.font_h2.render(nombre_p, True, self.TEXTO), (card.x + 22, card.y + 14))
 
                 accion_btn, rect_btn = btns_accion_fila[clave]
-                if act == clave:
+                if act_key == k_pair:
                     self.screen.blit(
                         self.font_body.render(
                             f"Simulando ({act_est})... {act_pct:.0f}% | Frames: {act_frames} | Pista: {act_pista_pct:.1f}% | RTT: {act_rtt:.0f} ms",
@@ -3278,16 +3315,16 @@ class JuegoPygame:
                     if fw > 0:
                         pg.draw.rect(self.screen, self.ACCENT, pg.Rect(barra.x + 2, barra.y + 2, fw, barra.h - 4), border_radius=4)
                     self._dibujar_boton(rect_btn, "Cancelar", (56, 20, 26), self.BAD)
-                elif clave in cola:
-                    pos_q = cola.index(clave) + 1
+                elif clave in cola_del_modelo:
+                    pos_q = cola_del_modelo.index(clave) + 1
                     self.screen.blit(
                         self.font_body.render(f"En cola (turno #{pos_q}) esperando servidor...", True, self.MUTED),
                         (card.x + 22, card.y + 52),
                     )
                     self._dibujar_boton(rect_btn, "Quitar de cola", (56, 38, 16), self.WARN)
-                elif clave in resultados:
-                    res = resultados[clave]["resumen"]
-                    est_r = resultados[clave]["estrategia"]
+                elif k_pair in resultados:
+                    res = resultados[k_pair]["resumen"]
+                    est_r = resultados[k_pair]["estrategia"]
                     col_r = self.OK if res["completada"] else self.WARN
                     self.screen.blit(
                         self.font_body.render(
@@ -3301,7 +3338,7 @@ class JuegoPygame:
                     self._dibujar_boton(rect_btn, "Ver Replay (30 FPS)", (15, 52, 48), self.OK)
                 else:
                     self.screen.blit(
-                        self.font_body.render("Sin simular aun. Pulsa '+ Simular' para enviar a la cola.", True, self.MUTED),
+                        self.font_body.render("Sin simular aun para este modelo. Pulsa '+ Simular'.", True, self.MUTED),
                         (card.x + 22, card.y + 52),
                     )
                     self._dibujar_boton(rect_btn, f"Simular {clave}", (24, 38, 62), self.ACCENT)
